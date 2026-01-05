@@ -13,8 +13,23 @@
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { KeyboardAvoidingView, Platform } from 'react-native';
-import { Stack as TamaguiStack, useTheme, X, YStack, Text, Spinner } from 'tamagui';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import {
+  Stack as TamaguiStack,
+  useTheme,
+  X,
+  YStack,
+  Text,
+  Spinner,
+  XStack,
+  Text as TamaguiText,
+} from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useCurrentMembership } from '@/hooks/useCurrentMembership';
@@ -41,14 +56,10 @@ export default function ThreadViewScreen() {
   const parentMessageId = params.id;
 
   // Fetch thread messages and parent message
-  const {
-    messages,
-    parentMessage,
-    loading,
-    error,
-    loadMore,
-    hasMore,
-  } = useThreadMessages(parentMessageId, tenantId);
+  const { messages, parentMessage, loading, error, loadMore, hasMore } = useThreadMessages(
+    parentMessageId,
+    tenantId
+  );
 
   // Local state for real-time message updates
   const [realTimeMessages, setRealTimeMessages] = useState<MessageWithSender[]>([]);
@@ -117,12 +128,13 @@ export default function ThreadViewScreen() {
           table: 'messages',
           filter: `parent_id=eq.${parentMessageId}`,
         },
-        async (payload) => {
+        (payload) => {
           // Fetch the complete message with sender info
-          const { data } = await supabase
-            .from('messages')
-            .select(
-              `
+          void (async () => {
+            const { data } = await supabase
+              .from('messages')
+              .select(
+                `
               id,
               tenant_id,
               conversation_id,
@@ -143,41 +155,42 @@ export default function ThreadViewScreen() {
                 )
               )
             `
-            )
-            .eq('id', payload.new.id)
-            .single();
+              )
+              .eq('id', payload.new.id)
+              .single();
 
-          if (data) {
-            const sender = data.sender as {
-              id: string;
-              user: { id: string; display_name: string | null; photo_url: string | null };
-            };
+            if (data) {
+              const sender = data.sender as {
+                id: string;
+                user: { id: string; display_name: string | null; photo_url: string | null };
+              };
 
-            const newMessage: MessageWithSender = {
-              id: data.id,
-              tenant_id: data.tenant_id,
-              conversation_id: data.conversation_id,
-              sender_id: data.sender_id,
-              parent_id: data.parent_id,
-              content: data.content,
-              content_type: data.content_type as MessageWithSender['content_type'],
-              is_event_chat: data.is_event_chat,
-              created_at: data.created_at,
-              updated_at: data.updated_at,
-              deleted_at: data.deleted_at,
-              sender: {
-                id: sender?.id ?? '',
-                user: {
-                  id: sender?.user?.id ?? '',
-                  display_name: sender?.user?.display_name ?? null,
-                  photo_url: sender?.user?.photo_url ?? null,
+              const newMessage: MessageWithSender = {
+                id: data.id,
+                tenant_id: data.tenant_id,
+                conversation_id: data.conversation_id,
+                sender_id: data.sender_id,
+                parent_id: data.parent_id,
+                content: data.content,
+                content_type: data.content_type as MessageWithSender['content_type'],
+                is_event_chat: data.is_event_chat,
+                created_at: data.created_at,
+                updated_at: data.updated_at,
+                deleted_at: data.deleted_at,
+                sender: {
+                  id: sender?.id ?? '',
+                  user: {
+                    id: sender?.user?.id ?? '',
+                    display_name: sender?.user?.display_name ?? null,
+                    photo_url: sender?.user?.photo_url ?? null,
+                  },
                 },
-              },
-              reply_count: 0,
-            };
+                reply_count: 0,
+              };
 
-            setRealTimeMessages((prev) => appendThreadMessage(prev, newMessage));
-          }
+              setRealTimeMessages((prev) => appendThreadMessage(prev, newMessage));
+            }
+          })();
         }
       )
       .on(
@@ -188,12 +201,13 @@ export default function ThreadViewScreen() {
           table: 'messages',
           filter: `parent_id=eq.${parentMessageId}`,
         },
-        async (payload) => {
+        (payload) => {
           // Fetch the updated message with sender info
-          const { data } = await supabase
-            .from('messages')
-            .select(
-              `
+          void (async () => {
+            const { data } = await supabase
+              .from('messages')
+              .select(
+                `
               id,
               tenant_id,
               conversation_id,
@@ -214,41 +228,42 @@ export default function ThreadViewScreen() {
                 )
               )
             `
-            )
-            .eq('id', payload.new.id)
-            .single();
+              )
+              .eq('id', payload.new.id)
+              .single();
 
-          if (data) {
-            const sender = data.sender as {
-              id: string;
-              user: { id: string; display_name: string | null; photo_url: string | null };
-            };
+            if (data) {
+              const sender = data.sender as {
+                id: string;
+                user: { id: string; display_name: string | null; photo_url: string | null };
+              };
 
-            const updatedMessage: MessageWithSender = {
-              id: data.id,
-              tenant_id: data.tenant_id,
-              conversation_id: data.conversation_id,
-              sender_id: data.sender_id,
-              parent_id: data.parent_id,
-              content: data.content,
-              content_type: data.content_type as MessageWithSender['content_type'],
-              is_event_chat: data.is_event_chat,
-              created_at: data.created_at,
-              updated_at: data.updated_at,
-              deleted_at: data.deleted_at,
-              sender: {
-                id: sender?.id ?? '',
-                user: {
-                  id: sender?.user?.id ?? '',
-                  display_name: sender?.user?.display_name ?? null,
-                  photo_url: sender?.user?.photo_url ?? null,
+              const updatedMessage: MessageWithSender = {
+                id: data.id,
+                tenant_id: data.tenant_id,
+                conversation_id: data.conversation_id,
+                sender_id: data.sender_id,
+                parent_id: data.parent_id,
+                content: data.content,
+                content_type: data.content_type as MessageWithSender['content_type'],
+                is_event_chat: data.is_event_chat,
+                created_at: data.created_at,
+                updated_at: data.updated_at,
+                deleted_at: data.deleted_at,
+                sender: {
+                  id: sender?.id ?? '',
+                  user: {
+                    id: sender?.user?.id ?? '',
+                    display_name: sender?.user?.display_name ?? null,
+                    photo_url: sender?.user?.photo_url ?? null,
+                  },
                 },
-              },
-              reply_count: 0,
-            };
+                reply_count: 0,
+              };
 
-            setRealTimeMessages((prev) => updateThreadMessage(prev, updatedMessage));
-          }
+              setRealTimeMessages((prev) => updateThreadMessage(prev, updatedMessage));
+            }
+          })();
         }
       )
       .on(
@@ -288,7 +303,13 @@ export default function ThreadViewScreen() {
 
   // Render empty state for threads
   const renderEmptyState = () => (
-    <YStack testID="thread-empty-state" flex={1} justifyContent="center" alignItems="center" padding="$4">
+    <YStack
+      testID="thread-empty-state"
+      flex={1}
+      justifyContent="center"
+      alignItems="center"
+      padding="$4"
+    >
       <Text color="$colorSubtle" fontSize="$5" textAlign="center">
         {t('chat.thread_no_replies')}
       </Text>
@@ -388,10 +409,6 @@ export default function ThreadViewScreen() {
 /**
  * Simplified reply input for threads (no Event Chat mode).
  */
-import { TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { XStack, Text as TamaguiText } from 'tamagui';
-import { Send } from '@tamagui/lucide-icons';
-
 interface ThreadReplyInputProps {
   onSend: (content: string) => Promise<void>;
   sending: boolean;
@@ -400,6 +417,7 @@ interface ThreadReplyInputProps {
 }
 
 function ThreadReplyInput({ onSend, sending, error, placeholder }: ThreadReplyInputProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const theme = useTheme();
 
@@ -442,7 +460,9 @@ function ThreadReplyInput({ onSend, sending, error, placeholder }: ThreadReplyIn
             },
           ]}
         >
-          <Send size={20} color={theme.background?.val} />
+          <TamaguiText fontSize="$md" color="white">
+            {t('chat.send')}
+          </TamaguiText>
         </TouchableOpacity>
       </XStack>
       {error && (

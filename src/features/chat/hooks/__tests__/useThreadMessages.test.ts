@@ -3,7 +3,12 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { useThreadMessages, appendThreadMessage, updateThreadMessage, removeThreadMessage } from '../useThreadMessages';
+import {
+  useThreadMessages,
+  appendThreadMessage,
+  updateThreadMessage,
+  removeThreadMessage,
+} from '../useThreadMessages';
 import { supabase } from '@/lib/supabase';
 import type { MessageWithSender } from '@/types/database';
 
@@ -104,7 +109,7 @@ describe('useThreadMessages', () => {
       error: null,
     });
 
-    const mockFrom = jest.fn().mockImplementation((table: string) => {
+    const mockFrom = jest.fn().mockImplementation((_table: string) => {
       return {
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -290,10 +295,7 @@ describe('Thread message helper functions', () => {
 
   describe('appendThreadMessage', () => {
     it('should append a new message to the end of the list', () => {
-      const existing = [
-        createMockMessage('msg-1', 'First'),
-        createMockMessage('msg-2', 'Second'),
-      ];
+      const existing = [createMockMessage('msg-1', 'First'), createMockMessage('msg-2', 'Second')];
       const newMessage = createMockMessage('msg-3', 'Third');
 
       const result = appendThreadMessage(existing, newMessage);
@@ -374,10 +376,7 @@ describe('Thread message helper functions', () => {
     });
 
     it('should not mutate the original array', () => {
-      const existing = [
-        createMockMessage('msg-1', 'First'),
-        createMockMessage('msg-2', 'Second'),
-      ];
+      const existing = [createMockMessage('msg-1', 'First'), createMockMessage('msg-2', 'Second')];
 
       const result = removeThreadMessage(existing, 'msg-1');
 
