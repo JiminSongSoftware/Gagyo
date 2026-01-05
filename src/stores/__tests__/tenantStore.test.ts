@@ -4,7 +4,8 @@
  * Tests AsyncStorage persistence and tenant context management.
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { renderHook, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTenantStore, useTenantContext } from '../tenantStore';
 
@@ -52,10 +53,7 @@ describe('tenantStore', () => {
 
       expect(result.current.activeTenantId).toBe('tenant-123');
       expect(result.current.activeTenantName).toBe('Test Church');
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        '@gagyo:active_tenant_id',
-        'tenant-123'
-      );
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('@gagyo:active_tenant_id', 'tenant-123');
     });
 
     it('should update existing tenant when called multiple times', async () => {
@@ -109,7 +107,9 @@ describe('tenantStore', () => {
       const { supabase } = require('@/lib/supabase');
 
       // Mock AsyncStorage to return a tenant ID
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('tenant-123');
+      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockResolvedValue(
+        'tenant-123'
+      );
 
       // Mock Supabase auth to return a user
       supabase.auth.getUser.mockResolvedValue({
@@ -124,7 +124,7 @@ describe('tenantStore', () => {
               single: jest.fn(() => ({
                 data: { id: 'membership-123' },
                 error: null,
-              }),
+              })),
             })),
           })),
         })),
@@ -156,7 +156,9 @@ describe('tenantStore', () => {
     it('should clear tenant if membership is no longer active', async () => {
       const { supabase } = require('@/lib/supabase');
 
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('tenant-123');
+      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockResolvedValue(
+        'tenant-123'
+      );
 
       supabase.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
@@ -170,7 +172,7 @@ describe('tenantStore', () => {
               single: jest.fn(() => ({
                 data: null,
                 error: { message: 'Not found' },
-              }),
+              })),
             })),
           })),
         })),
@@ -187,7 +189,9 @@ describe('tenantStore', () => {
     });
 
     it('should handle no tenant in storage', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockResolvedValue(
+        null
+      );
 
       const { result } = renderHook(() => useTenantStore());
 

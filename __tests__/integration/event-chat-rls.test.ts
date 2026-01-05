@@ -22,7 +22,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // ============================================================================
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -41,7 +42,7 @@ const TEST_DATA = {
   // Users
   userAEmail: 'event-chat-user-a@example.com',
   userAId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  userAEmail: 'event-chat-user-b@example.com',
+  userBEmail: 'event-chat-user-b@example.com',
   userBId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
   userCEmail: 'event-chat-user-c@example.com',
   userCId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
@@ -70,10 +71,10 @@ const TEST_DATA = {
 /**
  * Sign up a test user and return their session
  */
-async function signUpTestUser(email: string, userId: string): Promise<void> {
+async function signUpTestUser(email: string): Promise<void> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password: TEST_DATA.testPassword,
     options: {
@@ -194,15 +195,24 @@ async function cleanupTestData(): Promise<void> {
   if (!serviceRole) return;
 
   // Delete in correct order due to foreign keys
-  await serviceRole.from('event_chat_exclusions').delete().eq('message_id', TEST_DATA.conversationId); // Using conversation ID as a proxy
+  await serviceRole
+    .from('event_chat_exclusions')
+    .delete()
+    .eq('message_id', TEST_DATA.conversationId); // Using conversation ID as a proxy
   await serviceRole.from('messages').delete().eq('conversation_id', TEST_DATA.conversationId);
-  await serviceRole.from('conversation_participants').delete().eq('conversation_id', TEST_DATA.conversationId);
+  await serviceRole
+    .from('conversation_participants')
+    .delete()
+    .eq('conversation_id', TEST_DATA.conversationId);
   await serviceRole.from('conversations').delete().eq('id', TEST_DATA.conversationId);
-  await serviceRole.from('memberships').delete().in_('id', [
-    TEST_DATA.userAMembershipId,
-    TEST_DATA.userBMembershipId,
-    TEST_DATA.userCMembershipId,
-  ]);
+  await serviceRole
+    .from('memberships')
+    .delete()
+    .in('id', [
+      TEST_DATA.userAMembershipId,
+      TEST_DATA.userBMembershipId,
+      TEST_DATA.userCMembershipId,
+    ]);
   await serviceRole.from('tenants').delete().eq('id', TEST_DATA.tenantId);
 }
 
@@ -218,9 +228,9 @@ describe('Event Chat RLS Policies', () => {
 
   beforeAll(async () => {
     // Create test users
-    await signUpTestUser(TEST_DATA.userAEmail, TEST_DATA.userAId);
-    await signUpTestUser(TEST_DATA.userBEmail, TEST_DATA.userBId);
-    await signUpTestUser(TEST_DATA.userCEmail, TEST_DATA.userCId);
+    await signUpTestUser(TEST_DATA.userAEmail);
+    await signUpTestUser(TEST_DATA.userBEmail);
+    await signUpTestUser(TEST_DATA.userCEmail);
 
     // Set up test data (tenant, memberships, conversation)
     await setupTestData();
@@ -262,6 +272,9 @@ describe('Event Chat RLS Policies', () => {
 
     expect(insertError).toBeNull();
     expect(message).not.toBeNull();
+    if (!message) {
+      throw new Error('Failed to insert test message');
+    }
     testMessageId = message.id;
 
     // Create exclusions
@@ -277,10 +290,10 @@ describe('Event Chat RLS Policies', () => {
       .eq('conversation_id', TEST_DATA.conversationId);
 
     expect(queryError).toBeNull();
-    expect(messages).toBeArray();
+    expect(Array.isArray(messages)).toBe(true);
 
     // Sender should see the Event Chat message
-    const eventChatMessage = messages?.find((m: any) => m.id === testMessageId);
+    const eventChatMessage = messages?.find((m: { id?: string }) => m.id === testMessageId);
     expect(eventChatMessage).toBeDefined();
     expect(eventChatMessage?.content).toBe('Secret surprise party planning!');
     expect(eventChatMessage?.is_event_chat).toBe(true);
@@ -298,10 +311,10 @@ describe('Event Chat RLS Policies', () => {
       .eq('conversation_id', TEST_DATA.conversationId);
 
     expect(queryError).toBeNull();
-    expect(messages).toBeArray();
+    expect(Array.isArray(messages)).toBe(true);
 
     // User B should NOT see the Event Chat message
-    const eventChatMessage = messages?.find((m: any) => m.id === testMessageId);
+    const eventChatMessage = messages?.find((m: { id?: string }) => m.id === testMessageId);
     expect(eventChatMessage).toBeUndefined();
   });
 
@@ -317,10 +330,10 @@ describe('Event Chat RLS Policies', () => {
       .eq('conversation_id', TEST_DATA.conversationId);
 
     expect(queryError).toBeNull();
-    expect(messages).toBeArray();
+    expect(Array.isArray(messages)).toBe(true);
 
     // User C should see the Event Chat message
-    const eventChatMessage = messages?.find((m: any) => m.id === testMessageId);
+    const eventChatMessage = messages?.find((m: { id?: string }) => m.id === testMessageId);
     expect(eventChatMessage).toBeDefined();
     expect(eventChatMessage?.content).toBe('Secret surprise party planning!');
   });
@@ -366,7 +379,7 @@ describe('Event Chat RLS Policies', () => {
 
     // Sender should see exclusions
     expect(errorA).toBeNull();
-    expect(exclusionsForA).toBeArray();
+    expect(Array.isArray(exclusionsForA)).toBe(true);
     expect(exclusionsForA?.length).toBeGreaterThan(0);
 
     // User B queries event_chat_exclusions
@@ -378,7 +391,9 @@ describe('Event Chat RLS Policies', () => {
     // Non-sender should NOT see exclusions (RLS blocks it)
     expect(errorB).toBeNull();
     // Result should be empty or not contain the exclusion
-    const exclusionFound = exclusionsForB?.some((e: any) => e.message_id === message2Id);
+    const exclusionFound = exclusionsForB?.some(
+      (e: { message_id?: string }) => e.message_id === message2Id
+    );
     expect(exclusionFound).toBe(false);
   });
 
@@ -423,7 +438,7 @@ describe('Event Chat RLS Policies', () => {
       .select('*')
       .eq('message_id', multiMessageId);
 
-    expect(allExclusions).toBeArray();
+    expect(Array.isArray(allExclusions)).toBe(true);
     expect(allExclusions?.length).toBe(2);
 
     // User B should not see the message

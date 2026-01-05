@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Locale } from '@/i18n';
+import type { Locale } from '@/i18n/types';
 
 export interface PreferencesState {
   /**
@@ -73,7 +73,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       name: 'gagyo-preferences',
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
-        state._setHasHydrated(true);
+        state?._setHasHydrated(true);
       },
     }
   )

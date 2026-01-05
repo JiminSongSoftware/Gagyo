@@ -51,14 +51,15 @@ export default function App() {
     // Only initialize after hydration or with a timeout
     if (_hasHydrated) {
       void initializeI18n();
-    } else {
-      // Add a timeout in case hydration takes too long
-      const timeoutId = setTimeout(() => {
-        void initializeI18n();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
+      return undefined;
     }
+
+    // Add a timeout in case hydration takes too long
+    const timeoutId = setTimeout(() => {
+      void initializeI18n();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [_hasHydrated, savedLocale]);
 
   // Show loading screen while i18n initializes

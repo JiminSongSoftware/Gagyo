@@ -4,6 +4,7 @@
  * Tests form validation and user interactions.
  */
 
+import { describe, it, expect, jest } from '@jest/globals';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import SignupScreen from '../signup';
@@ -20,8 +21,7 @@ jest.mock('expo-router', () => ({
 // Mock i18n
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) =>
-      options?.defaultValue ?? key,
+    t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,
   }),
 }));
 
@@ -36,7 +36,7 @@ jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 describe('SignupScreen', () => {
   it('should render signup form', () => {
-    const { getByTestId, getByText } = render(<SignupScreen />);
+    const { getByTestId } = render(<SignupScreen />);
 
     expect(getByTestId('signup-screen')).toBeTruthy();
     expect(getByTestId('email-input')).toBeTruthy();
@@ -46,7 +46,7 @@ describe('SignupScreen', () => {
   });
 
   it('should validate email format', async () => {
-    const { getByTestId, getByText } = render(<SignupScreen />);
+    const { getByTestId } = render(<SignupScreen />);
 
     fireEvent.changeText(getByTestId('email-input'), 'invalid-email');
     fireEvent.changeText(getByTestId('password-input'), 'password123');
@@ -54,23 +54,19 @@ describe('SignupScreen', () => {
     fireEvent.press(getByTestId('signup-button'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        expect.stringContaining('invalid_email')
-      );
+      expect(Alert.alert).toHaveBeenCalledWith(expect.stringContaining('invalid_email'));
     });
   });
 
   it('should validate password length', async () => {
-    const { getByTestId, getByText } = render(<SignupScreen />);
+    const { getByTestId } = render(<SignupScreen />);
 
     fireEvent.changeText(getByTestId('email-input'), 'test@test.com');
     fireEvent.changeText(getByTestId('password-input'), 'short');
     fireEvent.press(getByTestId('signup-button'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        expect.stringContaining('password_too_short')
-      );
+      expect(Alert.alert).toHaveBeenCalledWith(expect.stringContaining('password_too_short'));
     });
   });
 
@@ -83,9 +79,7 @@ describe('SignupScreen', () => {
     fireEvent.press(getByTestId('signup-button'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        expect.stringContaining('passwords_dont_match')
-      );
+      expect(Alert.alert).toHaveBeenCalledWith(expect.stringContaining('passwords_dont_match'));
     });
   });
 

@@ -23,7 +23,6 @@ import {
 import {
   Stack as TamaguiStack,
   useTheme,
-  X,
   YStack,
   Text,
   Spinner,
@@ -332,7 +331,9 @@ export default function ThreadViewScreen() {
           headerShown: true,
           headerLeft: () => (
             <TamaguiStack testID="thread-back-button" px="$4" onPress={handleBack}>
-              <X size={24} color={theme.color1?.val} />
+              <TamaguiText fontSize="$8" color={theme.color1?.val}>
+                ←
+              </TamaguiText>
             </TamaguiStack>
           ),
         }}
@@ -422,7 +423,13 @@ interface ThreadReplyInputProps {
   enabled?: boolean;
 }
 
-function ThreadReplyInput({ onSend, sending, error, placeholder, enabled = true }: ThreadReplyInputProps) {
+function ThreadReplyInput({
+  onSend,
+  sending,
+  error,
+  placeholder,
+  enabled = true,
+}: ThreadReplyInputProps) {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const theme = useTheme();

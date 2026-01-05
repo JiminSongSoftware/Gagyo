@@ -27,12 +27,13 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Support both Expo-prefixed and standard env var names
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
     'EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set in environment variables. ' +
-    'Create a .env file with these values.'
+      'Create a .env file with these values.'
   );
 }
 
@@ -71,7 +72,10 @@ const TEST_DATA = {
 /**
  * Sign up a test user and return their session
  */
-async function signUpTestUser(email: string, password: string): Promise<{ userId: string; session: any }> {
+async function signUpTestUser(
+  email: string,
+  password: string
+): Promise<{ userId: string; session: unknown }> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const { data, error } = await supabase.auth.signUp({
@@ -104,7 +108,7 @@ async function signUpTestUser(email: string, password: string): Promise<{ userId
 async function getAuthenticatedClient(email: string, password: string): Promise<SupabaseClient> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -130,19 +134,13 @@ async function cleanupTestData(): Promise<void> {
 
 describe('RLS Policies - Integration Tests', () => {
   let adminClient: SupabaseClient;
-  let memberClient: SupabaseClient;
-  let adminUserId: string;
-  let memberUserId: string;
 
   beforeAll(async () => {
     // Create test users
-    const adminResult = await signUpTestUser(TEST_DATA.adminEmail, 'test-password-123');
-    adminUserId = adminResult.userId;
+    await signUpTestUser(TEST_DATA.adminEmail, 'test-password-123');
     adminClient = await getAuthenticatedClient(TEST_DATA.adminEmail, 'test-password-123');
 
-    const memberResult = await signUpTestUser(TEST_DATA.memberEmail, 'test-password-123');
-    memberUserId = memberResult.userId;
-    memberClient = await getAuthenticatedClient(TEST_DATA.memberEmail, 'test-password-123');
+    await signUpTestUser(TEST_DATA.memberEmail, 'test-password-123');
 
     // Note: In a real scenario, we'd also create tenant/membership records
     // This requires either service_role access or admin API calls
@@ -159,9 +157,7 @@ describe('RLS Policies - Integration Tests', () => {
   describe('Tenants Table', () => {
     it('Users can view tenants they are members of', async () => {
       // This test assumes the user has been added to a tenant
-      const { data, error } = await adminClient
-        .from('tenants')
-        .select('id, name, slug');
+      const { data, error } = await adminClient.from('tenants').select('id, name, slug');
 
       // If user is not in any tenant, this will be empty (which is correct)
       expect(Array.isArray(data)).toBe(true);
@@ -170,11 +166,10 @@ describe('RLS Policies - Integration Tests', () => {
 
     it('Users cannot view tenants they are not members of', async () => {
       // This would require setting up two tenants and verifying isolation
-      const { data, error } = await adminClient
-        .from('tenants')
-        .select('id');
+      const { data, error } = await adminClient.from('tenants').select('id');
 
       expect(Array.isArray(data)).toBe(true);
+      expect(error).toBeNull();
     });
   });
 
@@ -203,11 +198,10 @@ describe('RLS Policies - Integration Tests', () => {
     });
 
     it('Users can view their own device tokens', async () => {
-      const { data, error } = await adminClient
-        .from('device_tokens')
-        .select('*');
+      const { data, error } = await adminClient.from('device_tokens').select('*');
 
       expect(Array.isArray(data)).toBe(true);
+      expect(error).toBeNull();
     });
   });
 
@@ -217,9 +211,7 @@ describe('RLS Policies - Integration Tests', () => {
 
   describe('Messages Table', () => {
     it('Users can only view messages from accessible conversations', async () => {
-      const { data, error } = await adminClient
-        .from('messages')
-        .select('*');
+      const { data, error } = await adminClient.from('messages').select('*');
 
       expect(Array.isArray(data)).toBe(true);
       expect(error).toBeNull();
@@ -248,9 +240,7 @@ describe('RLS Policies - Integration Tests', () => {
 
   describe('Pastoral Journals Table', () => {
     it('Small group leaders can view their group journals', async () => {
-      const { data, error } = await adminClient
-        .from('pastoral_journals')
-        .select('*');
+      const { data, error } = await adminClient.from('pastoral_journals').select('*');
 
       expect(Array.isArray(data)).toBe(true);
       expect(error).toBeNull();

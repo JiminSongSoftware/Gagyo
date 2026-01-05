@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-chat-threads:-nested-conversations.md",
+                "file": "plan-v1-:-push-notifications:-token-management-&-delivery.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-chat-threads:-nested-conversations"
+              "title": "plan-v1-:-push-notifications:-token-management-&-delivery"
             }
           }
         ]
@@ -193,20 +193,21 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
-    "src/features/chat/hooks/useThreadMessages.ts.tmp.95595.1767615477079",
-    "supabase/migrations/20250105000000_add_thread_id_column.sql",
-    "src/features/chat/hooks/useThreadMessages.ts",
-    "src/features/chat/hooks/__tests__/useThreadMessages.test.ts",
-    "e2e/thread.test.ts",
-    "e2e/helpers/thread-helpers.ts",
-    "claude_docs/16_thread_architecture.md",
-    "app/chat/thread/[id].tsx",
-    "app/chat/thread",
-    "plan-v1-:-event-chat:-selective-message-visibility.md",
+    "__tests__/integration/tenant-selection.test.ts",
+    "src/hooks/__tests__/useLocale.test.ts",
+    "app/(auth)/tenant-selection.tsx",
+    "app/(auth)/signup.tsx",
+    "app/(auth)/login.tsx",
+    "src/types/tamagui-react19.d.ts",
+    "src/types/jest-globals.d.ts",
+    "src/types/pg.d.ts",
+    "src/types/bun-test.d.ts",
+    "__tests__/integration/tenant-selection.test.tsx",
+    "src/hooks/__tests__/useLocale.test.tsx",
     "plan-v1-:-chat-threads:-nested-conversations.md",
-    "src/features/chat/components/EventChatSelector.tsx",
-    "__tests__/integration/event-chat-rls.test.ts",
-    "locales/ko/chat.json.tmp.60139.1767611611594",
+    "plan-v1-:-push-notifications:-token-management-&-delivery.md",
+    "claude_docs/16_thread_architecture.md",
+    "plan-v1-:-event-chat:-selective-message-visibility.md",
     "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
     "assets/favicon.png",
     "node_modules/@babel/helper-define-polyfill-provider/node_modules/resolve/SECURITY.md",
@@ -229,7 +230,6 @@
     "node_modules/is-finalizationregistry/README.md",
     "node_modules/is-finalizationregistry/CHANGELOG.md",
     "node_modules/is-async-function/README.md",
-    "node_modules/is-async-function/CHANGELOG.md",
     "node_modules/psl/browserstack-logo.svg",
     "node_modules/stream-buffers/coverage/lcov-report/sort-arrow-sprite.png",
     "node_modules/istanbul-reports/lib/html-spa/assets/sort-arrow-sprite.png",

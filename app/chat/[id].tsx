@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { KeyboardAvoidingView, Platform } from 'react-native';
-import { Stack as TamaguiStack, useTheme, X } from 'tamagui';
+import { Stack as TamaguiStack, useTheme, Text as TamaguiText } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useCurrentMembership } from '@/hooks/useCurrentMembership';
@@ -98,9 +98,7 @@ export default function ChatDetailScreen() {
   const incrementParentReplyCount = useCallback((parentId: string) => {
     setRealTimeMessages((prev) =>
       prev.map((msg) =>
-        msg.id === parentId
-          ? { ...msg, reply_count: (msg.reply_count || 0) + 1 }
-          : msg
+        msg.id === parentId ? { ...msg, reply_count: (msg.reply_count || 0) + 1 } : msg
       )
     );
   }, []);
@@ -109,38 +107,42 @@ export default function ChatDetailScreen() {
   const decrementParentReplyCount = useCallback((parentId: string) => {
     setRealTimeMessages((prev) =>
       prev.map((msg) =>
-        msg.id === parentId
-          ? { ...msg, reply_count: Math.max(0, (msg.reply_count || 0) - 1) }
-          : msg
+        msg.id === parentId ? { ...msg, reply_count: Math.max(0, (msg.reply_count || 0) - 1) } : msg
       )
     );
   }, []);
 
   // Subscribe to real-time message updates
   useMessageSubscription(conversationId, tenantId, {
-    onInsert: useCallback((message: MessageWithSender) => {
-      // If this is a thread reply, increment the parent's reply count
-      if (message.parent_id) {
-        incrementParentReplyCount(message.parent_id);
-        // Don't add thread replies to the main message list
-        return;
-      }
-      // Add top-level message to the list
-      setRealTimeMessages((prev) => appendMessage(prev, message));
-    }, [incrementParentReplyCount]),
+    onInsert: useCallback(
+      (message: MessageWithSender) => {
+        // If this is a thread reply, increment the parent's reply count
+        if (message.parent_id) {
+          incrementParentReplyCount(message.parent_id);
+          // Don't add thread replies to the main message list
+          return;
+        }
+        // Add top-level message to the list
+        setRealTimeMessages((prev) => appendMessage(prev, message));
+      },
+      [incrementParentReplyCount]
+    ),
     onUpdate: useCallback((message: MessageWithSender) => {
       setRealTimeMessages((prev) => updateMessage(prev, message));
     }, []),
-    onDelete: useCallback((messageId: string, oldMessage?: MessageWithSender) => {
-      // If deleted message had a parent_id (thread reply), decrement parent's reply count
-      // Note: oldMessage may not be available in all cases
-      if (oldMessage?.parent_id) {
-        decrementParentReplyCount(oldMessage.parent_id);
-        return;
-      }
-      // Remove top-level message from the list
-      setRealTimeMessages((prev) => removeMessage(prev, messageId));
-    }, [decrementParentReplyCount]),
+    onDelete: useCallback(
+      (messageId: string, oldMessage?: MessageWithSender) => {
+        // If deleted message had a parent_id (thread reply), decrement parent's reply count
+        // Note: oldMessage may not be available in all cases
+        if (oldMessage?.parent_id) {
+          decrementParentReplyCount(oldMessage.parent_id);
+          return;
+        }
+        // Remove top-level message from the list
+        setRealTimeMessages((prev) => removeMessage(prev, messageId));
+      },
+      [decrementParentReplyCount]
+    ),
     onError: useCallback((err: Error) => {
       console.error('Message subscription error:', err);
     }, []),
@@ -180,13 +182,16 @@ export default function ChatDetailScreen() {
     router.back();
   }, [router]);
 
-  const handleMessagePress = useCallback((message: MessageWithSender) => {
-    // Navigate to thread view if message has replies or is a top-level message
-    // Only top-level messages can have threads (parent_id is null)
-    if (!message.parent_id) {
-      router.push(`/chat/thread/${message.id}`);
-    }
-  }, [router]);
+  const handleMessagePress = useCallback(
+    (message: MessageWithSender) => {
+      // Navigate to thread view if message has replies or is a top-level message
+      // Only top-level messages can have threads (parent_id is null)
+      if (!message.parent_id) {
+        router.push(`/chat/thread/${message.id}`);
+      }
+    },
+    [router]
+  );
 
   const getHeaderTitle = useCallback(() => {
     if (conversationName) {
@@ -213,7 +218,9 @@ export default function ChatDetailScreen() {
           headerShown: true,
           headerLeft: () => (
             <TamaguiStack px="$4" onPress={handleBack}>
-              <X size={24} color={theme.color1?.val} />
+              <TamaguiText fontSize="$8" color={theme.color1?.val}>
+                ←
+              </TamaguiText>
             </TamaguiStack>
           ),
         }}

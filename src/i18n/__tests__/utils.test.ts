@@ -7,8 +7,8 @@
  * 3. formatRelativeTime with various time differences and locales
  */
 
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import { formatDate, formatNumber, formatRelativeTime } from '../utils';
-import type { Locale } from '../types';
 
 describe('formatDate', () => {
   const testDate = new Date('2024-01-15T10:30:00Z');

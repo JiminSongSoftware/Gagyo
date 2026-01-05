@@ -5,10 +5,16 @@
  * and the tenant selection screen.
  */
 
+import { describe, it, beforeEach, expect, jest } from '@jest/globals';
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useMemberships } from '@/hooks/useMemberships';
+
+// Mock types
+type MockQuery = {
+  eq: jest.Mock;
+  order: jest.Mock;
+};
 
 // Mock Supabase
 jest.mock('@/lib/supabase', () => ({
@@ -16,21 +22,6 @@ jest.mock('@/lib/supabase', () => ({
     from: jest.fn(),
   },
 }));
-
-// Create a wrapper with QueryClient for React Query support
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-  };
-}
 
 describe('Tenant Selection Integration', () => {
   beforeEach(() => {
@@ -58,12 +49,12 @@ describe('Tenant Selection Integration', () => {
       },
     ];
 
-    const mockQuery = {
+    const mockQuery: MockQuery = {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({
         data: mockMemberships,
         error: null,
-      }),
+      } as unknown),
     };
 
     const mockSelect = jest.fn().mockReturnValue(mockQuery);
@@ -71,9 +62,7 @@ describe('Tenant Selection Integration', () => {
       select: mockSelect,
     });
 
-    const { result } = renderHook(() => useMemberships('user-123'), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useMemberships('user-123'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -122,12 +111,12 @@ describe('Tenant Selection Integration', () => {
       },
     ];
 
-    const mockQuery = {
+    const mockQuery: MockQuery = {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({
         data: mockMemberships,
         error: null,
-      }),
+      } as unknown),
     };
 
     const mockSelect = jest.fn().mockReturnValue(mockQuery);
@@ -135,9 +124,7 @@ describe('Tenant Selection Integration', () => {
       select: mockSelect,
     });
 
-    const { result } = renderHook(() => useMemberships('user-123'), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useMemberships('user-123'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -148,12 +135,12 @@ describe('Tenant Selection Integration', () => {
   });
 
   it('should handle fetch errors gracefully', async () => {
-    const mockQuery = {
+    const mockQuery: MockQuery = {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({
         data: null,
         error: { message: 'Database error' },
-      }),
+      } as unknown),
     };
 
     const mockSelect = jest.fn().mockReturnValue(mockQuery);
@@ -161,9 +148,7 @@ describe('Tenant Selection Integration', () => {
       select: mockSelect,
     });
 
-    const { result } = renderHook(() => useMemberships('user-123'), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useMemberships('user-123'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -172,9 +157,7 @@ describe('Tenant Selection Integration', () => {
   });
 
   it('should return empty array when userId is undefined', async () => {
-    const { result } = renderHook(() => useMemberships(undefined), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useMemberships(undefined));
 
     expect(result.current.memberships).toEqual([]);
     expect(result.current.loading).toBe(false);

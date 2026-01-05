@@ -1,17 +1,20 @@
 /**
  * Tenant Selection Screen
  *
- * Displays the list of churches (tenants) where the user has
- * an active membership. Users select their church to proceed
- * to the main app.
- *
- * Test IDs are provided for E2E testing with Detox.
+ * Displays the list of churches (tenants) a user belongs to and allows
+ * them to select which tenant context to enter.
  */
 
-import type { FC } from 'react';
 import { useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { YStack, Button, Text, Heading, Spinner, XStack } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useMemberships } from '@/hooks/useMemberships';
@@ -19,46 +22,31 @@ import { useTenantContext } from '@/hooks/useTenantContext';
 import { signOut } from '@/lib/auth';
 import type { Membership } from '@/types/database';
 
-/**
- * Loading state component while fetching memberships.
- */
 function LoadingState() {
   const { t } = useTranslation('common');
-
   return (
-    <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
-      <Spinner size="large" />
-      <Text testID="tenant-loading-spinner">{t('loading', { defaultValue: 'Loading...' })}</Text>
-    </YStack>
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" />
+      <Text testID="tenant-loading-spinner" style={styles.loadingText}>
+        {t('loading', { defaultValue: 'Loading...' })}
+      </Text>
+    </View>
   );
 }
 
-/**
- * Empty state when user has no active memberships.
- */
 function EmptyState() {
   const { t } = useTranslation('auth');
-
   return (
-    <YStack
-      flex={1}
-      padding="$4"
-      justifyContent="center"
-      alignItems="center"
-      gap="$4"
-    >
-      <Text testID="no-tenants-message" fontSize="$6" textAlign="center">
+    <View style={styles.emptyContainer}>
+      <Text testID="no-tenants-message" style={styles.emptyText}>
         {t('no_churches_found', {
           defaultValue: 'No churches found. Please contact your church administrator.',
         })}
       </Text>
-    </YStack>
+    </View>
   );
 }
 
-/**
- * Individual tenant button component.
- */
 interface TenantButtonProps {
   membership: Membership;
   onPress: (tenantId: string, tenantName: string) => void;
@@ -66,13 +54,12 @@ interface TenantButtonProps {
 
 function TenantButton({ membership, onPress }: TenantButtonProps) {
   const { t } = useTranslation('auth');
+
   const tenantName = membership.tenant?.name ?? 'Unknown Church';
-  const tenantId = membership.tenant_id;
   const role = membership.role;
 
-  // Get display name for role using i18n keys
-  const getRoleDisplay = (r: string) => {
-    switch (r) {
+  const roleDisplay = (() => {
+    switch (role) {
       case 'admin':
         return t('roles.admin', { defaultValue: 'Admin' });
       case 'pastor':
@@ -84,33 +71,21 @@ function TenantButton({ membership, onPress }: TenantButtonProps) {
       default:
         return t('roles.member', { defaultValue: 'Member' });
     }
-  };
+  })();
 
   return (
-    <Button
-      testID={`tenant-button-${tenantId}`}
-      size="$5"
-      onPress={() => onPress(tenantId, tenantName)}
-      backgroundColor="$backgroundStrong"
-      pressTheme={{ active: { background: '$backgroundPress' } }}
-      borderRadius="$4"
-      padding="$4"
+    <TouchableOpacity
+      testID={`tenant-button-${membership.tenant_id}`}
+      style={styles.tenantButton}
+      onPress={() => onPress(membership.tenant_id, tenantName)}
+      activeOpacity={0.85}
     >
-      <YStack gap="$2">
-        <Text fontSize="$7" fontWeight="bold">
-          {tenantName}
-        </Text>
-        <Text fontSize="$4" opacity={0.7}>
-          {getRoleDisplay(role)}
-        </Text>
-      </YStack>
-    </Button>
+      <Text style={styles.tenantName}>{tenantName}</Text>
+      <Text style={styles.tenantRole}>{roleDisplay}</Text>
+    </TouchableOpacity>
   );
 }
 
-/**
- * Main tenant selection screen component.
- */
 export default function TenantSelectionScreen() {
   const { t } = useTranslation('auth');
   const router = useRouter();
@@ -130,68 +105,152 @@ export default function TenantSelectionScreen() {
     try {
       await signOut();
       await clearTenantContext();
-      // Navigation is handled by auth guard in _layout.tsx
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('[TenantSelection] Logout failed', error);
       setLoggingOut(false);
     }
   }
 
-  // Show loading while fetching memberships
   if (loading) {
     return <LoadingState />;
   }
 
-  // Show empty state if no memberships
   if (memberships.length === 0) {
     return <EmptyState />;
   }
 
-  // Show tenant list
   return (
-    <YStack
-      testID="tenant-selection-screen"
-      flex={1}
-      padding="$4"
-      justifyContent="center"
-      backgroundColor="$background"
-      gap="$6"
-    >
-      <YStack gap="$2">
-        <Heading size="$8" textAlign="center">
+    <View style={styles.container} testID="tenant-selection-screen">
+      <View style={styles.header}>
+        <Text style={styles.title}>
           {t('select_church', { defaultValue: 'Select Your Church' })}
-        </Heading>
-        <Text textAlign="center" opacity={0.7}>
+        </Text>
+        <Text style={styles.description}>
           {t('select_church_description', {
             defaultValue: 'Choose the church you want to access',
           })}
         </Text>
-      </YStack>
+      </View>
 
-      <YStack testID="tenant-list" gap="$3" maxHeight={400}>
-        {memberships.map((membership) => (
+      <FlatList
+        data={memberships}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        renderItem={({ item }) => (
           <TenantButton
-            key={membership.id}
-            membership={membership}
-            onPress={handleSelectTenant}
+            membership={item}
+            onPress={(tenantId, tenantName) => {
+              void handleSelectTenant(tenantId, tenantName);
+            }}
           />
-        ))}
-      </YStack>
+        )}
+      />
 
-      <YStack gap="$2">
-        <Text fontSize="$3" opacity={0.5} textAlign="center">
+      <View style={styles.footer}>
+        <Text style={styles.footerPrompt}>
           {t('logout_prompt', { defaultValue: 'Not the right account?' })}
         </Text>
-        <Button
+        <TouchableOpacity
           testID="logout-button"
-          variant="outlined"
-          size="$3"
-          onPress={handleLogout}
+          style={[styles.logoutButton, loggingOut && styles.buttonDisabled]}
+          onPress={() => {
+            void handleLogout();
+          }}
           disabled={loggingOut}
         >
-          <Text>{loggingOut ? t('signing_out', { defaultValue: 'Signing out...' }) : t('sign_out', { defaultValue: 'Sign Out' })}</Text>
-        </Button>
-      </YStack>
-    </YStack>
+          <Text style={styles.logoutText}>
+            {loggingOut
+              ? t('signing_out', { defaultValue: 'Signing out...' })
+              : t('sign_out', { defaultValue: 'Sign Out' })}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 24,
+    gap: 24,
+    backgroundColor: '#fff',
+  },
+  header: {
+    gap: 8,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#111',
+  },
+  description: {
+    textAlign: 'center',
+    color: '#555',
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+  tenantButton: {
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: '#f6f6f6',
+    borderWidth: 1,
+    borderColor: '#e3e3e3',
+  },
+  tenantName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111',
+  },
+  tenantRole: {
+    marginTop: 4,
+    color: '#777',
+    fontSize: 14,
+  },
+  footer: {
+    gap: 8,
+    alignItems: 'center',
+  },
+  footerPrompt: {
+    color: '#777',
+    fontSize: 14,
+  },
+  logoutButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c9c9c9',
+    backgroundColor: '#fff',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  logoutText: {
+    color: '#111',
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: '#555',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#444',
+  },
+});

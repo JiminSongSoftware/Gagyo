@@ -2,7 +2,7 @@
  * i18n configuration and initialization using i18next.
  */
 
-import i18n from 'i18next';
+import i18n, { type TOptions } from 'i18next';
 import { initReactI18next, useTranslation, Trans } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import enCommon from '../../locales/en/common.json';
@@ -72,7 +72,6 @@ export async function initI18n(): Promise<typeof i18n> {
   const detectedLocale = detectLocale();
 
   await i18n.use(initReactI18next).init({
-    compatibilityJSON: 'v4',
     lng: detectedLocale,
     fallbackLng: 'en',
     ns: ['common', 'auth', 'chat', 'prayer', 'pastoral', 'settings', 'errors'],
@@ -85,13 +84,6 @@ export async function initI18n(): Promise<typeof i18n> {
     },
     react: {
       useSuspense: false,
-    },
-    missingKeyHandler: (lng, ns, key) => {
-      if (__DEV__) {
-        console.warn(
-          `[i18n] Missing translation key: ${key} for language: ${lng} in namespace: ${ns}`
-        );
-      }
     },
     resources: resources as unknown as Record<string, unknown>,
   });
@@ -137,9 +129,9 @@ export { i18n };
  */
 export function translate(
   key: string,
-  options?: Record<string, string | number | boolean>
+  options?: Record<string, string | number | boolean> | string
 ): string {
-  return i18n.t(key, options);
+  return i18n.t(key, options as TOptions);
 }
 
 /**

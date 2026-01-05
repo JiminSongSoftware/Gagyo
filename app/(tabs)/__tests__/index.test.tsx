@@ -1,6 +1,4 @@
 import { render } from '@testing-library/react-native';
-import { Text } from 'react-native';
-
 import HomeScreen from '../index';
 
 // Mock hooks
@@ -27,28 +25,38 @@ jest.mock('expo-router', () => ({
 }));
 
 // Mock UI components
-jest.mock('@/components/ui', () => ({
-  Container: ({ children, testID }: any) => (
-    <div testID={testID}>{children}</div>
-  ),
-  Heading: ({ i18nKey, level, testID }: any) => (
-    <h1 data-testid={testID || i18nKey}>{i18nKey}</h1>
-  ),
-  Column: ({ children }: any) => <div>{children}</div>,
-  Button: ({ labelKey, onPress }: any) => (
-    <button onPress={onPress}>{labelKey}</button>
-  ),
-}));
+jest.mock('@/components/ui', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    Container: ({ children, testID }: { children?: React.ReactNode; testID?: string }) => (
+      <View testID={testID}>{children}</View>
+    ),
+    Heading: ({ i18nKey, testID }: { i18nKey?: string; testID?: string }) => (
+      <Text testID={testID || i18nKey}>{i18nKey}</Text>
+    ),
+    Column: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+    Button: ({
+      labelKey,
+      onPress,
+      testID,
+    }: {
+      labelKey?: string;
+      onPress?: () => void;
+      testID?: string;
+    }) => (
+      <TouchableOpacity onPress={onPress} testID={testID}>
+        <Text>{labelKey}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
 
 // Mock i18n
 jest.mock('react-i18next', () => ({
   useTranslation: jest.fn(() => ({
     t: (key: string) => key,
   })),
-}));
-
-jest.mock('react-native', () => ({
-  ScrollView: ({ children }: any) => <div>{children}</div>,
 }));
 
 describe('HomeScreen', () => {

@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { createClient, RealtimeChannel } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { executeAsUser, executeAsServiceRole, TEST_DATA } from '../helpers/supabase-test';
 
 // ============================================================================
@@ -121,26 +121,6 @@ async function cleanupTestData(conversationId: string): Promise<void> {
   await executeAsServiceRole(sql, DATABASE_URL);
 }
 
-/**
- * Wait for a real-time event
- */
-function _waitForEvent(
-  _channel: RealtimeChannel,
-  _eventType: string,
-  timeoutMs = 5000
-): Promise<unknown> {
-  return new Promise((_resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error(`Timeout waiting for event`));
-    }, timeoutMs);
-
-    // This is a placeholder for real-time event testing
-    // In actual usage, you would subscribe to the channel and wait for events
-    void clearTimeout(timeout);
-    _resolve(undefined);
-  });
-}
-
 // ============================================================================
 // TEST SUITES
 // ============================================================================
@@ -202,7 +182,7 @@ describe('Chat Real-Time Sync Integration Tests', () => {
           }
         )
         .subscribe((status) => {
-          if (status === 'SUBSCRIPTION_ERROR') {
+          if (status === 'CHANNEL_ERROR') {
             throw new Error('Failed to subscribe');
           }
         });
