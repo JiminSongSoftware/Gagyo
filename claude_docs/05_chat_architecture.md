@@ -47,19 +47,31 @@ messages:
 
 ### Event Chat: Selective Visibility
 
-#### Feature Description
+#### Feature Requirements
 Messages can be sent in group chat while excluding specific members from seeing them. Use case: planning surprise events without the subject knowing.
+
+**Core capabilities:**
+- Sender can select 1-5 users to exclude from seeing the message
+- Excluded users never see the message in any view (list, detail, search, notifications)
+- Only sender sees visual indicator (eye emoji 👁️ already implemented in MessageBubble)
+- Exclusions are immutable once message is sent
 
 #### Enforcement Points
 
 1. **Database Level (RLS)**
 ```sql
+-- Messages table uses is_event_chat boolean flag
+-- event_chat_exclusions table stores exclusion relationships
+
+-- RLS policy on messages filters via event_chat_exclusions
 CREATE POLICY event_chat_visibility ON messages
+  FOR SELECT
   USING (
     tenant_id = auth.jwt() ->> 'tenant_id'
-    AND (
-      event_chat_excluded_users IS NULL
-      OR NOT (auth.uid() = ANY(event_chat_excluded_users))
+    AND NOT EXISTS (
+      SELECT 1 FROM event_chat_exclusions
+      WHERE event_chat_exclusions.message_id = messages.id
+        AND event_chat_exclusions.excluded_membership_id = auth.jwt() ->> 'membership_id'
     )
   );
 ```
@@ -67,11 +79,80 @@ CREATE POLICY event_chat_visibility ON messages
 2. **API Level**
 - Validate excluded users are members of the conversation
 - Cannot exclude yourself
-- Maximum exclusion limit (e.g., 5 users)
+- Maximum 5 excluded users per message
+- Validation enforced at both client and database levels
 
 3. **Client Level**
-- UI indicator for Event Chat messages (sender only)
+- UI indicator for Event Chat messages (sender only - eye emoji 👁️)
 - Excluded users never receive the message in any view
+- MessageInput component provides Event Chat mode toggle
+
+#### Validation Rules
+
+| Rule | Description | Enforcement Level |
+|------|-------------|-------------------|
+| **Cannot exclude self** | Sender cannot be in exclusion list | Client + Database |
+| **Max 5 exclusions** | Cannot select more than 5 users per message | Client + Database |
+| **Must be member** | Excluded users must be active conversation participants | Client + Database |
+| **Immutable** | Once sent, exclusions cannot be modified | Database (no UPDATE) |
+
+#### UI Flow
+
+1. **User taps "Event Chat" button** (👁️ icon) in message input area
+2. **Modal/sheet opens** showing list of conversation participants
+3. **User selects 1-5 members** to exclude (multi-select with checkboxes)
+4. **Selected count displayed** (e.g., "2 of 5 selected")
+5. **"Send Event Chat" button** replaces normal "Send" button
+6. **After sending**, input returns to normal mode
+
+**Visual states:**
+- **Normal mode**: Standard message input with send button
+- **Event Chat mode**: Badge showing excluded count, "Send Event Chat" button
+- **Selector modal**: Participant list with checkboxes, disabled after 5 selections
+
+#### API Contract
+
+```typescript
+// Message insert with Event Chat
+{
+  tenant_id: uuid,
+  conversation_id: uuid,
+  sender_id: uuid,
+  content: string,
+  content_type: 'text',
+  is_event_chat: true  // Set to true for Event Chat
+}
+
+// Separate insert for exclusions (after message created)
+event_chat_exclusions: [
+  { message_id: uuid, excluded_membership_id: uuid },
+  ...
+]
+```
+
+**Schema notes:**
+- `messages.is_event_chat`: boolean flag indicating Event Chat message
+- `event_chat_exclusions` table: stores (message_id, excluded_membership_id) pairs
+- RLS policy on `event_chat_exclusions`: only sender can query
+- RLS policy on `messages`: filters out messages where user is excluded
+
+#### Test Scenarios
+
+**Integration Tests:**
+- RLS policy blocks excluded user from seeing message
+- RLS policy allows non-excluded users to see message
+- Sender can always see their own Event Chat message
+- Cross-tenant isolation (User A tenant cannot see User B tenant Event Chat)
+- `event_chat_exclusions` table only readable by message sender
+
+**E2E Tests:**
+- User A sends Event Chat excluding User B
+- User B logs in and cannot see the message
+- User C (not excluded) logs in and sees the message
+- Sender sees eye emoji indicator on their message
+- Excluded user count validation (max 5)
+- Cannot exclude self validation
+- Event Chat mode toggle in MessageInput
 
 ### Room Type Visual Differentiation
 - Background color varies by conversation type
@@ -320,3 +401,4 @@ useEffect(() => {
 ### Figma References
 - Chat List: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=2-780
 - Chat Detail: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=2-776
+- Event Chat: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=202-1163

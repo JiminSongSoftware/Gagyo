@@ -35,5 +35,16 @@
   "today": "Today",
   "yesterday": "Yesterday",
   "typing": "{{name}} is typing...",
-  "typing_multiple": "{{count}} people are typing..."
+  "typing_multiple": "{{count}} people are typing...",
+  "event_chat_selector_title": "Select users to exclude",
+  "event_chat_selector_description": "These users won't see this message",
+  "event_chat_selected_count": "{{count}} of 5 selected",
+  "event_chat_max_reached": "Maximum 5 users can be excluded",
+  "event_chat_confirm": "Send Event Chat",
+  "event_chat_cancel": "Cancel",
+  "event_chat_mode_active": "Event Chat mode ({{count}} excluded)",
+  "event_chat_button": "Event Chat",
+  "cancel_event_chat": "Cancel Event Chat",
+  "select_at_least_one": "Select at least 1 user to exclude",
+  "message_placeholder": "Type a message..."
 }
