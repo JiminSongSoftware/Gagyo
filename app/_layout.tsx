@@ -9,6 +9,7 @@ import config from '@/tamagui.config';
 import type { InitPromise } from 'i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenantStore } from '@/stores/tenantStore';
+import { useNotificationHandler } from '@/features/notifications';
 
 /**
  * Auth navigation guard component.
@@ -27,7 +28,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Load tenant context on mount
-    loadTenantFromStorage();
+    void loadTenantFromStorage();
   }, [loadTenantFromStorage]);
 
   useEffect(() => {
@@ -56,11 +57,21 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
 
+  // Set up push notification handler
+  const { processInitialNotification } = useNotificationHandler();
+
   useEffect(() => {
-    initI18n().then((instance) => {
+    void initI18n().then((instance) => {
       setI18nInstance(instance);
     });
   }, []);
+
+  // Process cold start notification (app launched from notification)
+  useEffect(() => {
+    if (i18nInstance) {
+      void processInitialNotification();
+    }
+  }, [i18nInstance, processInitialNotification]);
 
   if (!i18nInstance) {
     return null;
@@ -75,6 +86,8 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="chat" options={{ headerShown: false }} />
+            <Stack.Screen name="prayer" options={{ headerShown: false }} />
+            <Stack.Screen name="pastoral" options={{ headerShown: false }} />
           </Stack>
         </AuthGuard>
       </I18nextProvider>

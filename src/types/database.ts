@@ -5,13 +5,7 @@
  * They are used for type-safe queries with the Supabase client.
  */
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 /**
  * Database type with all tables and their relationships.
@@ -366,6 +360,91 @@ export interface Database {
           },
         ];
       };
+      device_tokens: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android';
+          last_used_at: string;
+          created_at: string;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android';
+          last_used_at?: string;
+          created_at?: string;
+          revoked_at?: string | null;
+        };
+        Update: {
+          tenant_id?: string;
+          user_id?: string;
+          token?: string;
+          platform?: 'ios' | 'android';
+          last_used_at?: string;
+          revoked_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'device_tokens_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'device_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      push_notification_logs: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          notification_type: string;
+          recipient_count: number;
+          sent_count: number;
+          failed_count: number;
+          error_summary: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          notification_type: string;
+          recipient_count: number;
+          sent_count: number;
+          failed_count: number;
+          error_summary?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          notification_type?: string;
+          recipient_count?: number;
+          sent_count?: number;
+          failed_count?: number;
+          error_summary?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_notification_logs_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -434,7 +513,8 @@ export type Conversation = Database['public']['Tables']['conversations']['Row'];
 /**
  * Conversation participant type.
  */
-export type ConversationParticipant = Database['public']['Tables']['conversation_participants']['Row'];
+export type ConversationParticipant =
+  Database['public']['Tables']['conversation_participants']['Row'];
 
 /**
  * Event chat exclusion type.
@@ -478,3 +558,13 @@ export type ConversationWithLastMessage = Conversation & {
   unread_count: number;
   participant_names?: string[];
 };
+
+/**
+ * Device token type for push notifications.
+ */
+export type DeviceToken = Database['public']['Tables']['device_tokens']['Row'];
+
+/**
+ * Push notification log type.
+ */
+export type PushNotificationLog = Database['public']['Tables']['push_notification_logs']['Row'];

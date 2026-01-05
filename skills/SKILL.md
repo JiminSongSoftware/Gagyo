@@ -1011,3 +1011,459 @@ const hasEventChatSupport =
 
 ### Figma References
 - Event Chat UI: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=202-1163
+
+---
+
+## Push Notifications
+
+### Overview
+
+Push notifications enable real-time alerts for users across mobile devices (iOS/Android). The system uses Expo Push Notifications API with Supabase Edge Functions for trigger handling and notification delivery.
+
+**Key Concepts**:
+- Device tokens are stored per-tenant (NOT global)
+- Each user can have multiple device tokens (multiple devices)
+- Token lifecycle: register → rotate → invalidate
+- Notifications are tenant-scoped with RLS enforcement
+- Deep linking supports navigation to specific content
+
+### Database Schema
+
+**device_tokens** table:
+```typescript
+{
+  id: string;                    // UUID
+  tenant_id: string;             // Tenant ownership
+  user_id: string;               // User ownership
+  token: string;                 // Expo push token (unique per device)
+  platform: 'ios' | 'android';   // Device platform
+  last_used_at: string;          // Last activity timestamp
+  created_at: string;
+  revoked_at: string | null;     // Soft-delete for invalid tokens
+}
+```
+
+**push_notification_logs** table:
+```typescript
+{
+  id: string;                    // UUID
+  tenant_id: string;             // For rate limiting per tenant
+  notification_type: string;     // 'new_message', 'mention', etc.
+  recipient_count: number;       // Total intended recipients
+  sent_count: number;            // Successfully delivered
+  failed_count: number;          // Failed deliveries
+  error_summary: Json | null;    // Error details for debugging
+  created_at: string;
+}
+```
+
+**RLS Policies**:
+- Users can only read/write their own device tokens within their tenant
+- Service role required for sending notifications
+- Logs are readable by admin role only
+
+### Token Lifecycle
+
+**Registration** (on app launch):
+```typescript
+// In app/_layout.tsx or root component
+const { registerToken } = useDeviceToken();
+
+useEffect(() => {
+  // Register on app mount
+  registerToken();
+}, []);
+```
+
+**Token Rotation** (Expo may change tokens):
+```typescript
+// useDeviceToken detects token changes and updates
+// Old token is soft-deleted (revoked_at set)
+// New token inserted with same user_id
+```
+
+**Invalidation** (on logout or push receipt error):
+```typescript
+// Manual: User logout
+const { invalidateToken } = useDeviceToken();
+await invalidateToken();
+
+// Automatic: Expo reports DeviceNotRegistered
+// Edge Function marks token as revoked
+```
+
+### Tenant Scoping
+
+**IMPORTANT**: Device tokens are NOT global. They are tenant-scoped.
+
+When a user belongs to multiple tenants:
+- Each tenant gets a separate device token record
+- Same physical device, different token records per tenant
+- Notifications are filtered by tenant_id at query time
+
+```typescript
+// Correct query for user's tokens in a tenant
+const { data } = await supabase
+  .from('device_tokens')
+  .select('*')
+  .eq('tenant_id', activeTenantId)  // Must filter by tenant
+  .eq('user_id', userId)
+  .is('revoked_at', null);
+```
+
+### Client-Side Implementation
+
+**useDeviceToken Hook** (`src/features/notifications/useDeviceToken.ts`):
+```typescript
+interface DeviceTokenState {
+  token: string | null;
+  isRegistered: boolean;
+  isPermissionGranted: boolean;
+  error: string | null;
+}
+
+interface DeviceTokenActions {
+  registerToken: () => Promise<void>;
+  invalidateToken: () => Promise<void>;
+}
+
+const { token, isRegistered, registerToken, invalidateToken } = useDeviceToken();
+```
+
+**Setup** (required in root layout):
+```typescript
+import { useDeviceToken, useNotificationHandler } from '@/features/notifications';
+
+export default function RootLayout() {
+  const { registerToken } = useDeviceToken();
+  const { processInitialNotification } = useNotificationHandler();
+
+  useEffect(() => {
+    registerToken();              // Register device token
+    processInitialNotification(); // Handle cold-start notification
+  }, []);
+}
+```
+
+### Deep Linking
+
+**URL Scheme**: `gagyo:///{screen}/{id}?{params}`
+
+**Supported Routes**:
+| Notification Type | Deep Link | Parameters |
+|------------------|-----------|------------|
+| new_message | `/chat/{conversationId}` | `messageId`, `threadId` |
+| mention | `/chat/{conversationId}` | `messageId`, `threadId` |
+| prayer_answered | `/prayer/{prayerCardId}` | - |
+| pastoral_journal_submitted | `/pastoral/{journalId}` | - |
+| pastoral_journal_forwarded | `/pastoral/{journalId}` | - |
+| pastoral_journal_confirmed | `/pastoral/{journalId}` | - |
+
+**useNotificationHandler Hook** (`src/features/notifications/useNotificationHandler.ts`):
+```typescript
+const {
+  lastNotification,
+  isProcessing,
+  handleNotificationResponse,
+  processInitialNotification,
+} = useNotificationHandler();
+
+// processInitialNotification() handles app launches from notifications
+// handleNotificationResponse() handles notification taps when app is running
+```
+
+**Tenant Switching**:
+When notification targets a different tenant:
+1. Verify user has membership in target tenant
+2. Switch activeTenantId via useTenantStore
+3. Navigate to deep link after context switch
+
+### Edge Functions
+
+**send-push-notification** (`supabase/functions/send-push-notification/`):
+- Main entry point for sending notifications
+- Handles batching (100 per batch)
+- Rate limiting (1000 requests/min per tenant)
+- Invalid token cleanup
+- Logging to push_notification_logs
+
+**Request Format**:
+```typescript
+{
+  tenant_id: string;
+  notification_type: 'new_message' | 'mention' | 'prayer_answered' |
+                   'pastoral_journal_submitted' | 'pastoral_journal_forwarded' |
+                   'pastoral_journal_confirmed';
+  recipients: {
+    user_ids: string[];
+    conversation_id?: string;        // For event chat exclusions
+    exclude_user_ids?: string[];     // Explicit exclusions
+  };
+  payload: {
+    title: string;
+    body: string;
+    data: Record<string, string>;    // Deep link params
+  };
+  options?: {
+    priority?: 'normal' | 'high';
+    sound?: 'default' | 'default_critical' | null;
+    badge?: number | null;
+  };
+}
+```
+
+**handle-message-sent** (`supabase/functions/handle-message-sent/`):
+- Triggered when new message created
+- Sends to conversation participants (excluding sender)
+- Mentions get higher priority notifications
+- Respects event_chat_exclusions
+- Thread context included in deep link
+
+**handle-prayer-answered** (`supabase/functions/handle-prayer-answered/`):
+- Triggered when prayer_card.status changes to 'answered'
+- Recipients based on prayer scope:
+  - `individual`: author only
+  - `small_group`: all small group members
+  - `church_wide`: all active tenant members
+
+**handle-pastoral-journal-change** (`supabase/functions/handle-pastoral-journal-change/`):
+- Triggered on pastoral_journals.status change
+- Status transitions:
+  - `draft` → `submitted`: Notify zone leader
+  - `submitted` → `zone_reviewed`: Notify all pastors
+  - `zone_reviewed` → `pastor_confirmed`: Notify original author
+
+### Notification Payloads
+
+**Message Notification**:
+```typescript
+{
+  title: 'John Doe',                    // Sender name
+  body: 'Message content or [Attachment]',
+  data: {
+    type: 'new_message',
+    conversation_id: 'uuid',
+    message_id: 'uuid',
+    thread_id: 'uuid',                  // If thread reply
+    tenant_id: 'uuid',
+  },
+}
+```
+
+**Mention Notification**:
+```typescript
+{
+  title: 'Mentioned by John Doe',
+  body: 'Message content...',
+  data: {
+    type: 'mention',
+    conversation_id: 'uuid',
+    message_id: 'uuid',
+    thread_id: 'uuid',
+    tenant_id: 'uuid',
+  },
+}
+```
+
+**Prayer Answered**:
+```typescript
+{
+  title: 'Prayer Answered ✝️',
+  body: 'Your prayer has been answered!',
+  data: {
+    type: 'prayer_answered',
+    prayer_card_id: 'uuid',
+    tenant_id: 'uuid',
+  },
+}
+```
+
+**Pastoral Journal Notifications**:
+```typescript
+// Submitted
+{
+  title: 'Pastoral Journal Submitted',
+  body: 'John Doe submitted a journal for Small Group Name',
+  data: {
+    type: 'pastoral_journal_submitted',
+    journal_id: 'uuid',
+    small_group_id: 'uuid',
+    tenant_id: 'uuid',
+  },
+}
+
+// Forwarded
+{
+  title: 'Journal Ready for Review',
+  body: 'Zone Leader forwarded Small Group Name\'s journal',
+  data: { /* ... */ },
+}
+
+// Confirmed
+{
+  title: 'Pastoral Journal Confirmed ✝️',
+  body: 'Pastor has reviewed your journal',
+  data: { /* ... */ },
+}
+```
+
+### Translation Keys
+
+All notification strings use i18n. Add to `src/locales/{lang}.json`:
+
+```json
+{
+  "notifications": {
+    "newMessage": "{senderName}",
+    "mention": "Mentioned by {senderName}",
+    "mention_ko": "{senderName}님이 멘션함",
+    "prayerAnswered": "Prayer Answered ✝️",
+    "prayerAnswered_ko": "기도가 응답되었습니다 ✝️",
+    "pastoralSubmitted": "Pastoral Journal Submitted",
+    "pastoralSubmitted_ko": "목양 일지 제출",
+    "pastoralForwarded": "Journal Ready for Review",
+    "pastoralForwarded_ko": "목양 일지 검토 대기",
+    "pastoralConfirmed": "Pastoral Journal Confirmed ✝️",
+    "pastoralConfirmed_ko": "목양 일지 확정 ✝️"
+  }
+}
+```
+
+### Environment Variables
+
+**Required**:
+```bash
+# Expo Push Notifications
+EXPO_PROJECT_ID=your-expo-project-id
+EXPO_ACCESS_TOKEN=your-expo-access-token
+
+# Supabase
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_ANON_KEY=your-anon-key
+```
+
+**Set in Supabase Dashboard**:
+1. Go to Edge Functions
+2. Select function
+3. Settings → Environment Variables
+
+### Batching and Rate Limiting
+
+**Batching**:
+- Expo API accepts up to 100 messages per request
+- Edge Function automatically batches large recipient lists
+- Each batch is a separate API call
+
+**Rate Limiting**:
+- 1000 requests per minute per tenant
+- In-memory tracking (use Redis for multi-instance)
+- Returns 429 status with retry-after header when exceeded
+
+**Token Cleanup**:
+- Invalid tokens marked as revoked immediately
+- Uses 90-day inactivity check for stale tokens
+- Expo API errors trigger cleanup (DeviceNotRegistered)
+
+### Testing
+
+**Unit Tests** (`src/features/notifications/__tests__/`):
+```bash
+bun test useDeviceToken.test.ts
+bun test useNotificationHandler.test.ts
+```
+
+**Integration Tests** (require DATABASE_URL):
+```bash
+DATABASE_URL="postgresql://..." bun test device-token-integration.test.ts
+```
+
+**E2E Tests** (Detox):
+```bash
+bun test e2e/push-notifications.test.ts
+```
+
+**Test Scenarios**:
+- Token registration flow
+- Permission request handling
+- Token rotation detection
+- Notification receipt and display
+- Deep link navigation
+- Tenant switching
+- Multi-device support
+
+### Security Considerations
+
+**RLS Enforcement**:
+- device_tokens: Users can only read/write their own tokens
+- push_notification_logs: Admin-only access
+- Tenant isolation enforced at query level
+
+**Authorization**:
+- Edge Functions require Bearer token (service role or valid JWT)
+- Client cannot directly call send-push-notification
+- Trigger functions authorized via service role
+
+**Data Privacy**:
+- Notification payloads logged in plain text (admin only)
+- User data in notifications minimized (display names only)
+- Deep link data contains IDs, not sensitive info
+
+### Common Patterns
+
+**Sending Notification from Edge Function**:
+```typescript
+const response = await fetch(
+  `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push-notification`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+    },
+    body: JSON.stringify({
+      tenant_id: tenantId,
+      notification_type: 'new_message',
+      recipients: { user_ids: recipientUserIds },
+      payload: {
+        title: 'New Message',
+        body: 'You have a new message',
+        data: { conversation_id: conversationId },
+      },
+    }),
+  }
+);
+```
+
+**Checking Push Support**:
+```typescript
+import * as Device from 'expo-device';
+
+const isDeviceSupported = Device.isDevice;
+if (!isDeviceSupported) {
+  // Running in simulator, push not supported
+}
+```
+
+**Handling Notification Permissions**:
+```typescript
+import * as Notifications from 'expo-notifications';
+
+const { status: existingStatus } = await Notifications.getPermissionsAsync();
+if (existingStatus !== 'granted') {
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') {
+    // Permission denied
+    return;
+  }
+}
+```
+
+### Figma References
+- Notification settings: [To be added]
+- Permission flow: [To be added]
+
+### Related Documentation
+- `claude_docs/06_push_notifications.md` - Full push notification specification
+- `supabase/functions/*/index.ts` - Edge Function implementations
+- `src/features/notifications/` - Client-side notification features

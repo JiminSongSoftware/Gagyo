@@ -68,7 +68,7 @@ export async function executeAsUser(
   userId: string,
   sql: string,
   connectionString: string
-): Promise<{ rows: any[]; rowCount: number }> {
+): Promise<{ rows: unknown[]; rowCount: number }> {
   const client = new Client({ connectionString });
 
   try {
@@ -93,9 +93,9 @@ export async function executeAsUser(
     await client.query('ROLLBACK');
 
     return { rows: result.rows, rowCount: result.rowCount || 0 };
-  } catch (error) {
+  } catch {
     await client.query('ROLLBACK').catch(() => {});
-    throw error;
+    throw new Error('Query execution failed');
   } finally {
     await client.end();
   }
@@ -107,7 +107,7 @@ export async function executeAsUser(
 export async function executeAsServiceRole(
   sql: string,
   connectionString: string
-): Promise<{ rows: any[]; rowCount: number }> {
+): Promise<{ rows: unknown[]; rowCount: number }> {
   const client = new Client({ connectionString });
 
   try {

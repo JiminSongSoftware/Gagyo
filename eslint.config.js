@@ -17,6 +17,7 @@ module.exports = [
       '.obsidian/**',
       'e2e/**',
       '.storybook/**',
+      'supabase/functions/**', // Deno files, use separate linter
     ],
   },
   {
@@ -58,6 +59,8 @@ module.exports = [
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
+      // Allow imports that TypeScript resolves but ESLint doesn't
+      'import/no-unresolved': 'off',
     },
   },
   {

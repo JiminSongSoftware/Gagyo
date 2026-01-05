@@ -522,23 +522,24 @@ A notification sent to a user about an event in the system.
 
 ### DeviceToken
 
-A push notification token for a user's device.
+A push notification token for a user's device within a specific tenant context. Each device can have different tokens per tenant (multi-tenant isolation).
 
 | Property | Definition |
 |----------|------------|
 | **Type** | Entity |
-| **Identity Rules** | Composite key: (user_id, token); token must be unique |
-| **Lifecycle** | Registered → Active → Expired/Revoked |
-| **Invariants** | Token must be valid Expo push token format; user must exist |
-| **Relationships** | Belongs to: User (N:1) |
-| **Tenant Scope** | Global (device tokens are user-level, not tenant-specific) |
+| **Identity Rules** | Composite key: (tenant_id, token); token must be unique within tenant |
+| **Lifecycle** | Registered → Active → Revoked (on logout/expiry) |
+| **Invariants** | Token must be valid Expo push token format; user and tenant must exist; same physical token can exist for different tenants |
+| **Relationships** | Belongs to: User (N:1), Tenant (N:1) |
+| **Tenant Scope** | Tenant (token is scoped to tenant for isolation) |
 | **Persistence** | `device_tokens` table |
-| **Events Emitted** | `DeviceTokenRegistered`, `DeviceTokenRevoked` |
+| **Events Emitted** | `DeviceTokenRegistered`, `DeviceTokenRevoked`, `DeviceTokenRotated` |
 
 **Fields**:
 - `id`: UUID (primary key)
+- `tenant_id`: UUID (foreign key to tenants)
 - `user_id`: UUID (foreign key to users)
-- `token`: string (Expo push token)
+- `token`: string (Expo push token, format: ExponentPushToken[xxx])
 - `platform`: enum ('ios', 'android')
 - `last_used_at`: timestamp
 - `created_at`: timestamp
@@ -652,6 +653,51 @@ The type of notification being sent.
 | **Type** | Value Object (Enumeration) |
 | **Values** | `'new_message'`, `'mention'`, `'prayer_answered'`, `'pastoral_journal_submitted'`, `'pastoral_journal_forwarded'`, `'pastoral_journal_confirmed'`, `'system'` |
 | **Validation** | Must be one of the defined values |
+
+---
+
+### NotificationPayload
+
+The structured data sent in a push notification to a device.
+
+| Property | Definition |
+|----------|------------|
+| **Type** | Value Object |
+| **Validation** | Must include type, title, body; data must be valid JSON |
+
+**Structure**:
+```typescript
+interface NotificationPayload {
+  type: NotificationType;
+  title: string;  // i18n key or resolved text
+  body: string;   // i18n key or resolved text
+  data?: {
+    tenant_id: string;
+    [key: string]: string | number | undefined;
+  };
+  sound?: 'default' | 'null' | 'custom';
+  priority?: 'normal' | 'high';
+}
+```
+
+---
+
+### DeepLinkTarget
+
+The navigation destination for a notification tap.
+
+| Property | Definition |
+|----------|------------|
+| **Type** | Value Object |
+| **Validation** | Route must be valid Expo Router path; params must match route schema |
+
+**Routes**:
+| Notification Type | Route | Required Params | Optional Params |
+|-------------------|-------|-----------------|-----------------|
+| new_message | `/chat/[conversationId]` | conversationId | - |
+| mention | `/chat/[conversationId]` | conversationId | messageId, tenant_id |
+| prayer_answered | `/prayer/[prayerCardId]` | prayerCardId | tenant_id |
+| pastoral_journal_* | `/pastoral/[journalId]` | journalId | tenant_id |
 
 ---
 
