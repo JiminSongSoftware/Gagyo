@@ -65,7 +65,7 @@ function getConversationDisplayName(conversation: ConversationWithLastMessage): 
   }
 
   // For direct messages, show participant names
-  if (conversation.conversation_type === 'direct' && conversation.participant_names?.length) {
+  if (conversation.type === 'direct' && conversation.participant_names?.length) {
     return conversation.participant_names.join(', ');
   }
 

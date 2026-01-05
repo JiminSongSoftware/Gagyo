@@ -6,13 +6,13 @@
 
 import { useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { MessageContentType } from '@/types/database';
+import type { MessageContentType, MessageWithSender } from '@/types/database';
 
 export interface SendMessageState {
   sendMessage: (
     content: string,
     contentType?: MessageContentType
-  ) => Promise<void>;
+  ) => Promise<MessageWithSender | null>;
   sending: boolean;
   error: Error | null;
 }
@@ -63,28 +63,54 @@ export function useSendMessage(
     async (
       content: string,
       contentType: MessageContentType = 'text'
-    ): Promise<void> => {
+    ): Promise<MessageWithSender | null> => {
       if (!conversationId || !tenantId || !senderMembershipId) {
         setError(new Error('Missing required parameters'));
-        return;
+        return null;
       }
 
       if (!content.trim()) {
         setError(new Error('Message content cannot be empty'));
-        return;
+        return null;
       }
 
       setSending(true);
       setError(null);
 
       try {
-        const { error: insertError } = await supabase.from('messages').insert({
-          tenant_id: tenantId,
-          conversation_id: conversationId,
-          sender_id: senderMembershipId,
-          content: content.trim(),
-          content_type: contentType,
-        });
+        const { data, error: insertError } = await supabase
+          .from('messages')
+          .insert({
+            tenant_id: tenantId,
+            conversation_id: conversationId,
+            sender_id: senderMembershipId,
+            content: content.trim(),
+            content_type: contentType,
+          })
+          .select(
+            `
+            id,
+            tenant_id,
+            conversation_id,
+            sender_id,
+            parent_id,
+            content,
+            content_type,
+            is_event_chat,
+            created_at,
+            updated_at,
+            deleted_at,
+            sender:memberships!messages_sender_id_fkey (
+              id,
+              user:users!memberships_user_id_fkey (
+                id,
+                display_name,
+                photo_url
+              )
+            )
+          `
+          )
+          .single();
 
         if (insertError) {
           throw insertError;
@@ -95,6 +121,38 @@ export function useSendMessage(
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', conversationId);
+
+        // Transform data to match MessageWithSender type
+        if (data) {
+          const sender = data.sender as {
+            id: string;
+            user: { id: string; display_name: string | null; photo_url: string | null };
+          };
+
+          return {
+            id: data.id,
+            tenant_id: data.tenant_id,
+            conversation_id: data.conversation_id,
+            sender_id: data.sender_id,
+            parent_id: data.parent_id,
+            content: data.content,
+            content_type: data.content_type as MessageContentType,
+            is_event_chat: data.is_event_chat,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            deleted_at: data.deleted_at,
+            sender: {
+              id: sender?.id ?? '',
+              user: {
+                id: sender?.user?.id ?? '',
+                display_name: sender?.user?.display_name ?? null,
+                photo_url: sender?.user?.photo_url ?? null,
+              },
+            },
+          } as MessageWithSender;
+        }
+
+        return null;
       } catch (err) {
         setError(err as Error);
         throw err;
@@ -119,22 +177,31 @@ export function useSendMessage(
  * @param tenantId - The tenant ID
  * @param senderMembershipId - The sender's membership ID
  * @param parentMessageId - The parent message ID to reply to
- * @returns SendMessageState with sendMessage function for replies
+ * @returns SendMessageState with sendReply function for replies
  */
+export interface SendReplyState {
+  sendReply: (
+    content: string,
+    contentType?: MessageContentType
+  ) => Promise<MessageWithSender | null>;
+  sending: boolean;
+  error: Error | null;
+}
+
 export function useSendReply(
   conversationId: string | null,
   tenantId: string | null,
   senderMembershipId: string | null,
   parentMessageId: string | null
-): SendMessageState {
+): SendReplyState {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const sendMessage = useCallback(
+  const sendReply = useCallback(
     async (
       content: string,
       contentType: MessageContentType = 'text'
-    ): Promise<void> => {
+    ): Promise<MessageWithSender | null> => {
       if (
         !conversationId ||
         !tenantId ||
@@ -142,30 +209,88 @@ export function useSendReply(
         !parentMessageId
       ) {
         setError(new Error('Missing required parameters'));
-        return;
+        return null;
       }
 
       if (!content.trim()) {
         setError(new Error('Message content cannot be empty'));
-        return;
+        return null;
       }
 
       setSending(true);
       setError(null);
 
       try {
-        const { error: insertError } = await supabase.from('messages').insert({
-          tenant_id: tenantId,
-          conversation_id: conversationId,
-          sender_id: senderMembershipId,
-          parent_id: parentMessageId,
-          content: content.trim(),
-          content_type: contentType,
-        });
+        const { data, error: insertError } = await supabase
+          .from('messages')
+          .insert({
+            tenant_id: tenantId,
+            conversation_id: conversationId,
+            sender_id: senderMembershipId,
+            parent_id: parentMessageId,
+            content: content.trim(),
+            content_type: contentType,
+          })
+          .select(
+            `
+            id,
+            tenant_id,
+            conversation_id,
+            sender_id,
+            parent_id,
+            content,
+            content_type,
+            is_event_chat,
+            created_at,
+            updated_at,
+            deleted_at,
+            sender:memberships!messages_sender_id_fkey (
+              id,
+              user:users!memberships_user_id_fkey (
+                id,
+                display_name,
+                photo_url
+              )
+            )
+          `
+          )
+          .single();
 
         if (insertError) {
           throw insertError;
         }
+
+        // Transform data to match MessageWithSender type
+        if (data) {
+          const sender = data.sender as {
+            id: string;
+            user: { id: string; display_name: string | null; photo_url: string | null };
+          };
+
+          return {
+            id: data.id,
+            tenant_id: data.tenant_id,
+            conversation_id: data.conversation_id,
+            sender_id: data.sender_id,
+            parent_id: data.parent_id,
+            content: data.content,
+            content_type: data.content_type as MessageContentType,
+            is_event_chat: data.is_event_chat,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            deleted_at: data.deleted_at,
+            sender: {
+              id: sender?.id ?? '',
+              user: {
+                id: sender?.user?.id ?? '',
+                display_name: sender?.user?.display_name ?? null,
+                photo_url: sender?.user?.photo_url ?? null,
+              },
+            },
+          } as MessageWithSender;
+        }
+
+        return null;
       } catch (err) {
         setError(err as Error);
         throw err;
@@ -177,7 +302,7 @@ export function useSendReply(
   );
 
   return {
-    sendMessage,
+    sendReply,
     sending,
     error,
   };

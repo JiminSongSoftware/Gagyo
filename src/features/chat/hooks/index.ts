@@ -8,7 +8,9 @@
 export { useConversations } from './useConversations';
 export { useMessages } from './useMessages';
 export { useSendMessage, useSendReply } from './useSendMessage';
+export type { SendMessageState, SendReplyState } from './useSendMessage';
 export {
   useMessageSubscription,
   useConversationListSubscription,
 } from './useMessageSubscription';
+export { appendMessage, updateMessage, removeMessage } from './useMessages';

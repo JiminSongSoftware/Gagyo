@@ -72,12 +72,24 @@ describe('useSendMessage', () => {
   it('should send a text message successfully', async () => {
     const mockMessage = {
       id: 'new-msg-1',
-      conversation_id: mockConversationId,
       tenant_id: mockTenantId,
-      sender_membership_id: mockSenderMembershipId,
+      conversation_id: mockConversationId,
+      sender_id: mockSenderMembershipId,
+      parent_id: null,
       content: 'Hello!',
       content_type: 'text',
+      is_event_chat: false,
       created_at: '2024-01-01T12:00:00Z',
+      updated_at: '2024-01-01T12:00:00Z',
+      deleted_at: null,
+      sender: {
+        id: mockSenderMembershipId,
+        user: {
+          id: 'user-123',
+          display_name: 'Test User',
+          photo_url: null,
+        },
+      },
     };
 
     const mockFrom = jest.fn().mockReturnValue({
@@ -199,7 +211,7 @@ describe('useSendMessage', () => {
       expect.objectContaining({
         tenant_id: mockTenantId,
         conversation_id: mockConversationId,
-        sender_membership_id: mockSenderMembershipId,
+        sender_id: mockSenderMembershipId,
         content: 'Hello!',
         content_type: 'text',
       })
@@ -252,7 +264,7 @@ describe('useSendReply', () => {
 
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        parent_message_id: mockParentMessageId,
+        parent_id: mockParentMessageId,
         content: 'Reply text',
       })
     );

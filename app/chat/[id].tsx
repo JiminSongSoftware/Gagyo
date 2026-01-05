@@ -27,6 +27,7 @@ import {
   removeMessage,
 } from '@/features/chat/hooks';
 import { MessageList, MessageInput } from '@/features/chat/components';
+import { getRoomBackgroundColor } from '@/features/chat/utils/getRoomBackgroundColor';
 import { supabase } from '@/lib/supabase';
 import type { ConversationType, MessageWithSender } from '@/types/database';
 
@@ -174,15 +175,7 @@ export default function ChatDetailScreen() {
       <TamaguiStack
         testID="chat-detail-screen"
         flex={1}
-        backgroundColor={
-          conversationType === 'small_group'
-            ? '$backgroundWarm'
-            : conversationType === 'ministry'
-              ? '$backgroundCool'
-              : conversationType === 'church_wide'
-                ? '$backgroundAccent'
-                : '$background'
-        }
+        backgroundColor={getRoomBackgroundColor(conversationType)}
       >
         <KeyboardAvoidingView
           style={{ flex: 1 }}

@@ -186,32 +186,35 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
 /**
  * Add a new message to the messages list.
  * Used by the real-time subscription hook.
+ * @returns The new messages array with the message appended
  */
 export function appendMessage(
-  setMessages: React.Dispatch<React.SetStateAction<MessageWithSender[]>>,
+  prev: MessageWithSender[],
   newMessage: MessageWithSender
-): void {
-  setMessages((prev) => [...prev, newMessage]);
+): MessageWithSender[] {
+  return [...prev, newMessage];
 }
 
 /**
  * Update a message in the messages list.
  * Used by the real-time subscription hook for message edits.
+ * @returns The new messages array with the message updated
  */
 export function updateMessage(
-  setMessages: React.Dispatch<React.SetStateAction<MessageWithSender[]>>,
+  prev: MessageWithSender[],
   updatedMessage: MessageWithSender
-): void {
-  setMessages((prev) => prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg)));
+): MessageWithSender[] {
+  return prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg));
 }
 
 /**
  * Remove a message from the messages list.
  * Used by the real-time subscription hook for message deletes.
+ * @returns The new messages array with the message removed
  */
 export function removeMessage(
-  setMessages: React.Dispatch<React.SetStateAction<MessageWithSender[]>>,
+  prev: MessageWithSender[],
   messageId: string
-): void {
-  setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+): MessageWithSender[] {
+  return prev.filter((msg) => msg.id !== messageId);
 }

@@ -193,6 +193,8 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
+    "src/features/chat/utils/getRoomBackgroundColor.ts",
+    "src/features/chat/utils",
     "src/hooks/useCurrentMembership.ts",
     "src/features/chat/hooks/__tests__/useMessages.test.ts",
     "src/features/chat/hooks/__tests__/useSendMessage.test.ts",
@@ -202,8 +204,6 @@
     "src/features/chat/hooks/useMessages.ts",
     "src/features/chat/hooks/useMessageSubscription.ts",
     "src/features/chat/hooks/useConversations.ts",
-    "src/features/chat/hooks/index.ts",
-    "src/features/chat/hooks/__tests__",
     "assets/favicon.png",
     "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
     "node_modules/@babel/helper-define-polyfill-provider/node_modules/resolve/SECURITY.md",
