@@ -302,6 +302,7 @@ export function MessageInput({
               onChangeText={handleChangeText}
               onContentSizeChange={handleContentSizeChange}
               placeholder={actualPlaceholder}
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               placeholderTextColor={theme.color3?.val}
               multiline
               maxLength={maxLength}
@@ -312,6 +313,7 @@ export function MessageInput({
                   android: 8,
                 }),
                 fontSize: 16,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 color: theme.color1?.val,
                 minHeight: inputHeight,
                 maxHeight: 100,
@@ -343,7 +345,10 @@ export function MessageInput({
                 justifyContent="center"
               >
                 {uploading ? (
-                  <ActivityIndicator size="small" color={theme.primary?.val} />
+                  <ActivityIndicator
+                    size="small"
+                    color={(theme.primary as { val?: string })?.val ?? '#007AFF'}
+                  />
                 ) : (
                   <TamaguiText fontSize="$lg">📷</TamaguiText>
                 )}

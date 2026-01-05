@@ -260,7 +260,7 @@ export function ImageViewer({
   const keyExtractor = useCallback((item: ImageAttachment) => item.id, []);
 
   const getItemLayout = useCallback(
-    (_data: unknown, index: number) => ({
+    (_data: ArrayLike<ImageAttachment> | null | undefined, index: number) => ({
       length: width,
       offset: width * index,
       index,

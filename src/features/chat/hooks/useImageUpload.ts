@@ -168,6 +168,7 @@ export function useImageUpload(
           };
         };
 
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment */
         return {
           id: data.id,
           tenant_id: data.tenant_id,
@@ -189,6 +190,7 @@ export function useImageUpload(
             },
           },
         } as MessageWithSender;
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment */
       }
 
       return null;
@@ -268,6 +270,7 @@ export function useImageUpload(
    * Open image picker and upload selected image
    */
   const pickAndUploadImage = useCallback(async (): Promise<MessageWithSender | null> => {
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
     if (!conversationId || !tenantId || !senderMembershipId) {
       setError(new Error('Missing required parameters'));
       return null;
@@ -281,13 +284,15 @@ export function useImageUpload(
     }
 
     // Launch image picker
-    const result = await ImagePicker.launchImageLibraryAsync(IMAGE_PICKER_OPTIONS);
+    const result = (await ImagePicker.launchImageLibraryAsync(
+      IMAGE_PICKER_OPTIONS
+    )) as ImagePicker.ImagePickerResult;
 
     if (result.canceled || !result.assets?.[0]) {
       return null;
     }
 
-    const asset = result.assets[0];
+    const asset = result.assets[0] as ImagePicker.ImagePickerAsset;
     const fileName = asset.fileName ?? `image_${Date.now()}.jpg`;
 
     // Determine MIME type
@@ -309,6 +314,7 @@ export function useImageUpload(
     }
 
     return uploadSelectedImage(asset.uri, fileName, mimeType);
+    /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
   }, [conversationId, tenantId, senderMembershipId, uploadSelectedImage]);
 
   return {

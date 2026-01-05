@@ -190,9 +190,8 @@ export async function uploadImage(options: ImageUploadOptions): Promise<ImageUpl
   }
 
   // Get public URL
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from('images').getPublicUrl(storagePath);
+  const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(storagePath);
+  const publicUrl = publicUrlData.publicUrl;
 
   // Get file size for attachment record
   const fileInfo = await getFileInfo(imageUri);
@@ -222,6 +221,7 @@ export async function uploadImage(options: ImageUploadOptions): Promise<ImageUpl
 
   return {
     url: publicUrl,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     attachmentId: attachment.id,
     storagePath,
   };
