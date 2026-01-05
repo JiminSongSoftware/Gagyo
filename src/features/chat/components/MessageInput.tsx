@@ -8,15 +8,17 @@
  * - Send button disabled when empty or sending
  * - Error display
  * - Event Chat mode for selective message visibility
+ * - Image upload button
  * - Typing indicator support (future)
  */
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { TextInput, Pressable, Platform } from 'react-native';
+import { TextInput, Pressable, Platform, ActivityIndicator } from 'react-native';
 import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import type { SendMessageOptions } from '../hooks/useSendMessage';
 import { EventChatSelector } from './EventChatSelector';
+import { useImageUpload } from '../hooks/useImageUpload';
 
 export interface MessageInputProps {
   /**
@@ -57,12 +59,12 @@ export interface MessageInputProps {
   testID?: string;
 
   /**
-   * Conversation ID for Event Chat participant fetching.
+   * Conversation ID for Event Chat participant fetching and image upload.
    */
   conversationId?: string;
 
   /**
-   * Tenant ID for Event Chat.
+   * Tenant ID for Event Chat and image upload.
    */
   tenantId?: string;
 
@@ -70,6 +72,16 @@ export interface MessageInputProps {
    * Current user's membership ID (filtered from exclusion list).
    */
   currentMembershipId?: string;
+
+  /**
+   * Whether to show the image upload button.
+   */
+  showImageUpload?: boolean;
+
+  /**
+   * Callback when an image is successfully uploaded.
+   */
+  onImageUploaded?: () => void;
 }
 
 const DEFAULT_MAX_LENGTH = 2000;
@@ -88,6 +100,8 @@ export function MessageInput({
   conversationId,
   tenantId,
   currentMembershipId,
+  showImageUpload = true,
+  onImageUploaded,
 }: MessageInputProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -101,7 +115,18 @@ export function MessageInput({
   const [excludedMembershipIds, setExcludedMembershipIds] = useState<string[]>([]);
   const [selectorVisible, setSelectorVisible] = useState(false);
 
+  // Image upload hook
+  const {
+    pickAndUploadImage,
+    uploading,
+    error: imageError,
+    clearError: clearImageError,
+  } = useImageUpload();
+
   const actualPlaceholder = placeholder || t('chat.message_placeholder');
+
+  // Determine if image upload is available
+  const canUploadImages = showImageUpload && conversationId && tenantId;
 
   // Reset input on successful send
   useEffect(() => {
@@ -138,23 +163,13 @@ export function MessageInput({
       // Restore input on error
       setInputText(trimmed);
     }
-  }, [
-    inputText,
-    sending,
-    onSend,
-    isEventChatMode,
-    onSendEventChat,
-    excludedMembershipIds,
-  ]);
+  }, [inputText, sending, onSend, isEventChatMode, onSendEventChat, excludedMembershipIds]);
 
-  const handleEventChatSelectorConfirm = useCallback(
-    (selectedIds: string[]) => {
-      setExcludedMembershipIds(selectedIds);
-      setIsEventChatMode(true);
-      setSelectorVisible(false);
-    },
-    []
-  );
+  const handleEventChatSelectorConfirm = useCallback((selectedIds: string[]) => {
+    setExcludedMembershipIds(selectedIds);
+    setIsEventChatMode(true);
+    setSelectorVisible(false);
+  }, []);
 
   const handleCancelEventChat = useCallback(() => {
     setIsEventChatMode(false);
@@ -173,12 +188,37 @@ export function MessageInput({
     []
   );
 
+  // Handle image upload
+  const handleImageUpload = useCallback(async () => {
+    if (!canUploadImages || uploading) {
+      return;
+    }
+
+    clearImageError();
+
+    const result = await pickAndUploadImage({
+      tenantId: tenantId!,
+      conversationId: conversationId!,
+    });
+
+    if (result) {
+      onImageUploaded?.();
+    }
+  }, [
+    canUploadImages,
+    uploading,
+    clearImageError,
+    pickAndUploadImage,
+    tenantId,
+    conversationId,
+    onImageUploaded,
+  ]);
+
   const canSend = inputText.trim().length > 0 && !sending;
   const charCount = inputText.length;
   const nearLimit = charCount > maxLength * 0.9;
 
-  const hasEventChatSupport =
-    onSendEventChat && conversationId && tenantId && currentMembershipId;
+  const hasEventChatSupport = onSendEventChat && conversationId && tenantId && currentMembershipId;
 
   return (
     <>
@@ -204,6 +244,28 @@ export function MessageInput({
               {error.message}
             </TamaguiText>
           </Stack>
+        )}
+
+        {/* Image upload error display */}
+        {imageError && (
+          <XStack
+            testID="image-upload-error"
+            backgroundColor="$dangerLight"
+            borderRadius="$2"
+            paddingHorizontal="$3"
+            paddingVertical="$2"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <TamaguiText fontSize="$xs" color="$danger" flex={1}>
+              {imageError.message}
+            </TamaguiText>
+            <Pressable onPress={clearImageError}>
+              <TamaguiText fontSize="$xs" color="$danger" fontWeight="bold">
+                ✕
+              </TamaguiText>
+            </Pressable>
+          </XStack>
         )}
 
         {/* Event Chat mode indicator */}
@@ -262,6 +324,33 @@ export function MessageInput({
             />
           </Stack>
 
+          {/* Image upload button */}
+          {canUploadImages && (
+            <Pressable
+              testID="image-upload-button"
+              onPress={() => void handleImageUpload()}
+              disabled={sending || uploading}
+              style={({ pressed }) => ({
+                opacity: pressed || uploading ? 0.5 : 1,
+              })}
+            >
+              <Stack
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor="$backgroundTertiary"
+                alignItems="center"
+                justifyContent="center"
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color={theme.primary?.val} />
+                ) : (
+                  <TamaguiText fontSize="$lg">📷</TamaguiText>
+                )}
+              </Stack>
+            </Pressable>
+          )}
+
           {/* Event Chat button */}
           {hasEventChatSupport && !isEventChatMode && (
             <Pressable
@@ -296,11 +385,7 @@ export function MessageInput({
               height={40}
               borderRadius={20}
               backgroundColor={
-                isEventChatMode
-                  ? '$warning'
-                  : canSend
-                    ? '$primary'
-                    : '$backgroundTertiary'
+                isEventChatMode ? '$warning' : canSend ? '$primary' : '$backgroundTertiary'
               }
               alignItems="center"
               justifyContent="center"
@@ -310,10 +395,7 @@ export function MessageInput({
                   ...
                 </TamaguiText>
               ) : (
-                <TamaguiText
-                  fontSize="$md"
-                  color={isEventChatMode ? 'white' : 'white'}
-                >
+                <TamaguiText fontSize="$md" color={isEventChatMode ? 'white' : 'white'}>
                   {isEventChatMode ? 'EC' : t('chat.send')}
                 </TamaguiText>
               )}

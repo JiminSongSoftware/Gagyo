@@ -56,5 +56,23 @@
     "start_conversation": "Start Conversation",
     "create_prayer": "Create Prayer Card",
     "write_journal": "Write Journal Entry"
+  },
+  "images": {
+    "title": "Images",
+    "no_images": "No images yet",
+    "no_images_description": "Images shared in your conversations will appear here",
+    "loading": "Loading images...",
+    "error_loading": "Failed to load images",
+    "filter_all": "All conversations",
+    "filter_search_placeholder": "Search conversations",
+    "upload_error": "Failed to upload image",
+    "upload_too_large": "Image must be less than 5MB",
+    "upload_invalid_type": "Only JPEG, PNG, GIF, and WebP images are supported",
+    "viewer_counter": "{{current}} / {{total}}",
+    "empty_title": "No Images Yet",
+    "empty_description": "Images shared in conversations will appear here",
+    "error_title": "Error Loading Images",
+    "error_description": "Unable to load images. Please check your connection and try again.",
+    "retry_button": "Retry"
   }
 }

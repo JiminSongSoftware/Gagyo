@@ -568,3 +568,43 @@ export type DeviceToken = Database['public']['Tables']['device_tokens']['Row'];
  * Push notification log type.
  */
 export type PushNotificationLog = Database['public']['Tables']['push_notification_logs']['Row'];
+
+/**
+ * Attachment type for images and files.
+ */
+export interface Attachment {
+  id: string;
+  tenant_id: string;
+  message_id: string | null;
+  prayer_card_id: string | null;
+  url: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+}
+
+/**
+ * Image attachment with message and conversation context.
+ * Used for displaying images in the gallery view.
+ */
+export interface ImageAttachment {
+  id: string;
+  url: string;
+  fileName: string;
+  fileSize: number;
+  createdAt: string;
+  message: {
+    id: string;
+    conversationId: string;
+    conversation: {
+      id: string;
+      name: string | null;
+      type: ConversationType;
+    };
+    sender: {
+      displayName: string | null;
+      photoUrl: string | null;
+    };
+  };
+}

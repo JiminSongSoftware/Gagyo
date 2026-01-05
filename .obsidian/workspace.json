@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-push-notifications:-token-management-&-delivery.md",
+                "file": "plan-v1-:-unified-images-view:-cross-chat-image-gallery.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-push-notifications:-token-management-&-delivery"
+              "title": "plan-v1-:-unified-images-view:-cross-chat-image-gallery"
             }
           }
         ]
@@ -193,6 +193,8 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
+    "plan-v1-:-push-notifications:-token-management-&-delivery.md",
+    "plan-v1-:-unified-images-view:-cross-chat-image-gallery.md",
     "supabase/functions/send-push-notification/send-push-notification.test.ts",
     "supabase/functions/send-push-notification/index.ts",
     "supabase/functions/handle-prayer-answered/index.ts",
@@ -203,9 +205,7 @@
     "supabase/functions/handle-prayer-answered",
     "supabase/functions/handle-pastoral-journal-change",
     "supabase/functions/handle-message-sent",
-    "supabase/functions",
     "plan-v1-:-chat-threads:-nested-conversations.md",
-    "plan-v1-:-push-notifications:-token-management-&-delivery.md",
     "claude_docs/16_thread_architecture.md",
     "plan-v1-:-event-chat:-selective-message-visibility.md",
     "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
