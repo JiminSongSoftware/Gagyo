@@ -73,6 +73,12 @@
     "empty_description": "Images shared in conversations will appear here",
     "error_title": "Error Loading Images",
     "error_description": "Unable to load images. Please check your connection and try again.",
-    "retry_button": "Retry"
+    "retry_button": "Retry",
+    "empty_state": "No images yet",
+    "all_conversations": "All conversations",
+    "search_conversations": "Search conversations",
+    "no_matching_conversations": "No matching conversations",
+    "no_conversations": "No conversations",
+    "filter_by_conversation": "Filter by conversation"
   }
 }

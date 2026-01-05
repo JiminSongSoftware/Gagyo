@@ -73,6 +73,12 @@
     "empty_description": "대화에서 공유된 이미지가 여기에 표시됩니다",
     "error_title": "이미지 로딩 오류",
     "error_description": "이미지를 불러올 수 없습니다. 연결 상태를 확인하고 다시 시도해 주세요.",
-    "retry_button": "재시도"
+    "retry_button": "재시도",
+    "empty_state": "아직 이미지가 없습니다",
+    "all_conversations": "전체 대화",
+    "search_conversations": "대화 검색",
+    "no_matching_conversations": "일치하는 대화가 없습니다",
+    "no_conversations": "대화가 없습니다",
+    "filter_by_conversation": "대화로 필터링"
   }
 }

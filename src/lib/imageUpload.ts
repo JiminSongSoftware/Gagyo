@@ -175,7 +175,8 @@ export async function uploadImage(options: ImageUploadOptions): Promise<ImageUpl
   }
 
   // Convert base64 to Uint8Array for upload
-  const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  // Use Buffer which is available in React Native (polyfilled by expo-filesystem)
+  const binaryData = Uint8Array.from(Buffer.from(base64Data, 'base64'));
 
   // Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage

@@ -117,7 +117,13 @@ function MetadataOverlay({
       </TamaguiText>
 
       {/* Date */}
-      <TamaguiText fontSize="$sm" color="white" opacity={0.6} marginTop="$1">
+      <TamaguiText
+        testID="image-viewer-timestamp"
+        fontSize="$sm"
+        color="white"
+        opacity={0.6}
+        marginTop="$1"
+      >
         {formattedDate}
       </TamaguiText>
     </YStack>
@@ -276,7 +282,7 @@ export function ImageViewer({
 
   return (
     <Modal
-      testID="image-viewer-modal"
+      testID="image-viewer"
       visible={visible}
       transparent
       animationType="fade"

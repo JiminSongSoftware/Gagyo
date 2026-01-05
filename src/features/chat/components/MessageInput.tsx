@@ -115,18 +115,18 @@ export function MessageInput({
   const [excludedMembershipIds, setExcludedMembershipIds] = useState<string[]>([]);
   const [selectorVisible, setSelectorVisible] = useState(false);
 
-  // Image upload hook
+  // Image upload hook - pass context params so pickAndUploadImage requires no arguments
   const {
     pickAndUploadImage,
     uploading,
     error: imageError,
     clearError: clearImageError,
-  } = useImageUpload();
+  } = useImageUpload(conversationId ?? null, tenantId ?? null, currentMembershipId ?? null);
 
   const actualPlaceholder = placeholder || t('chat.message_placeholder');
 
-  // Determine if image upload is available
-  const canUploadImages = showImageUpload && conversationId && tenantId;
+  // Determine if image upload is available - ensure all props are non-null before enabling
+  const canUploadImages = showImageUpload && conversationId && tenantId && currentMembershipId;
 
   // Reset input on successful send
   useEffect(() => {
@@ -196,23 +196,12 @@ export function MessageInput({
 
     clearImageError();
 
-    const result = await pickAndUploadImage({
-      tenantId: tenantId!,
-      conversationId: conversationId!,
-    });
+    const result = await pickAndUploadImage();
 
     if (result) {
       onImageUploaded?.();
     }
-  }, [
-    canUploadImages,
-    uploading,
-    clearImageError,
-    pickAndUploadImage,
-    tenantId,
-    conversationId,
-    onImageUploaded,
-  ]);
+  }, [canUploadImages, uploading, clearImageError, pickAndUploadImage, onImageUploaded]);
 
   const canSend = inputText.trim().length > 0 && !sending;
   const charCount = inputText.length;

@@ -67,7 +67,7 @@ function EmptyState() {
 
   return (
     <Stack
-      testID="images-empty-state"
+      testID="image-grid-empty"
       flex={1}
       alignItems="center"
       justifyContent="center"
@@ -90,7 +90,7 @@ function LoadingState() {
 
   return (
     <Stack
-      testID="images-loading-state"
+      testID="image-grid-loading"
       flex={1}
       alignItems="center"
       justifyContent="center"
@@ -113,7 +113,7 @@ function ErrorState({ error }: { error: Error }) {
 
   return (
     <Stack
-      testID="images-error-state"
+      testID="image-grid-error"
       flex={1}
       alignItems="center"
       justifyContent="center"
@@ -141,7 +141,7 @@ function ListFooter({ loading, hasMore }: { loading: boolean; hasMore: boolean }
 
   if (loading) {
     return (
-      <Stack padding="$4" alignItems="center">
+      <Stack testID="image-grid-footer-loading" padding="$4" alignItems="center">
         <Spinner size="small" color="$primary" />
       </Stack>
     );
@@ -170,7 +170,7 @@ function ImageThumbnail({
 
   return (
     <Pressable
-      testID={`image-thumbnail-${index}`}
+      testID={`image-grid-item-${index}`}
       onPress={handlePress}
       style={({ pressed }) => [
         styles.thumbnailContainer,

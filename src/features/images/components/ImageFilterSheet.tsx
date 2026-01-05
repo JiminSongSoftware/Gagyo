@@ -143,6 +143,7 @@ function ConversationItem({
         gap="$3"
       >
         <Stack
+          testID={`filter-conversation-type-${conversation.type}`}
           width={40}
           height={40}
           borderRadius={20}
