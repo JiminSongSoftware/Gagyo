@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
+                "file": "plan-v1-:-event-chat:-selective-message-visibility.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync"
+              "title": "plan-v1-:-event-chat:-selective-message-visibility"
             }
           }
         ]
@@ -193,6 +193,8 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
+    "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
+    "plan-v1-:-event-chat:-selective-message-visibility.md",
     "src/features/chat/utils/getRoomBackgroundColor.ts",
     "src/features/chat/utils",
     "src/hooks/useCurrentMembership.ts",
@@ -203,9 +205,7 @@
     "src/features/chat/hooks/useSendMessage.ts",
     "src/features/chat/hooks/useMessages.ts",
     "src/features/chat/hooks/useMessageSubscription.ts",
-    "src/features/chat/hooks/useConversations.ts",
     "assets/favicon.png",
-    "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
     "node_modules/@babel/helper-define-polyfill-provider/node_modules/resolve/SECURITY.md",
     "node_modules/jest-runtime/node_modules/strip-bom/readme.md",
     "node_modules/@eslint/eslintrc/node_modules/globals/readme.md",
