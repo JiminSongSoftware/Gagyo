@@ -206,6 +206,9 @@ describe('useMessages', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(typeof result.current.appendMessage).toBe('function');
+    // appendMessage is a separate exported utility, not returned by the hook
+    // It is used by the real-time subscription hook
+    const { appendMessage: appendMessageUtil } = await import('../useMessages');
+    expect(typeof appendMessageUtil).toBe('function');
   });
 });

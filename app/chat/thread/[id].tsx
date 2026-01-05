@@ -398,6 +398,7 @@ export default function ThreadViewScreen() {
               sending={sendingReply}
               error={sendError}
               placeholder={t('chat.thread_reply_placeholder')}
+              enabled={!!conversationId && !!parentMessage}
             />
           </TamaguiStack>
         </KeyboardAvoidingView>
@@ -414,19 +415,22 @@ interface ThreadReplyInputProps {
   sending: boolean;
   error: Error | null;
   placeholder: string;
+  enabled?: boolean;
 }
 
-function ThreadReplyInput({ onSend, sending, error, placeholder }: ThreadReplyInputProps) {
+function ThreadReplyInput({ onSend, sending, error, placeholder, enabled = true }: ThreadReplyInputProps) {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const theme = useTheme();
 
   const handleSend = useCallback(async () => {
-    if (!text.trim() || sending) return;
+    if (!text.trim() || sending || !enabled) return;
     const content = text.trim();
     setText('');
     await onSend(content);
-  }, [text, sending, onSend]);
+  }, [text, sending, onSend, enabled]);
+
+  const isDisabled = !enabled || sending;
 
   return (
     <YStack>
@@ -439,6 +443,7 @@ function ThreadReplyInput({ onSend, sending, error, placeholder }: ThreadReplyIn
               backgroundColor: theme.background?.val,
               color: theme.color?.val,
               borderColor: theme.borderColor?.val,
+              opacity: isDisabled ? 0.5 : 1,
             },
           ]}
           value={text}
@@ -447,16 +452,16 @@ function ThreadReplyInput({ onSend, sending, error, placeholder }: ThreadReplyIn
           placeholderTextColor={theme.colorSubtle?.val}
           multiline
           maxLength={4000}
-          editable={!sending}
+          editable={!isDisabled}
         />
         <TouchableOpacity
           testID="thread-send-button"
           onPress={() => void handleSend()}
-          disabled={!text.trim() || sending}
+          disabled={!text.trim() || isDisabled}
           style={[
             styles.sendButton,
             {
-              backgroundColor: text.trim() && !sending ? theme.blue10?.val : theme.gray8?.val,
+              backgroundColor: text.trim() && !isDisabled ? theme.blue10?.val : theme.gray8?.val,
             },
           ]}
         >
@@ -468,6 +473,11 @@ function ThreadReplyInput({ onSend, sending, error, placeholder }: ThreadReplyIn
       {error && (
         <TamaguiText color="$red10" fontSize="$2" marginTop="$1">
           {error.message}
+        </TamaguiText>
+      )}
+      {!enabled && (
+        <TamaguiText color="$colorSubtle" fontSize="$2" marginTop="$1">
+          Loading conversation...
         </TamaguiText>
       )}
     </YStack>

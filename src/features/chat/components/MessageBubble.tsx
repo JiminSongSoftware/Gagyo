@@ -268,6 +268,7 @@ export function MessageBubble({
             {/* Thread reply count indicator */}
             {showThreadIndicator && message.reply_count && message.reply_count > 0 && (
               <Stack
+                testID="reply-count-badge"
                 flexDirection="row"
                 alignItems="center"
                 gap="$1"
@@ -276,8 +277,8 @@ export function MessageBubble({
                 paddingHorizontal="$2"
                 paddingVertical="$1"
               >
-                <TamaguiText fontSize="$xs" color={isOwnMessage ? 'white' : '$color2'}>
-                  💬 {message.reply_count}
+                <TamaguiText testID="reply-count-text" fontSize="$xs" color={isOwnMessage ? 'white' : '$color2'}>
+                  {message.reply_count}
                 </TamaguiText>
               </Stack>
             )}

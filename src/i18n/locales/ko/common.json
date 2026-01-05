@@ -25,6 +25,12 @@
     "start_conversation": "대화를 시작하세요",
     "small_group": "소그룹",
     "ministry": "사역",
-    "church_wide": "교회 전체"
+    "church_wide": "교회 전체",
+    "thread_title": "스레드",
+    "thread_replies": "답글",
+    "thread_reply_placeholder": "답글을 입력하세요...",
+    "thread_no_replies": "아직 답글이 없습니다",
+    "thread_start_conversation": "첫 번째 답글을 작성하세요",
+    "thread_cannot_nest": "답글에 답글을 달 수 없습니다"
   }
 }

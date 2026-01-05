@@ -25,6 +25,12 @@
     "start_conversation": "Start the conversation",
     "small_group": "Small Group",
     "ministry": "Ministry",
-    "church_wide": "Church Wide"
+    "church_wide": "Church Wide",
+    "thread_title": "Thread",
+    "thread_replies": "replies",
+    "thread_reply_placeholder": "Write a reply...",
+    "thread_no_replies": "No replies yet",
+    "thread_start_conversation": "Be the first to reply",
+    "thread_cannot_nest": "Cannot reply to a reply"
   }
 }

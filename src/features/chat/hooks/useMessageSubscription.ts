@@ -29,7 +29,12 @@ interface MessageUpdatePayload {
 interface MessageDeletePayload {
   eventType: 'DELETE';
   new: Record<string, never>;
-  old: { id: string };
+  old: {
+    id: string;
+    parent_id?: string | null;
+    conversation_id?: string;
+    [key: string]: unknown;
+  };
 }
 
 type MessagePayload = MessageInsertPayload | MessageUpdatePayload | MessageDeletePayload;
@@ -149,7 +154,8 @@ export function useMessageSubscription(
                 callbacksRef.current.onUpdate?.(typedPayload.new);
                 break;
               case 'DELETE':
-                callbacksRef.current.onDelete?.(typedPayload.old.id);
+                // Pass full old payload to include parent_id for thread reply count updates
+                callbacksRef.current.onDelete?.(typedPayload.old.id, typedPayload.old);
                 break;
             }
           } catch (error) {
