@@ -235,6 +235,7 @@ export interface Database {
           conversation_id: string;
           sender_id: string;
           parent_id: string | null;
+          thread_id: string | null;
           content: string | null;
           content_type: 'text' | 'image' | 'prayer_card' | 'system';
           is_event_chat: boolean;
@@ -248,6 +249,7 @@ export interface Database {
           conversation_id: string;
           sender_id: string;
           parent_id?: string | null;
+          thread_id?: string | null;
           content?: string | null;
           content_type?: 'text' | 'image' | 'prayer_card' | 'system';
           is_event_chat?: boolean;
@@ -256,6 +258,8 @@ export interface Database {
           deleted_at?: string | null;
         };
         Update: {
+          parent_id?: string | null;
+          thread_id?: string | null;
           content?: string | null;
           content_type?: 'text' | 'image' | 'prayer_card' | 'system';
           is_event_chat?: boolean;

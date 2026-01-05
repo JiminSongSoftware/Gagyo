@@ -291,9 +291,10 @@ export function useSendReply(
 
       try {
         // Check if parent message already has a parent (prevent nested threads)
+        // Also fetch thread_id to set on the reply
         const { data: parentMessage, error: parentError } = await supabase
           .from('messages')
-          .select('parent_id')
+          .select('parent_id, thread_id')
           .eq('id', parentMessageId)
           .eq('tenant_id', tenantId)
           .single();
@@ -306,6 +307,10 @@ export function useSendReply(
           throw new Error('Cannot reply to a reply');
         }
 
+        // Determine thread_id: use parent's thread_id if it exists,
+        // otherwise the parent IS the thread root
+        const thread_id = parentMessage?.thread_id ?? parentMessageId;
+
         const { data, error: insertError } = await supabase
           .from('messages')
           .insert({
@@ -313,6 +318,7 @@ export function useSendReply(
             conversation_id: conversationId,
             sender_id: senderMembershipId,
             parent_id: parentMessageId,
+            thread_id: thread_id,
             content: content.trim(),
             content_type: contentType,
           })
@@ -323,6 +329,7 @@ export function useSendReply(
             conversation_id,
             sender_id,
             parent_id,
+            thread_id,
             content,
             content_type,
             is_event_chat,
@@ -358,6 +365,7 @@ export function useSendReply(
             conversation_id: data.conversation_id,
             sender_id: data.sender_id,
             parent_id: data.parent_id,
+            thread_id: data.thread_id,
             content: data.content,
             content_type: data.content_type as MessageContentType,
             is_event_chat: data.is_event_chat,
