@@ -2,7 +2,7 @@
  * Unit tests for useMessages hook.
  */
 
-import { renderHook, waitFor, act } from '@testing-library/react-native';
+import { renderHook, waitFor } from '@testing-library/react-native';
 import { useMessages } from '../useMessages';
 import { supabase } from '@/lib/supabase';
 
@@ -35,9 +35,7 @@ describe('useMessages', () => {
   });
 
   it('should return empty messages when tenantId is null', async () => {
-    const { result } = renderHook(() =>
-      useMessages(mockConversationId, null)
-    );
+    const { result } = renderHook(() => useMessages(mockConversationId, null));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -80,9 +78,7 @@ describe('useMessages', () => {
     });
     mockSupabase.from = mockFrom;
 
-    const { result } = renderHook(() =>
-      useMessages(mockConversationId, mockTenantId)
-    );
+    const { result } = renderHook(() => useMessages(mockConversationId, mockTenantId));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -109,9 +105,7 @@ describe('useMessages', () => {
     });
     mockSupabase.from = mockFrom;
 
-    const { result } = renderHook(() =>
-      useMessages(mockConversationId, mockTenantId)
-    );
+    const { result } = renderHook(() => useMessages(mockConversationId, mockTenantId));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -158,9 +152,7 @@ describe('useMessages', () => {
     });
     mockSupabase.from = mockFrom;
 
-    const { result } = renderHook(() =>
-      useMessages(mockConversationId, mockTenantId)
-    );
+    const { result } = renderHook(() => useMessages(mockConversationId, mockTenantId));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -184,9 +176,7 @@ describe('useMessages', () => {
     });
     mockSupabase.from = mockFrom;
 
-    const { result } = renderHook(() =>
-      useMessages(mockConversationId, mockTenantId)
-    );
+    const { result } = renderHook(() => useMessages(mockConversationId, mockTenantId));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -210,9 +200,7 @@ describe('useMessages', () => {
     });
     mockSupabase.from = mockFrom;
 
-    const { result } = renderHook(() =>
-      useMessages(mockConversationId, mockTenantId)
-    );
+    const { result } = renderHook(() => useMessages(mockConversationId, mockTenantId));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);

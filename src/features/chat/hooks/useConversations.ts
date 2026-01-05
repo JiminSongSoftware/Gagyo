@@ -6,10 +6,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import type {
-  ConversationWithLastMessage,
-  MessageContentType,
-} from '@/types/database';
+import type { ConversationWithLastMessage, MessageContentType } from '@/types/database';
 
 export interface ConversationsState {
   conversations: ConversationWithLastMessage[];
@@ -49,9 +46,7 @@ export function useConversations(
   tenantId: string | null,
   membershipId: string | null
 ): ConversationsState {
-  const [conversations, setConversations] = useState<
-    ConversationWithLastMessage[]
-  >([]);
+  const [conversations, setConversations] = useState<ConversationWithLastMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -84,16 +79,13 @@ export function useConversations(
       }
 
       const conversationIds = participantData.map((p) => p.conversation_id);
-      const lastReadMap = new Map(
-        participantData.map((p) => [p.conversation_id, p.last_read_at])
-      );
+      const lastReadMap = new Map(participantData.map((p) => [p.conversation_id, p.last_read_at]));
 
       // Fetch conversations with last message
-      const { data: conversationsData, error: conversationsError } =
-        await supabase
-          .from('conversations')
-          .select(
-            `
+      const { data: conversationsData, error: conversationsError } = await supabase
+        .from('conversations')
+        .select(
+          `
             id,
             tenant_id,
             type,
@@ -103,10 +95,10 @@ export function useConversations(
             created_at,
             updated_at
           `
-          )
-          .eq('tenant_id', tenantId)
-          .in('id', conversationIds)
-          .order('updated_at', { ascending: false });
+        )
+        .eq('tenant_id', tenantId)
+        .in('id', conversationIds)
+        .order('updated_at', { ascending: false });
 
       if (conversationsError) {
         throw conversationsError;
@@ -183,8 +175,7 @@ export function useConversations(
             participantNames = participants
               ?.map(
                 (p) =>
-                  (p.membership as { user: { display_name: string | null } })
-                    ?.user?.display_name
+                  (p.membership as { user: { display_name: string | null } })?.user?.display_name
               )
               .filter((name): name is string => name !== null);
           }
@@ -234,7 +225,7 @@ export function useConversations(
   }, [tenantId, membershipId]);
 
   useEffect(() => {
-    fetchConversations();
+    void fetchConversations();
   }, [fetchConversations]);
 
   return {

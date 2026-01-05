@@ -35,9 +35,7 @@ describe('useSendMessage', () => {
   });
 
   it('should not send when conversationId is null', async () => {
-    const { result } = renderHook(() =>
-      useSendMessage(null, mockTenantId, mockSenderMembershipId)
-    );
+    const { result } = renderHook(() => useSendMessage(null, mockTenantId, mockSenderMembershipId));
 
     await act(async () => {
       const response = await result.current.sendMessage('Hello');
@@ -61,9 +59,7 @@ describe('useSendMessage', () => {
   });
 
   it('should not send when senderMembershipId is null', async () => {
-    const { result } = renderHook(() =>
-      useSendMessage(mockConversationId, mockTenantId, null)
-    );
+    const { result } = renderHook(() => useSendMessage(mockConversationId, mockTenantId, null));
 
     await act(async () => {
       const response = await result.current.sendMessage('Hello');
@@ -165,7 +161,7 @@ describe('useSendMessage', () => {
     expect(result.current.sending).toBe(false);
 
     act(() => {
-      result.current.sendMessage('Hello!');
+      void result.current.sendMessage('Hello!');
     });
 
     // Should be sending immediately after call
@@ -223,12 +219,7 @@ describe('useSendReply', () => {
 
   it('should initialize with idle state', () => {
     const { result } = renderHook(() =>
-      useSendReply(
-        mockConversationId,
-        mockTenantId,
-        mockSenderMembershipId,
-        mockParentMessageId
-      )
+      useSendReply(mockConversationId, mockTenantId, mockSenderMembershipId, mockParentMessageId)
     );
 
     expect(result.current.sending).toBe(false);
@@ -252,12 +243,7 @@ describe('useSendReply', () => {
     mockSupabase.from = mockFrom;
 
     const { result } = renderHook(() =>
-      useSendReply(
-        mockConversationId,
-        mockTenantId,
-        mockSenderMembershipId,
-        mockParentMessageId
-      )
+      useSendReply(mockConversationId, mockTenantId, mockSenderMembershipId, mockParentMessageId)
     );
 
     await act(async () => {
@@ -274,12 +260,7 @@ describe('useSendReply', () => {
 
   it('should not send reply when parentMessageId is null', async () => {
     const { result } = renderHook(() =>
-      useSendReply(
-        mockConversationId,
-        mockTenantId,
-        mockSenderMembershipId,
-        null
-      )
+      useSendReply(mockConversationId, mockTenantId, mockSenderMembershipId, null)
     );
 
     await act(async () => {

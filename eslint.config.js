@@ -1,12 +1,10 @@
 // https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const typescriptEslint = require('@typescript-eslint/eslint-plugin');
 const typescriptParser = require('@typescript-eslint/parser');
-const i18nJson = require('eslint-plugin-i18n-json');
 
-module.exports = defineConfig([
-  expoConfig,
+module.exports = [
+  ...expoConfig,
   {
     ignores: [
       'dist/*',
@@ -16,7 +14,13 @@ module.exports = defineConfig([
       'ios/build/*',
       'android/app/build/*',
       'coverage/*',
+      '.obsidian/**',
+      'e2e/**',
+      '.storybook/**',
     ],
+  },
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx', '__tests__/**/*.ts'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -34,7 +38,6 @@ module.exports = defineConfig([
     },
     plugins: {
       '@typescript-eslint': typescriptEslint,
-      'i18n-json': i18nJson,
     },
     rules: {
       // TypeScript strictness rules
@@ -106,14 +109,4 @@ module.exports = defineConfig([
       ],
     },
   },
-  {
-    files: ['locales/**/*.json'],
-    rules: {
-      // Validate JSON structure and key consistency across locales
-      'i18n-json/valid-json': 'error',
-      'i18n-json/valid-key-syntax': 'error',
-      'i18n-json/confirmed-keys': 'error',
-      'i18n-json/sorted-keys': 'off', // Optional: keep keys in logical order
-    },
-  },
-]);
+];

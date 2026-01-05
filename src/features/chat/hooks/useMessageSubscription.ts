@@ -32,10 +32,7 @@ interface MessageDeletePayload {
   old: { id: string };
 }
 
-type MessagePayload =
-  | MessageInsertPayload
-  | MessageUpdatePayload
-  | MessageDeletePayload;
+type MessagePayload = MessageInsertPayload | MessageUpdatePayload | MessageDeletePayload;
 
 /**
  * Callbacks for message events.
@@ -112,7 +109,7 @@ export function useMessageSubscription(
 
   const unsubscribe = useCallback(() => {
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      void supabase.removeChannel(channelRef.current);
       channelRef.current = null;
       isSubscribedRef.current = false;
     }
@@ -164,9 +161,7 @@ export function useMessageSubscription(
         if (status === 'SUBSCRIBED') {
           isSubscribedRef.current = true;
         } else if (status === 'CHANNEL_ERROR') {
-          callbacksRef.current.onError?.(
-            new Error('Failed to subscribe to messages channel')
-          );
+          callbacksRef.current.onError?.(new Error('Failed to subscribe to messages channel'));
         }
       });
 
@@ -211,7 +206,7 @@ export function useConversationListSubscription(
 
   const unsubscribe = useCallback(() => {
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      void supabase.removeChannel(channelRef.current);
       channelRef.current = null;
       isSubscribedRef.current = false;
     }
@@ -238,10 +233,7 @@ export function useConversationListSubscription(
         (payload) => {
           try {
             const message = payload.new as unknown as MessageWithSender;
-            callbacksRef.current.onNewMessage?.(
-              message.conversation_id,
-              message
-            );
+            callbacksRef.current.onNewMessage?.(message.conversation_id, message);
           } catch (error) {
             callbacksRef.current.onError?.(
               error instanceof Error ? error : new Error('Unknown error')

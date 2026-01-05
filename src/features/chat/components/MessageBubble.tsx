@@ -11,7 +11,7 @@
 
 import { useCallback } from 'react';
 import { Pressable, ViewStyle } from 'react-native';
-import { Stack, Text as TamaguiText, Image, useTheme } from 'tamagui';
+import { Stack, Text as TamaguiText, Image } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import type { MessageWithSender, ConversationType } from '@/types/database';
 
@@ -30,11 +30,6 @@ export interface MessageBubbleProps {
    * The conversation type (affects display behavior).
    */
   conversationType: ConversationType;
-
-  /**
-   * The current user's membership ID.
-   */
-  currentUserId: string;
 
   /**
    * Callback when the message is pressed (for thread view or image expansion).
@@ -77,11 +72,7 @@ function isSameDay(date1: string, date2: string): boolean {
 /**
  * Get background color based on conversation type.
  */
-function getBackgroundColor(
-  isOwnMessage: boolean,
-  conversationType: ConversationType,
-  theme: any
-): string {
+function getBackgroundColor(isOwnMessage: boolean, conversationType: ConversationType): string {
   if (isOwnMessage) {
     return '$primary';
   }
@@ -102,7 +93,7 @@ function getBackgroundColor(
 /**
  * Get text color based on message ownership.
  */
-function getTextColor(isOwnMessage: boolean, theme: any): string {
+function getTextColor(isOwnMessage: boolean): string {
   return isOwnMessage ? 'white' : '$color1';
 }
 
@@ -111,12 +102,7 @@ function getTextColor(isOwnMessage: boolean, theme: any): string {
  */
 function SystemMessage({ content }: { content: string | null }) {
   return (
-    <Stack
-      alignItems="center"
-      paddingVertical="$2"
-      paddingHorizontal="$4"
-      width="100%"
-    >
+    <Stack alignItems="center" paddingVertical="$2" paddingHorizontal="$4" width="100%">
       <TamaguiText fontSize="$xs" color="$color3" textAlign="center">
         {content || ''}
       </TamaguiText>
@@ -127,13 +113,7 @@ function SystemMessage({ content }: { content: string | null }) {
 /**
  * Render image message.
  */
-function ImageMessage({
-  content,
-  onPress,
-}: {
-  content: string | null;
-  onPress?: () => void;
-}) {
+function ImageMessage({ content, onPress }: { content: string | null; onPress?: () => void }) {
   return (
     <Pressable onPress={onPress}>
       <Stack
@@ -144,11 +124,7 @@ function ImageMessage({
         backgroundColor="$backgroundTertiary"
       >
         {content ? (
-          <Image
-            source={{ uri: content }}
-            style={{ width: 200, height: 200 }}
-            resizeMode="cover"
-          />
+          <Image source={{ uri: content }} style={{ width: 200, height: 200 }} resizeMode="cover" />
         ) : (
           <Stack width={200} height={200} alignItems="center" justifyContent="center">
             <TamaguiText fontSize="$lg">📷</TamaguiText>
@@ -169,8 +145,6 @@ function PrayerCardMessage({
   content: string | null;
   isOwnMessage: boolean;
 }) {
-  const theme = useTheme();
-
   return (
     <Stack
       borderWidth={1}
@@ -183,11 +157,7 @@ function PrayerCardMessage({
       <TamaguiText fontSize="$sm" fontWeight="600" color={isOwnMessage ? 'white' : '$primary'}>
         🙏 {isOwnMessage ? 'Prayer Request' : 'Prayer Card'}
       </TamaguiText>
-      <TamaguiText
-        fontSize="$md"
-        color={isOwnMessage ? 'white' : '$color1'}
-        lineHeight="$4"
-      >
+      <TamaguiText fontSize="$md" color={isOwnMessage ? 'white' : '$color1'} lineHeight="$4">
         {content || ''}
       </TamaguiText>
     </Stack>
@@ -201,14 +171,10 @@ export function MessageBubble({
   message,
   isOwnMessage,
   conversationType,
-  currentUserId,
   onPress,
   onSenderPress,
   testID,
 }: MessageBubbleProps) {
-  const { t } = useTranslation();
-  const theme = useTheme();
-
   const handlePress = useCallback(() => {
     onPress?.(message);
   }, [message, onPress]);
@@ -224,8 +190,8 @@ export function MessageBubble({
     return <SystemMessage content={message.content} />;
   }
 
-  const backgroundColor = getBackgroundColor(isOwnMessage, conversationType, theme);
-  const textColor = getTextColor(isOwnMessage, theme);
+  const backgroundColor = getBackgroundColor(isOwnMessage, conversationType);
+  const textColor = getTextColor(isOwnMessage);
   const isDirectMessage = conversationType === 'direct';
 
   // Show sender info for group chats when not own message
@@ -261,12 +227,7 @@ export function MessageBubble({
 
       {/* Message bubble */}
       <Pressable onPress={handlePress}>
-        <Stack
-          borderRadius="$3"
-          padding="$3"
-          backgroundColor={backgroundColor}
-          gap="$2"
-        >
+        <Stack borderRadius="$3" padding="$3" backgroundColor={backgroundColor} gap="$2">
           {/* Message content based on type */}
           {message.content_type === 'image' && (
             <ImageMessage content={message.content} onPress={handlePress} />
@@ -277,12 +238,7 @@ export function MessageBubble({
           )}
 
           {message.content_type === 'text' && (
-            <TamaguiText
-              testID="message-content"
-              fontSize="$md"
-              color={textColor}
-              lineHeight="$5"
-            >
+            <TamaguiText testID="message-content" fontSize="$md" color={textColor} lineHeight="$5">
               {message.content || ''}
             </TamaguiText>
           )}
@@ -373,11 +329,7 @@ export function DateSeparator({ currentDate, previousDate }: DateSeparatorProps)
   }
 
   return (
-    <Stack
-      testID={`date-separator-${currentDate}`}
-      alignItems="center"
-      paddingVertical="$3"
-    >
+    <Stack testID={`date-separator-${currentDate}`} alignItems="center" paddingVertical="$3">
       <Stack
         backgroundColor="$backgroundTertiary"
         borderRadius={12}

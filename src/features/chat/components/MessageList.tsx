@@ -17,7 +17,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
-import { Stack, Text as TamaguiText, Spinner, useTheme } from 'tamagui';
+import { Stack, Text as TamaguiText, Spinner } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { MessageBubble, DateSeparator } from './MessageBubble';
 import type { MessageWithSender, ConversationType } from '@/types/database';
@@ -84,11 +84,7 @@ export interface MessageListProps {
  */
 function LoadingMore() {
   return (
-    <Stack
-      testID="loading-more-messages"
-      paddingVertical="$3"
-      alignItems="center"
-    >
+    <Stack testID="loading-more-messages" paddingVertical="$3" alignItems="center">
       <Spinner size="small" color="$primary" />
     </Stack>
   );
@@ -110,19 +106,10 @@ function EmptyMessages() {
       gap="$3"
     >
       <TamaguiText fontSize={48}>💬</TamaguiText>
-      <TamaguiText
-        fontSize="$lg"
-        fontWeight="600"
-        color="$color1"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
         {t('chat.no_messages')}
       </TamaguiText>
-      <TamaguiText
-        fontSize="$md"
-        color="$color2"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$md" color="$color2" textAlign="center">
         {t('chat.start_conversation')}
       </TamaguiText>
     </Stack>
@@ -136,27 +123,12 @@ function ErrorState({ error }: { error: Error }) {
   const { t } = useTranslation();
 
   return (
-    <Stack
-      flex={1}
-      alignItems="center"
-      justifyContent="center"
-      padding="$6"
-      gap="$3"
-    >
+    <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
       <TamaguiText fontSize={48}>⚠️</TamaguiText>
-      <TamaguiText
-        fontSize="$lg"
-        fontWeight="600"
-        color="$danger"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$lg" fontWeight="600" color="$danger" textAlign="center">
         {t('error')}
       </TamaguiText>
-      <TamaguiText
-        fontSize="$md"
-        color="$color2"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$md" color="$color2" textAlign="center">
         {error.message}
       </TamaguiText>
     </Stack>
@@ -185,15 +157,11 @@ function MessageItem({
 
   return (
     <>
-      <DateSeparator
-        currentDate={item.created_at}
-        previousDate={previousItem?.created_at}
-      />
+      <DateSeparator currentDate={item.created_at} previousDate={previousItem?.created_at} />
       <MessageBubble
         message={item}
         isOwnMessage={isOwnMessage}
         conversationType={conversationType}
-        currentUserId={currentUserId}
         onPress={onMessagePress}
         onSenderPress={onSenderPress}
       />
@@ -218,7 +186,6 @@ export function MessageList({
   testID,
 }: MessageListProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   // Ref for FlatList to control scrolling
   const flatListRef = useRef<FlatList>(null);
@@ -238,17 +205,14 @@ export function MessageList({
   }, [messages.length, loading]);
 
   // Handle scroll events to track position
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-      const paddingToBottom = 100;
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100;
 
-      // Check if near bottom
-      isNearBottomRef.current =
-        layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-    },
-    []
-  );
+    // Check if near bottom
+    isNearBottomRef.current =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+  }, []);
 
   // Auto-scroll to bottom when new message arrives and we were at bottom
   const messagesLengthRef = useRef(messages.length);

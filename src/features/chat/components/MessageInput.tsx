@@ -11,10 +11,9 @@
  */
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { TextInput, Pressable, Keyboard, Platform } from 'react-native';
-import { Stack, Text as TamaguiText, Button, useTheme } from 'tamagui';
+import { TextInput, Pressable, Platform } from 'react-native';
+import { Stack, Text as TamaguiText, useTheme } from 'tamagui';
 import { useTranslation } from '@/i18n';
-import { Send } from '@tamagui/lucide-react';
 
 export interface MessageInputProps {
   /**
@@ -91,7 +90,7 @@ export function MessageInput({
 
     try {
       await onSend(trimmed);
-    } catch (err) {
+    } catch {
       // Restore input on error
       setInputText(trimmed);
     }
@@ -140,12 +139,7 @@ export function MessageInput({
 
       <Stack flexDirection="row" alignItems="flex-end" gap="$2">
         {/* Text input */}
-        <Stack
-          flex={1}
-          backgroundColor="$backgroundTertiary"
-          borderRadius="$2"
-          minHeight={40}
-        >
+        <Stack flex={1} backgroundColor="$backgroundTertiary" borderRadius="$2" minHeight={40}>
           <TextInput
             ref={textInputRef}
             testID="message-text-input"
@@ -169,7 +163,7 @@ export function MessageInput({
               textAlignVertical: 'top',
             }}
             returnKeyType="send"
-            onSubmitEditing={canSend ? handleSend : undefined}
+            onSubmitEditing={canSend ? () => void handleSend() : undefined}
             blurOnSubmit={false}
             editable={!sending}
           />
@@ -178,7 +172,7 @@ export function MessageInput({
         {/* Send button */}
         <Pressable
           testID="send-message-button"
-          onPress={handleSend}
+          onPress={() => void handleSend()}
           disabled={!canSend}
           style={({ pressed }) => ({
             opacity: pressed || !canSend ? 0.5 : 1,
@@ -193,9 +187,13 @@ export function MessageInput({
             justifyContent="center"
           >
             {sending ? (
-              <TamaguiText fontSize="$xs" color="white">...</TamaguiText>
+              <TamaguiText fontSize="$xs" color="white">
+                ...
+              </TamaguiText>
             ) : (
-              <Send size={20} color="white" />
+              <TamaguiText fontSize="$md" color="white">
+                Send
+              </TamaguiText>
             )}
           </Stack>
         </Pressable>

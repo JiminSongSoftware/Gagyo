@@ -4,22 +4,21 @@
 
 import i18n from 'i18next';
 import { initReactI18next, useTranslation, Trans } from 'react-i18next';
-import * as Localization from 'expo-localization';
 import { getLocales } from 'expo-localization';
-import enCommon from '../../../locales/en/common.json';
-import enAuth from '../../../locales/en/auth.json';
-import enChat from '../../../locales/en/chat.json';
-import enPrayer from '../../../locales/en/prayer.json';
-import enPastoral from '../../../locales/en/pastoral.json';
-import enSettings from '../../../locales/en/settings.json';
-import enErrors from '../../../locales/en/errors.json';
-import koCommon from '../../../locales/ko/common.json';
-import koAuth from '../../../locales/ko/auth.json';
-import koChat from '../../../locales/ko/chat.json';
-import koPrayer from '../../../locales/ko/prayer.json';
-import koPastoral from '../../../locales/ko/pastoral.json';
-import koSettings from '../../../locales/ko/settings.json';
-import koErrors from '../../../locales/ko/errors.json';
+import enCommon from '../../locales/en/common.json';
+import enAuth from '../../locales/en/auth.json';
+import enChat from '../../locales/en/chat.json';
+import enPrayer from '../../locales/en/prayer.json';
+import enPastoral from '../../locales/en/pastoral.json';
+import enSettings from '../../locales/en/settings.json';
+import enErrors from '../../locales/en/errors.json';
+import koCommon from '../../locales/ko/common.json';
+import koAuth from '../../locales/ko/auth.json';
+import koChat from '../../locales/ko/chat.json';
+import koPrayer from '../../locales/ko/prayer.json';
+import koPastoral from '../../locales/ko/pastoral.json';
+import koSettings from '../../locales/ko/settings.json';
+import koErrors from '../../locales/ko/errors.json';
 
 // Resources object with all translations
 const resources = {
@@ -89,7 +88,9 @@ export async function initI18n(): Promise<typeof i18n> {
     },
     missingKeyHandler: (lng, ns, key) => {
       if (__DEV__) {
-        console.warn(`[i18n] Missing translation key: ${key} for language: ${lng} in namespace: ${ns}`);
+        console.warn(
+          `[i18n] Missing translation key: ${key} for language: ${lng} in namespace: ${ns}`
+        );
       }
     },
     resources: resources as unknown as Record<string, unknown>,
@@ -149,7 +150,12 @@ export { useTranslation, Trans };
 /**
  * Re-export initialization utilities.
  */
-export { initI18nForApp, initI18nForStorybook, detectDeviceLocale, isI18nInitialized } from './init';
+export {
+  initI18nForApp,
+  initI18nForStorybook,
+  detectDeviceLocale,
+  isI18nInitialized,
+} from './init';
 
 /**
  * Default export for convenience.

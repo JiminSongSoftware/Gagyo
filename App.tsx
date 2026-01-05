@@ -2,9 +2,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import { initI18nForApp } from '@/i18n';
+import i18n, { initI18nForApp } from '@/i18n';
 import { usePreferencesStore } from '@/stores/preferences';
-import i18n from '@/i18n';
 
 /**
  * Loading screen shown while i18n initializes.
@@ -51,11 +50,11 @@ export default function App() {
 
     // Only initialize after hydration or with a timeout
     if (_hasHydrated) {
-      initializeI18n();
+      void initializeI18n();
     } else {
       // Add a timeout in case hydration takes too long
       const timeoutId = setTimeout(() => {
-        initializeI18n();
+        void initializeI18n();
       }, 100);
 
       return () => clearTimeout(timeoutId);

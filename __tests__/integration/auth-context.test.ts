@@ -23,12 +23,11 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // ============================================================================
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set.'
-  );
+  throw new Error('EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set.');
 }
 
 // ============================================================================
@@ -47,7 +46,7 @@ const generateTestEmail = () => `auth-test-${Date.now()}@example.com`;
 async function createTestUser(email: string, password: string): Promise<SupabaseClient> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
   });
@@ -65,7 +64,7 @@ async function createTestUser(email: string, password: string): Promise<Supabase
 async function signInTestUser(email: string, password: string): Promise<SupabaseClient> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -185,7 +184,7 @@ describe('Auth Context - Integration Tests', () => {
       const user = await getUser(client);
 
       // Query memberships table
-      const { data, error } = await client
+      const { data } = await client
         .from('memberships')
         .select('*, tenant:tenants(*)')
         .eq('user_id', user?.id);
@@ -200,7 +199,7 @@ describe('Auth Context - Integration Tests', () => {
       const user = await getUser(client);
 
       // Query only active memberships
-      const { data, error } = await client
+      const { data } = await client
         .from('memberships')
         .select('*, tenant:tenants(*)')
         .eq('user_id', user?.id)
@@ -208,8 +207,8 @@ describe('Auth Context - Integration Tests', () => {
 
       expect(Array.isArray(data)).toBe(true);
       // All returned memberships should have status 'active'
-      data?.forEach((membership: any) => {
-        expect(membership.status).toBe('active');
+      data?.forEach((membership: unknown) => {
+        expect((membership as { status: string }).status).toBe('active');
       });
     });
 
@@ -238,7 +237,7 @@ describe('Auth Context - Integration Tests', () => {
       const user = await getUser(client);
 
       // Query tenants through memberships
-      const { data, error } = await client
+      const { data } = await client
         .from('memberships')
         .select('tenant:tenants(*)')
         .eq('user_id', user?.id)
@@ -248,11 +247,11 @@ describe('Auth Context - Integration Tests', () => {
 
       // Extract unique tenants
       const tenants = data
-        ?.map((m: any) => m.tenant)
-        .filter((t: any) => t !== null);
+        ?.map((m: unknown) => (m as { tenant: unknown }).tenant)
+        .filter((t: unknown) => t !== null);
 
       // Should only return unique tenants
-      const uniqueTenantIds = new Set(tenants?.map((t: any) => t.id));
+      const uniqueTenantIds = new Set(tenants?.map((t: unknown) => (t as { id: string }).id));
       expect(tenants?.length).toBe(uniqueTenantIds.size);
     });
 
@@ -260,9 +259,7 @@ describe('Auth Context - Integration Tests', () => {
       client = await createTestUser(testEmail, testPassword);
 
       // Direct tenant query should only return accessible tenants
-      const { data, error } = await client
-        .from('tenants')
-        .select('*');
+      const { data, error } = await client.from('tenants').select('*');
 
       // Should succeed (RLS policies filter results)
       expect(Array.isArray(data)).toBe(true);
@@ -305,7 +302,7 @@ describe('Auth Context - Integration Tests', () => {
       client = await createTestUser(testEmail, testPassword);
 
       // Update metadata
-      const { data: updateData, error: updateError } = await client.auth.updateUser({
+      const { error: updateError } = await client.auth.updateUser({
         data: metadata,
       });
       expect(updateError).toBeNull();
@@ -339,7 +336,7 @@ describe('Auth Context - Integration Tests', () => {
 
       // Try to create again with same email
       client = createClient(supabaseUrl, supabaseAnonKey);
-      const { data, error } = await client.auth.signUp({
+      const { error } = await client.auth.signUp({
         email: testEmail,
         password: testPassword,
       });
@@ -351,7 +348,7 @@ describe('Auth Context - Integration Tests', () => {
       client = createClient(supabaseUrl, supabaseAnonKey);
       const weakEmail = generateTestEmail();
 
-      const { data, error } = await client.auth.signUp({
+      const { error } = await client.auth.signUp({
         email: weakEmail,
         password: '123', // Too weak
       });

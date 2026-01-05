@@ -10,9 +10,9 @@
 
 import { useCallback } from 'react';
 import { Pressable } from 'react-native';
-import { Stack, Text as TamaguiText, useTheme } from 'tamagui';
+import { Stack, Text as TamaguiText } from 'tamagui';
 import { useTranslation } from '@/i18n';
-import type { ConversationWithLastMessage, ConversationType } from '@/types/database';
+import type { ConversationWithLastMessage } from '@/types/database';
 
 export interface ConversationListItemProps {
   /**
@@ -59,18 +59,13 @@ function formatTimestamp(dateString: string, t: (key: string) => string): string
 /**
  * Get display name for a conversation based on type.
  */
-function getConversationDisplayName(
-  conversation: ConversationWithLastMessage
-): string {
+function getConversationDisplayName(conversation: ConversationWithLastMessage): string {
   if (conversation.name) {
     return conversation.name;
   }
 
   // For direct messages, show participant names
-  if (
-    conversation.conversation_type === 'direct' &&
-    conversation.participant_names?.length
-  ) {
+  if (conversation.conversation_type === 'direct' && conversation.participant_names?.length) {
     return conversation.participant_names.join(', ');
   }
 
@@ -80,14 +75,12 @@ function getConversationDisplayName(
 /**
  * Get last message preview text.
  */
-function getLastMessagePreview(
-  conversation: ConversationWithLastMessage
-): string | null {
+function getLastMessagePreview(conversation: ConversationWithLastMessage): string | null {
   if (!conversation.last_message) {
     return null;
   }
 
-  const { content, content_type, sender } = conversation.last_message;
+  const { content, content_type } = conversation.last_message;
 
   // Handle non-text message types
   if (content_type === 'image') {
@@ -113,13 +106,8 @@ function getLastMessagePreview(
 /**
  * ConversationListItem component.
  */
-export function ConversationListItem({
-  conversation,
-  onPress,
-  testID,
-}: ConversationListItemProps) {
+export function ConversationListItem({ conversation, onPress, testID }: ConversationListItemProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   const handlePress = useCallback(() => {
     onPress(conversation.id);
@@ -134,8 +122,7 @@ export function ConversationListItem({
 
   // Generate testID based on conversation name
   const itemTestID =
-    testID ||
-    `conversation-item-${displayName.toLowerCase().replace(/\s+/g, '-')}`;
+    testID || `conversation-item-${displayName.toLowerCase().replace(/\s+/g, '-')}`;
 
   return (
     <Pressable
@@ -163,11 +150,7 @@ export function ConversationListItem({
           alignItems="center"
           justifyContent="center"
         >
-          <TamaguiText
-            fontSize="$lg"
-            fontWeight="600"
-            color="$color2"
-          >
+          <TamaguiText fontSize="$lg" fontWeight="600" color="$color2">
             {displayName.charAt(0).toUpperCase()}
           </TamaguiText>
         </Stack>
@@ -187,11 +170,7 @@ export function ConversationListItem({
             </TamaguiText>
 
             {timestamp && (
-              <TamaguiText
-                fontSize="$sm"
-                color="$color3"
-                marginLeft="$2"
-              >
+              <TamaguiText fontSize="$sm" color="$color3" marginLeft="$2">
                 {timestamp}
               </TamaguiText>
             )}
@@ -223,14 +202,8 @@ export function ConversationListItem({
                   justifyContent="center"
                   paddingHorizontal="$2"
                 >
-                  <TamaguiText
-                    fontSize="$xs"
-                    fontWeight="700"
-                    color="white"
-                  >
-                    {conversation.unread_count > 99
-                      ? '99+'
-                      : conversation.unread_count}
+                  <TamaguiText fontSize="$xs" fontWeight="700" color="white">
+                    {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
                   </TamaguiText>
                 </Stack>
               )}

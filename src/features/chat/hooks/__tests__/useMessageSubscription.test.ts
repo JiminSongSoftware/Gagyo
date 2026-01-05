@@ -2,11 +2,8 @@
  * Unit tests for useMessageSubscription hook.
  */
 
-import { renderHook, act } from '@testing-library/react-native';
-import {
-  useMessageSubscription,
-  useConversationListSubscription,
-} from '../useMessageSubscription';
+import { renderHook } from '@testing-library/react-native';
+import { useMessageSubscription, useConversationListSubscription } from '../useMessageSubscription';
 import { supabase } from '@/lib/supabase';
 
 // Mock Supabase client
@@ -51,9 +48,7 @@ describe('useMessageSubscription', () => {
       onInsert: jest.fn(),
     };
 
-    renderHook(() =>
-      useMessageSubscription(mockConversationId, null, callbacks)
-    );
+    renderHook(() => useMessageSubscription(mockConversationId, null, callbacks));
 
     expect(supabase.channel).not.toHaveBeenCalled();
   });
@@ -63,13 +58,9 @@ describe('useMessageSubscription', () => {
       onInsert: jest.fn(),
     };
 
-    renderHook(() =>
-      useMessageSubscription(mockConversationId, mockTenantId, callbacks)
-    );
+    renderHook(() => useMessageSubscription(mockConversationId, mockTenantId, callbacks));
 
-    expect(supabase.channel).toHaveBeenCalledWith(
-      `messages:${mockConversationId}`
-    );
+    expect(supabase.channel).toHaveBeenCalledWith(`messages:${mockConversationId}`);
     expect(mockOn).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({
@@ -114,8 +105,7 @@ describe('useMessageSubscription', () => {
     };
 
     const { rerender } = renderHook(
-      ({ conversationId }) =>
-        useMessageSubscription(conversationId, mockTenantId, callbacks),
+      ({ conversationId }) => useMessageSubscription(conversationId, mockTenantId, callbacks),
       { initialProps: { conversationId: mockConversationId } }
     );
 
@@ -146,9 +136,7 @@ describe('useConversationListSubscription', () => {
       onNewMessage: jest.fn(),
     };
 
-    renderHook(() =>
-      useConversationListSubscription(null, mockTenantId, callbacks)
-    );
+    renderHook(() => useConversationListSubscription(null, mockTenantId, callbacks));
 
     expect(supabase.channel).not.toHaveBeenCalled();
   });
@@ -158,9 +146,7 @@ describe('useConversationListSubscription', () => {
       onNewMessage: jest.fn(),
     };
 
-    renderHook(() =>
-      useConversationListSubscription(mockMembershipId, null, callbacks)
-    );
+    renderHook(() => useConversationListSubscription(mockMembershipId, null, callbacks));
 
     expect(supabase.channel).not.toHaveBeenCalled();
   });
@@ -170,13 +156,9 @@ describe('useConversationListSubscription', () => {
       onNewMessage: jest.fn(),
     };
 
-    renderHook(() =>
-      useConversationListSubscription(mockMembershipId, mockTenantId, callbacks)
-    );
+    renderHook(() => useConversationListSubscription(mockMembershipId, mockTenantId, callbacks));
 
-    expect(supabase.channel).toHaveBeenCalledWith(
-      `conversation-list:${mockMembershipId}`
-    );
+    expect(supabase.channel).toHaveBeenCalledWith(`conversation-list:${mockMembershipId}`);
     expect(mockOn).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({

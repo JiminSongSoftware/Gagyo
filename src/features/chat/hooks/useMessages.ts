@@ -44,10 +44,7 @@ export interface MessagesState {
  * }
  * ```
  */
-export function useMessages(
-  conversationId: string | null,
-  tenantId: string | null
-): MessagesState {
+export function useMessages(conversationId: string | null, tenantId: string | null): MessagesState {
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -173,7 +170,7 @@ export function useMessages(
   }, [fetchMessages]);
 
   useEffect(() => {
-    fetchMessages(true);
+    void fetchMessages(true);
   }, [conversationId, tenantId]);
 
   return {
@@ -205,9 +202,7 @@ export function updateMessage(
   setMessages: React.Dispatch<React.SetStateAction<MessageWithSender[]>>,
   updatedMessage: MessageWithSender
 ): void {
-  setMessages((prev) =>
-    prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
-  );
+  setMessages((prev) => prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg)));
 }
 
 /**
