@@ -46,5 +46,11 @@
   "event_chat_button": "Event Chat",
   "cancel_event_chat": "Cancel Event Chat",
   "select_at_least_one": "Select at least 1 user to exclude",
-  "message_placeholder": "Type a message..."
+  "message_placeholder": "Type a message...",
+  "thread_title": "Thread",
+  "thread_replies": "{{count}} replies",
+  "thread_reply_placeholder": "Reply to thread...",
+  "thread_no_replies": "No replies yet",
+  "thread_start_conversation": "Be the first to reply",
+  "thread_cannot_nest": "Cannot reply to a reply"
 }

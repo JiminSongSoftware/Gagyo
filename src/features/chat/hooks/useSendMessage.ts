@@ -290,6 +290,22 @@ export function useSendReply(
       setError(null);
 
       try {
+        // Check if parent message already has a parent (prevent nested threads)
+        const { data: parentMessage, error: parentError } = await supabase
+          .from('messages')
+          .select('parent_id')
+          .eq('id', parentMessageId)
+          .eq('tenant_id', tenantId)
+          .single();
+
+        if (parentError) {
+          throw new Error('Failed to verify parent message');
+        }
+
+        if (parentMessage?.parent_id) {
+          throw new Error('Cannot reply to a reply');
+        }
+
         const { data, error: insertError } = await supabase
           .from('messages')
           .insert({

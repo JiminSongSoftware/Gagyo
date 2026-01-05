@@ -1,7 +1,7 @@
 /**
- * Hook for fetching messages in a conversation.
+ * Hook for fetching thread messages (replies to a parent message).
  *
- * Provides paginated messages with sender information.
+ * Provides paginated messages for a specific thread.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -10,8 +10,9 @@ import type { MessageWithSender, MessageContentType } from '@/types/database';
 
 const PAGE_SIZE = 50;
 
-export interface MessagesState {
+export interface ThreadMessagesState {
   messages: MessageWithSender[];
+  parentMessage: MessageWithSender | null;
   loading: boolean;
   error: Error | null;
   loadMore: () => Promise<void>;
@@ -20,16 +21,19 @@ export interface MessagesState {
 }
 
 /**
- * Hook for fetching messages in a conversation.
+ * Hook for fetching messages in a thread.
  *
- * @param conversationId - The conversation ID to fetch messages for
+ * @param parentMessageId - The parent message ID to fetch thread replies for
  * @param tenantId - The tenant ID for RLS enforcement
- * @returns MessagesState with messages list, loading, error, and pagination
+ * @returns ThreadMessagesState with messages list, loading, error, and pagination
  *
  * @example
  * ```tsx
- * function MessageList() {
- *   const { messages, loading, loadMore, hasMore } = useMessages(conversationId, tenantId);
+ * function ThreadView({ parentMessageId }: { parentMessageId: string }) {
+ *   const { messages, parentMessage, loading, loadMore, hasMore } = useThreadMessages(
+ *     parentMessageId,
+ *     tenantId
+ *   );
  *
  *   return (
  *     <FlatList
@@ -37,23 +41,102 @@ export interface MessagesState {
  *       keyExtractor={(item) => item.id}
  *       renderItem={({ item }) => <MessageBubble message={item} />}
  *       onEndReached={hasMore ? loadMore : undefined}
- *       onEndReachedThreshold={0.5}
- *       inverted
+ *       ListHeaderComponent={parentMessage && <MessageBubble message={parentMessage} />}
  *     />
  *   );
  * }
  * ```
  */
-export function useMessages(conversationId: string | null, tenantId: string | null): MessagesState {
+export function useThreadMessages(
+  parentMessageId: string | null,
+  tenantId: string | null
+): ThreadMessagesState {
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
+  const [parentMessage, setParentMessage] = useState<MessageWithSender | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
 
+  // Fetch parent message
+  const fetchParentMessage = useCallback(async () => {
+    if (!parentMessageId || !tenantId) {
+      setParentMessage(null);
+      return;
+    }
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('messages')
+        .select(
+          `
+          id,
+          tenant_id,
+          conversation_id,
+          sender_id,
+          parent_id,
+          content,
+          content_type,
+          is_event_chat,
+          created_at,
+          updated_at,
+          deleted_at,
+          sender:memberships!messages_sender_id_fkey (
+            id,
+            user:users!memberships_user_id_fkey (
+              id,
+              display_name,
+              photo_url
+            )
+          )
+        `
+        )
+        .eq('id', parentMessageId)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (data) {
+        const sender = data.sender as {
+          id: string;
+          user: { id: string; display_name: string | null; photo_url: string | null };
+        };
+
+        setParentMessage({
+          id: data.id,
+          tenant_id: data.tenant_id,
+          conversation_id: data.conversation_id,
+          sender_id: data.sender_id,
+          parent_id: data.parent_id,
+          content: data.content,
+          content_type: data.content_type as MessageContentType,
+          is_event_chat: data.is_event_chat,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          deleted_at: data.deleted_at,
+          sender: {
+            id: sender?.id ?? '',
+            user: {
+              id: sender?.user?.id ?? '',
+              display_name: sender?.user?.display_name ?? null,
+              photo_url: sender?.user?.photo_url ?? null,
+            },
+          },
+        } as MessageWithSender);
+      }
+    } catch (err) {
+      setError(err as Error);
+    }
+  }, [parentMessageId, tenantId]);
+
+  // Fetch thread messages
   const fetchMessages = useCallback(
     async (reset: boolean = false) => {
-      if (!conversationId || !tenantId) {
+      if (!parentMessageId || !tenantId) {
         setMessages([]);
         setLoading(false);
         setError(null);
@@ -93,15 +176,13 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
                 display_name,
                 photo_url
               )
-            ),
-            replies:messages!parent_id(count)
+            )
           `
           )
-          .eq('conversation_id', conversationId)
+          .eq('parent_id', parentMessageId)
           .eq('tenant_id', tenantId)
-          .is('parent_id', null) // Only fetch top-level messages, not thread replies
           .is('deleted_at', null)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: true }) // Chronological order (oldest first)
           .range(currentOffset, currentOffset + PAGE_SIZE - 1);
 
         if (fetchError) {
@@ -113,10 +194,6 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
             id: string;
             user: { id: string; display_name: string | null; photo_url: string | null };
           };
-
-          // Extract reply count from the aggregate subquery
-          const replies = msg.replies as { count: number }[] | undefined;
-          const reply_count = replies?.[0]?.count ?? 0;
 
           return {
             id: msg.id,
@@ -138,18 +215,16 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
                 photo_url: sender?.user?.photo_url ?? null,
               },
             },
-            reply_count,
+            // Thread replies don't have reply_count (no nested threads)
+            reply_count: 0,
           } as MessageWithSender;
         });
 
-        // Reverse to get chronological order (oldest first)
-        const sortedMessages = messagesWithSender.reverse();
-
         if (reset) {
-          setMessages(sortedMessages);
+          setMessages(messagesWithSender);
         } else {
-          // Prepend older messages (for infinite scroll going back)
-          setMessages((prev) => [...sortedMessages, ...prev]);
+          // Append newer messages (for infinite scroll going forward)
+          setMessages((prev) => [...prev, ...messagesWithSender]);
         }
 
         setHasMore(data?.length === PAGE_SIZE);
@@ -163,7 +238,7 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
         setLoading(false);
       }
     },
-    [conversationId, tenantId, offset]
+    [parentMessageId, tenantId, offset]
   );
 
   const loadMore = useCallback(async () => {
@@ -173,15 +248,17 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
   }, [loading, hasMore, fetchMessages]);
 
   const refetch = useCallback(async () => {
-    await fetchMessages(true);
-  }, [fetchMessages]);
+    await Promise.all([fetchParentMessage(), fetchMessages(true)]);
+  }, [fetchParentMessage, fetchMessages]);
 
   useEffect(() => {
+    void fetchParentMessage();
     void fetchMessages(true);
-  }, [conversationId, tenantId]);
+  }, [parentMessageId, tenantId]);
 
   return {
     messages,
+    parentMessage,
     loading,
     error,
     loadMore,
@@ -191,11 +268,11 @@ export function useMessages(conversationId: string | null, tenantId: string | nu
 }
 
 /**
- * Add a new message to the messages list.
+ * Add a new reply to the thread messages list.
  * Used by the real-time subscription hook.
- * @returns The new messages array with the message appended
+ * @returns The new messages array with the reply appended
  */
-export function appendMessage(
+export function appendThreadMessage(
   prev: MessageWithSender[],
   newMessage: MessageWithSender
 ): MessageWithSender[] {
@@ -203,11 +280,11 @@ export function appendMessage(
 }
 
 /**
- * Update a message in the messages list.
+ * Update a reply in the thread messages list.
  * Used by the real-time subscription hook for message edits.
  * @returns The new messages array with the message updated
  */
-export function updateMessage(
+export function updateThreadMessage(
   prev: MessageWithSender[],
   updatedMessage: MessageWithSender
 ): MessageWithSender[] {
@@ -215,11 +292,11 @@ export function updateMessage(
 }
 
 /**
- * Remove a message from the messages list.
+ * Remove a reply from the thread messages list.
  * Used by the real-time subscription hook for message deletes.
  * @returns The new messages array with the message removed
  */
-export function removeMessage(
+export function removeThreadMessage(
   prev: MessageWithSender[],
   messageId: string
 ): MessageWithSender[] {

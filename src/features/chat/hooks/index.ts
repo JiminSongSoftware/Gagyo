@@ -2,11 +2,13 @@
  * Chat feature hooks.
  *
  * Exports all hooks related to chat functionality including
- * conversations, messages, sending, and real-time subscriptions.
+ * conversations, messages, threads, sending, and real-time subscriptions.
  */
 
 export { useConversations } from './useConversations';
 export { useMessages } from './useMessages';
+export { useThreadMessages } from './useThreadMessages';
+export type { ThreadMessagesState } from './useThreadMessages';
 export { useSendMessage, useSendReply } from './useSendMessage';
 export type { SendMessageState, SendReplyState } from './useSendMessage';
 export {
@@ -14,3 +16,8 @@ export {
   useConversationListSubscription,
 } from './useMessageSubscription';
 export { appendMessage, updateMessage, removeMessage } from './useMessages';
+export {
+  appendThreadMessage,
+  updateThreadMessage,
+  removeThreadMessage,
+} from './useThreadMessages';

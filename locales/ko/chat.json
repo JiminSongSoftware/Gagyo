@@ -46,5 +46,11 @@
   "event_chat_button": "이벤트 채팅",
   "cancel_event_chat": "이벤트 채팅 취소",
   "select_at_least_one": "최소 1명 이상 선택해주세요",
-  "message_placeholder": "메시지를 입력하세요..."
+  "message_placeholder": "메시지를 입력하세요...",
+  "thread_title": "스레드",
+  "thread_replies": "{{count}}개의 답글",
+  "thread_reply_placeholder": "스레드에 답글 달기...",
+  "thread_no_replies": "아직 답글이 없습니다",
+  "thread_start_conversation": "첫 번째 답글을 남겨보세요",
+  "thread_cannot_nest": "답글에는 답글을 달 수 없습니다"
 }

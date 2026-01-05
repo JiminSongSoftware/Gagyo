@@ -74,6 +74,12 @@ export interface MessageListProps {
   onSenderPress?: (membershipId: string) => void;
 
   /**
+   * Whether to show thread indicators on messages. Default: true.
+   * Set to false in thread views where replies can't have threads.
+   */
+  showThreadIndicators?: boolean;
+
+  /**
    * Test ID for E2E testing.
    */
   testID?: string;
@@ -145,6 +151,7 @@ function MessageItem({
   currentUserId,
   onMessagePress,
   onSenderPress,
+  showThreadIndicator,
 }: {
   item: MessageWithSender;
   previousItem?: MessageWithSender;
@@ -152,6 +159,7 @@ function MessageItem({
   currentUserId: string;
   onMessagePress?: (message: MessageWithSender) => void;
   onSenderPress?: (membershipId: string) => void;
+  showThreadIndicator: boolean;
 }) {
   const isOwnMessage = item.sender_id === currentUserId;
 
@@ -164,6 +172,7 @@ function MessageItem({
         conversationType={conversationType}
         onPress={onMessagePress}
         onSenderPress={onSenderPress}
+        showThreadIndicator={showThreadIndicator}
       />
     </>
   );
@@ -183,6 +192,7 @@ export function MessageList({
   onLoadMore,
   onMessagePress,
   onSenderPress,
+  showThreadIndicators = true,
   testID,
 }: MessageListProps) {
   const { t } = useTranslation();
@@ -239,10 +249,11 @@ export function MessageList({
           currentUserId={currentUserId}
           onMessagePress={onMessagePress}
           onSenderPress={onSenderPress}
+          showThreadIndicator={showThreadIndicators}
         />
       );
     },
-    [conversationType, currentUserId, messages, onMessagePress, onSenderPress]
+    [conversationType, currentUserId, messages, onMessagePress, onSenderPress, showThreadIndicators]
   );
 
   const keyExtractor = useCallback((item: MessageWithSender) => item.id, []);

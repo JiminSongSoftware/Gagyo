@@ -261,7 +261,7 @@ A single message within a conversation.
 | **Identity Rules** | UUID primary key; unique within conversation by (conversation_id, created_at, sender_id) |
 | **Lifecycle** | Created → Delivered → Read → (optionally) Deleted |
 | **Invariants** | Must belong to exactly one conversation and tenant; sender must be valid participant; content or attachment required |
-| **Relationships** | Belongs to: Conversation (N:1), Sender/Membership (N:1); Has many: Attachments (1:N), EventChatExclusions (1:N); Optionally belongs to: ParentMessage for threading (N:1) |
+| **Relationships** | Belongs to: Conversation (N:1), Sender/Membership (N:1), ParentMessage (N:1, optional, for thread replies); Has many: Attachments (1:N), EventChatExclusions (1:N), ThreadReplies (1:N, messages with this as parent_id) |
 | **Tenant Scope** | Tenant |
 | **Persistence** | `messages` table |
 | **Events Emitted** | `MessageSent`, `MessageDeleted` |
@@ -271,7 +271,8 @@ A single message within a conversation.
 - `tenant_id`: UUID (foreign key to tenants)
 - `conversation_id`: UUID (foreign key to conversations)
 - `sender_id`: UUID (foreign key to memberships)
-- `parent_id`: UUID (nullable, for single-level threading)
+- `parent_id`: UUID (nullable, for single-level threading - null for top-level, set for thread replies)
+- `reply_count`: integer (computed, count of direct thread replies - aggregate subquery)
 - `content`: text (nullable)
 - `content_type`: MessageContentType value object
 - `is_event_chat`: boolean (default false, enables exclusion feature)
@@ -306,18 +307,52 @@ Tracks which users are excluded from seeing a specific Event Chat message.
 
 ### Thread
 
-Represents a thread within a message (single-level only).
+A single-level nested conversation within a parent message. Threads allow focused discussion without cluttering the main conversation.
 
 | Property | Definition |
 |----------|------------|
 | **Type** | Value Object (realized through Message.parent_id) |
-| **Identity Rules** | A message with parent_id set is a thread reply |
-| **Lifecycle** | N/A (realized through Message) |
-| **Invariants** | Thread depth must be exactly 1 (replies cannot have replies); parent message must exist |
-| **Relationships** | N/A (realized through Message) |
+| **Identity Rules** | Identified by parent message ID; all replies share the same parent_id |
+| **Lifecycle** | Created when first reply sent → Active → (optionally) Deleted |
+| **Invariants** | Thread depth must be exactly 1 (replies cannot have replies); parent message cannot itself be a reply; parent message must exist in same conversation and tenant |
+| **Relationships** | Parent Message (N:1, the message being replied to); Thread Replies (1:N, messages with this message as parent_id) |
 | **Tenant Scope** | Tenant |
-| **Persistence** | Realized via `messages.parent_id` |
-| **Events Emitted** | N/A (use MessageSent) |
+| **Persistence** | Realized via `messages.parent_id`; `reply_count` computed via aggregate subquery |
+| **Events Emitted** | `ThreadReplyCreated` (alias of MessageSent for thread replies) |
+
+**Fields** (via Message):
+- `parent_id`: UUID (nullable, foreign key to messages.self - null for top-level messages, set for thread replies)
+- `reply_count`: integer (computed, number of direct replies to this message)
+
+**Thread Reply Invariants**:
+- A message with `parent_id` set is a thread reply
+- Thread replies themselves cannot have `parent_id` (no nested threads)
+- Deleting a parent message cascades to all its thread replies
+- Thread replies respect the same tenant and conversation boundaries as their parent
+
+---
+
+### ReplyCount
+
+The aggregate count of direct replies to a message within a thread.
+
+| Property | Definition |
+|----------|------------|
+| **Type** | Value Object (computed) |
+| **Identity Rules** | Composite: (message_id) → count |
+| **Lifecycle** | Recomputed on each query |
+| **Invariants** | Always non-negative; increments on new reply; decrements on reply deletion |
+| **Relationships** | References: Message (N:1) |
+| **Tenant Scope** | Tenant |
+| **Persistence** | Computed via Supabase aggregate subquery in SELECT clause |
+| **Events Emitted** | None (derived state) |
+
+**Query Pattern**:
+```sql
+SELECT m.*,
+  (SELECT COUNT(*) FROM messages WHERE parent_id = m.id) AS reply_count
+FROM messages m
+```
 
 ---
 
@@ -792,3 +827,4 @@ User (1) ──┬──► Memberships (N) ──► Tenant context
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2024-01-04 | Claude | Initial complete ontology with all entities, value objects, and domain events |
+| 1.1 | 2024-01-05 | Claude | Added Thread and ReplyCount entities; updated Message entity with parent_id, reply_count, and ThreadReplies relationship; documented single-level threading invariants |

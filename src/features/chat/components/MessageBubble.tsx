@@ -42,6 +42,12 @@ export interface MessageBubbleProps {
   onSenderPress?: (membershipId: string) => void;
 
   /**
+   * Whether to show the thread indicator badge. Default: true.
+   * Set to false in thread views where replies don't have threads.
+   */
+  showThreadIndicator?: boolean;
+
+  /**
    * Test ID for E2E testing.
    */
   testID?: string;
@@ -173,6 +179,7 @@ export function MessageBubble({
   conversationType,
   onPress,
   onSenderPress,
+  showThreadIndicator = true,
   testID,
 }: MessageBubbleProps) {
   const handlePress = useCallback(() => {
@@ -259,7 +266,7 @@ export function MessageBubble({
             </TamaguiText>
 
             {/* Thread reply count indicator */}
-            {message.reply_count && message.reply_count > 0 && (
+            {showThreadIndicator && message.reply_count && message.reply_count > 0 && (
               <Stack
                 flexDirection="row"
                 alignItems="center"

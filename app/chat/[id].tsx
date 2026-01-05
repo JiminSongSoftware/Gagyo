@@ -94,17 +94,53 @@ export default function ChatDetailScreen() {
     void fetchConversationDetails();
   }, [conversationId, tenantId]);
 
+  // Helper to increment reply count on parent message
+  const incrementParentReplyCount = useCallback((parentId: string) => {
+    setRealTimeMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === parentId
+          ? { ...msg, reply_count: (msg.reply_count || 0) + 1 }
+          : msg
+      )
+    );
+  }, []);
+
+  // Helper to decrement reply count on parent message
+  const decrementParentReplyCount = useCallback((parentId: string) => {
+    setRealTimeMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === parentId
+          ? { ...msg, reply_count: Math.max(0, (msg.reply_count || 0) - 1) }
+          : msg
+      )
+    );
+  }, []);
+
   // Subscribe to real-time message updates
   useMessageSubscription(conversationId, tenantId, {
     onInsert: useCallback((message: MessageWithSender) => {
+      // If this is a thread reply, increment the parent's reply count
+      if (message.parent_id) {
+        incrementParentReplyCount(message.parent_id);
+        // Don't add thread replies to the main message list
+        return;
+      }
+      // Add top-level message to the list
       setRealTimeMessages((prev) => appendMessage(prev, message));
-    }, []),
+    }, [incrementParentReplyCount]),
     onUpdate: useCallback((message: MessageWithSender) => {
       setRealTimeMessages((prev) => updateMessage(prev, message));
     }, []),
-    onDelete: useCallback((messageId: string) => {
+    onDelete: useCallback((messageId: string, oldMessage?: MessageWithSender) => {
+      // If deleted message had a parent_id (thread reply), decrement parent's reply count
+      // Note: oldMessage may not be available in all cases
+      if (oldMessage?.parent_id) {
+        decrementParentReplyCount(oldMessage.parent_id);
+        return;
+      }
+      // Remove top-level message from the list
       setRealTimeMessages((prev) => removeMessage(prev, messageId));
-    }, []),
+    }, [decrementParentReplyCount]),
     onError: useCallback((err: Error) => {
       console.error('Message subscription error:', err);
     }, []),
@@ -145,9 +181,12 @@ export default function ChatDetailScreen() {
   }, [router]);
 
   const handleMessagePress = useCallback((message: MessageWithSender) => {
-    // Future: Open thread view or expand image
-    console.log('Message pressed:', message.id);
-  }, []);
+    // Navigate to thread view if message has replies or is a top-level message
+    // Only top-level messages can have threads (parent_id is null)
+    if (!message.parent_id) {
+      router.push(`/chat/thread/${message.id}`);
+    }
+  }, [router]);
 
   const getHeaderTitle = useCallback(() => {
     if (conversationName) {

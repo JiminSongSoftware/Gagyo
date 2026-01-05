@@ -50,8 +50,10 @@ export interface MessageSubscriptionCallbacks {
 
   /**
    * Called when a message is deleted.
+   * @param messageId - The ID of the deleted message
+   * @param oldMessage - Partial data from the deleted message (may include parent_id for thread updates)
    */
-  onDelete?: (messageId: string) => void;
+  onDelete?: (messageId: string, oldMessage?: Partial<MessageWithSender>) => void;
 
   /**
    * Called when a subscription error occurs.

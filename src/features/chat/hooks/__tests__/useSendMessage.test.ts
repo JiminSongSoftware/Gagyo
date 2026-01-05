@@ -282,4 +282,152 @@ describe('useSendReply', () => {
 
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
+
+  it('should reject replying to a reply (nested thread)', async () => {
+    // Mock parent message that already has a parent_id (it's a reply)
+    const mockParentIsReply = {
+      parent_id: 'grandparent-msg-123', // This message is already a reply
+    };
+
+    const selectMock = jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: mockParentIsReply,
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const mockFrom = jest.fn().mockReturnValue({
+      select: selectMock,
+    });
+    mockSupabase.from = mockFrom;
+
+    const { result } = renderHook(() =>
+      useSendReply(mockConversationId, mockTenantId, mockSenderMembershipId, mockParentMessageId)
+    );
+
+    await act(async () => {
+      try {
+        await result.current.sendReply('Nested reply attempt');
+      } catch {
+        // Expected to throw
+      }
+    });
+
+    expect(result.current.error?.message).toBe('Cannot reply to a reply');
+  });
+
+  it('should allow replying to a top-level message', async () => {
+    // Mock parent message that is a top-level message (parent_id is null)
+    const mockParentIsTopLevel = {
+      parent_id: null, // This message is a top-level message
+    };
+
+    const mockReply = {
+      id: 'reply-1',
+      tenant_id: mockTenantId,
+      conversation_id: mockConversationId,
+      sender_id: mockSenderMembershipId,
+      parent_id: mockParentMessageId,
+      content: 'Valid reply',
+      content_type: 'text',
+      is_event_chat: false,
+      created_at: '2024-01-01T12:00:00Z',
+      updated_at: '2024-01-01T12:00:00Z',
+      deleted_at: null,
+      sender: {
+        id: mockSenderMembershipId,
+        user: {
+          id: 'user-123',
+          display_name: 'Test User',
+          photo_url: null,
+        },
+      },
+    };
+
+    // First call: check parent message's parent_id
+    const selectParentMock = jest.fn().mockResolvedValue({
+      data: mockParentIsTopLevel,
+      error: null,
+    });
+
+    // Second call: insert the reply
+    const insertMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({
+          data: mockReply,
+          error: null,
+        }),
+      }),
+    });
+
+    let callCount = 0;
+    const mockFrom = jest.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        // First call: checking parent message
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: selectParentMock,
+              }),
+            }),
+          }),
+        };
+      }
+      // Subsequent calls: insert
+      return {
+        insert: insertMock,
+      };
+    });
+    mockSupabase.from = mockFrom;
+
+    const { result } = renderHook(() =>
+      useSendReply(mockConversationId, mockTenantId, mockSenderMembershipId, mockParentMessageId)
+    );
+
+    let sentReply;
+    await act(async () => {
+      sentReply = await result.current.sendReply('Valid reply');
+    });
+
+    expect(sentReply).not.toBeNull();
+    expect(result.current.error).toBeNull();
+  });
+
+  it('should handle error when verifying parent message', async () => {
+    const verifyError = new Error('Failed to fetch parent');
+
+    const mockFrom = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: null,
+              error: verifyError,
+            }),
+          }),
+        }),
+      }),
+    });
+    mockSupabase.from = mockFrom;
+
+    const { result } = renderHook(() =>
+      useSendReply(mockConversationId, mockTenantId, mockSenderMembershipId, mockParentMessageId)
+    );
+
+    await act(async () => {
+      try {
+        await result.current.sendReply('Reply');
+      } catch {
+        // Expected to throw
+      }
+    });
+
+    expect(result.current.error?.message).toBe('Failed to verify parent message');
+  });
 });

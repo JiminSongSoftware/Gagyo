@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-event-chat:-selective-message-visibility.md",
+                "file": "plan-v1-:-chat-threads:-nested-conversations.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-event-chat:-selective-message-visibility"
+              "title": "plan-v1-:-chat-threads:-nested-conversations"
             }
           }
         ]
@@ -193,18 +193,19 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
-    "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
     "plan-v1-:-event-chat:-selective-message-visibility.md",
+    "plan-v1-:-chat-threads:-nested-conversations.md",
+    "src/features/chat/components/EventChatSelector.tsx",
+    "__tests__/integration/event-chat-rls.test.ts",
+    "locales/ko/chat.json.tmp.60139.1767611611594",
+    "e2e/event-chat.test.ts",
+    "plan-v1-:-chat-foundation:-conversations,-messages-&-real-time-sync.md",
     "src/features/chat/utils/getRoomBackgroundColor.ts",
     "src/features/chat/utils",
     "src/hooks/useCurrentMembership.ts",
     "src/features/chat/hooks/__tests__/useMessages.test.ts",
     "src/features/chat/hooks/__tests__/useSendMessage.test.ts",
     "src/features/chat/hooks/__tests__/useMessageSubscription.test.ts",
-    "src/features/chat/hooks/__tests__/useConversations.test.ts",
-    "src/features/chat/hooks/useSendMessage.ts",
-    "src/features/chat/hooks/useMessages.ts",
-    "src/features/chat/hooks/useMessageSubscription.ts",
     "assets/favicon.png",
     "node_modules/@babel/helper-define-polyfill-provider/node_modules/resolve/SECURITY.md",
     "node_modules/jest-runtime/node_modules/strip-bom/readme.md",
@@ -229,7 +230,6 @@
     "node_modules/is-async-function/CHANGELOG.md",
     "node_modules/is-number-object/CHANGELOG.md",
     "node_modules/is-number-object/README.md",
-    "node_modules/is-boolean-object/CHANGELOG.md",
     "node_modules/psl/browserstack-logo.svg",
     "node_modules/stream-buffers/coverage/lcov-report/sort-arrow-sprite.png",
     "node_modules/istanbul-reports/lib/html-spa/assets/sort-arrow-sprite.png",
