@@ -445,6 +445,96 @@ export interface Database {
           },
         ];
       };
+      prayer_cards: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          author_id: string;
+          content: string;
+          recipient_scope: 'individual' | 'small_group' | 'church_wide';
+          answered: boolean;
+          answered_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          author_id: string;
+          content: string;
+          recipient_scope: 'individual' | 'small_group' | 'church_wide';
+          answered?: boolean;
+          answered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          recipient_scope?: 'individual' | 'small_group' | 'church_wide';
+          answered?: boolean;
+          answered_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'prayer_cards_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prayer_cards_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      prayer_card_recipients: {
+        Row: {
+          id: string;
+          prayer_card_id: string;
+          recipient_membership_id: string | null;
+          recipient_small_group_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          prayer_card_id: string;
+          recipient_membership_id?: string | null;
+          recipient_small_group_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          recipient_membership_id?: string | null;
+          recipient_small_group_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'prayer_card_recipients_prayer_card_id_fkey';
+            columns: ['prayer_card_id'];
+            isOneToOne: false;
+            referencedRelation: 'prayer_cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prayer_card_recipients_recipient_membership_id_fkey';
+            columns: ['recipient_membership_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prayer_card_recipients_recipient_small_group_id_fkey';
+            columns: ['recipient_small_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'small_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -582,6 +672,36 @@ export interface Attachment {
   file_type: string;
   file_size: number;
   created_at: string;
+}
+
+/**
+ * Prayer card type.
+ */
+export type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
+
+/**
+ * Prayer card recipient type.
+ */
+export type PrayerCardRecipient = Database['public']['Tables']['prayer_card_recipients']['Row'];
+
+/**
+ * Prayer card recipient scope type.
+ */
+export type PrayerCardRecipientScope = PrayerCard['recipient_scope'];
+
+/**
+ * Prayer card with author information joined.
+ * Used for displaying prayer cards in the UI.
+ */
+export interface PrayerCardWithAuthor extends PrayerCard {
+  author: {
+    id: string;
+    user: {
+      id: string;
+      display_name: string | null;
+      photo_url: string | null;
+    };
+  };
 }
 
 /**
