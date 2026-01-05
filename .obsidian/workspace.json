@@ -1,0 +1,243 @@
+{
+  "main": {
+    "id": "1f45034828ff134f",
+    "type": "split",
+    "children": [
+      {
+        "id": "b0f57f41d1890f83",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0e184059e80d3ecf",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "CLAUDE.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CLAUDE"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "784b16378f1ffb8b",
+    "type": "split",
+    "children": [
+      {
+        "id": "5b27a731100fbebb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b151ef1db14a04a6",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "46fe07a531517cbd",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "2cfcda88c0f3d3c5",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1ced3c7c009a0994",
+    "type": "split",
+    "children": [
+      {
+        "id": "e9354155d3131b86",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f2cef6efd9bd6e19",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "f4b56e9245a74c4d",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "67085dbd8ab372d8",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "d633773978bac7f0",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "d978512b43a4b351",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          },
+          {
+            "id": "3e558071908ded76",
+            "type": "leaf",
+            "state": {
+              "type": "copilot-chat-view",
+              "state": {},
+              "icon": "message-square",
+              "title": "Copilot"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "copilot:Open Copilot Chat": false
+    }
+  },
+  "active": "0e184059e80d3ecf",
+  "lastOpenFiles": [
+    "node_modules/date-fns/yearsToMonths.js",
+    "node_modules/date-fns/yearsToQuarters.js",
+    "node_modules/date-fns/yearsToQuarters.d.ts",
+    "node_modules/date-fns/yearsToQuarters.d.cts",
+    "node_modules/date-fns/yearsToQuarters.cjs",
+    "node_modules/date-fns/yearsToMonths.cjs",
+    "node_modules/date-fns/yearsToMonths.d.cts",
+    "node_modules/date-fns/yearsToMonths.d.ts",
+    "node_modules/date-fns/yearsToDays.cjs",
+    "node_modules/date-fns/yearsToDays.d.cts",
+    "node_modules/date-fns/yearsToDays.js",
+    "node_modules/date-fns/SECURITY.md",
+    "node_modules/date-fns/README.md",
+    "node_modules/date-fns/LICENSE.md",
+    "node_modules/date-fns/CHANGELOG.md",
+    "node_modules/@supabase/supabase-js/README.md",
+    "node_modules/@sentry/react-native/android/replay-stubs/README.md",
+    "node_modules/@sentry/react-native/README.md",
+    "node_modules/@sentry/react-native/LICENSE.md",
+    "node_modules/@react-native-async-storage/async-storage/README.md",
+    "node_modules/typescript/SECURITY.md",
+    "node_modules/typescript/README.md",
+    "node_modules/prettier/THIRD-PARTY-NOTICES.md",
+    "node_modules/prettier/README.md",
+    "node_modules/lint-staged/README.md",
+    "node_modules/jest-expo/README.md",
+    "node_modules/jest/README.md",
+    "node_modules/husky/README.md",
+    "node_modules/eslint-plugin-react-native/README.md",
+    "node_modules/eslint-plugin-i18n-json/README.md",
+    "node_modules/detox/detox-native/README.md",
+    "node_modules/detox/README.md",
+    "node_modules/@typescript-eslint/parser/README.md",
+    "node_modules/@typescript-eslint/eslint-plugin/README.md",
+    "node_modules/@types/react/README.md",
+    "node_modules/@testing-library/react-native/README.md",
+    "node_modules/qrcode-terminal/example/basic.png",
+    "node_modules/es6-shim/coverage/sort-arrow-sprite.png",
+    "node_modules/date-fns/docs/logotype.svg",
+    "node_modules/date-fns/docs/logo.svg",
+    "node_modules/psl/browserstack-logo.svg",
+    "node_modules/react-native/ReactAndroid/src/main/res/devsupport/drawable-xxhdpi/ic_resume.png",
+    "node_modules/react-native/ReactAndroid/src/main/res/devsupport/drawable-mdpi/ic_resume.png",
+    "node_modules/react-native/ReactAndroid/src/main/res/devsupport/drawable-xxxhdpi/ic_resume.png",
+    "node_modules/react-native/ReactAndroid/src/main/res/devsupport/drawable-xhdpi/ic_resume.png",
+    "node_modules/react-native/ReactAndroid/src/main/res/devsupport/drawable-hdpi/ic_resume.png"
+  ]
+}

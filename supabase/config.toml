@@ -1,0 +1,35 @@
+# Supabase Configuration
+# See: https://supabase.com/docs/guides/cli/config-reference
+
+project_id = "your-project-id-here"
+
+[api]
+enabled = true
+port = 54321
+# Additional API settings
+
+[db]
+port = 54322
+# Additional database settings
+
+[studio]
+enabled = true
+port = 54323
+# Additional studio settings
+
+[ingest]
+enabled = true
+# Additional ingest settings
+
+[storage]
+enabled = true
+file_size_limit = "5MiB"
+# Additional storage settings
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# Additional auth settings
+
+[functions]
+# Edge Functions configuration - future phases

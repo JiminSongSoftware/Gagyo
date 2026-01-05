@@ -1,0 +1,13 @@
+{
+  "app_name": "가교",
+  "home": "홈",
+  "loading": "로딩 중...",
+  "error": "오류",
+  "success": "성공",
+  "confirm": "확인",
+  "cancel": "취소",
+  "save": "저장",
+  "delete": "삭제",
+  "edit": "편집",
+  "network_error": "네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도해 주세요."
+}

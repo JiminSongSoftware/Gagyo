@@ -1,0 +1,23 @@
+{
+  "generic_error": "Something went wrong. Please try again.",
+  "network_error": "Network error. Please check your connection.",
+  "server_error": "Server error. Please try again later.",
+  "timeout_error": "Request timed out. Please try again.",
+  "unauthorized": "You are not authorized to perform this action.",
+  "forbidden": "Access denied.",
+  "not_found": "Resource not found.",
+  "validation_error": "Please check your input and try again.",
+  "session_expired": "Your session has expired. Please sign in again.",
+  "tenant_not_found": "Church not found.",
+  "membership_required": "You must be a member to access this feature.",
+  "role_required": "You don't have permission to access this feature.",
+  "file_too_large": "File is too large. Maximum size is {{size}}MB.",
+  "invalid_file_type": "Invalid file type. Allowed types: {{types}}.",
+  "upload_failed": "Failed to upload file. Please try again.",
+  "message_send_failed": "Failed to send message. Please try again.",
+  "subscription_error": "Failed to connect to real-time updates.",
+  "push_notification_error": "Failed to register for push notifications.",
+  "rate_limited": "Too many requests. Please wait a moment.",
+  "offline": "You are offline. Some features may not be available.",
+  "sync_error": "Failed to sync data. Please refresh."
+}

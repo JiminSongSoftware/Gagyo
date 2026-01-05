@@ -1,0 +1,23 @@
+{
+  "generic_error": "문제가 발생했습니다. 다시 시도해 주세요.",
+  "network_error": "네트워크 오류입니다. 연결 상태를 확인해 주세요.",
+  "server_error": "서버 오류입니다. 나중에 다시 시도해 주세요.",
+  "timeout_error": "요청 시간이 초과되었습니다. 다시 시도해 주세요.",
+  "unauthorized": "이 작업을 수행할 권한이 없습니다.",
+  "forbidden": "접근이 거부되었습니다.",
+  "not_found": "리소스를 찾을 수 없습니다.",
+  "validation_error": "입력 내용을 확인하고 다시 시도해 주세요.",
+  "session_expired": "세션이 만료되었습니다. 다시 로그인해 주세요.",
+  "tenant_not_found": "교회를 찾을 수 없습니다.",
+  "membership_required": "이 기능에 접근하려면 회원이어야 합니다.",
+  "role_required": "이 기능에 접근할 권한이 없습니다.",
+  "file_too_large": "파일이 너무 큽니다. 최대 크기는 {{size}}MB입니다.",
+  "invalid_file_type": "잘못된 파일 형식입니다. 허용된 형식: {{types}}.",
+  "upload_failed": "파일 업로드에 실패했습니다. 다시 시도해 주세요.",
+  "message_send_failed": "메시지 전송에 실패했습니다. 다시 시도해 주세요.",
+  "subscription_error": "실시간 업데이트 연결에 실패했습니다.",
+  "push_notification_error": "푸시 알림 등록에 실패했습니다.",
+  "rate_limited": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  "offline": "오프라인 상태입니다. 일부 기능을 사용할 수 없습니다.",
+  "sync_error": "데이터 동기화에 실패했습니다. 새로고침해 주세요."
+}

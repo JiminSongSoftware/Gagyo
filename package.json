@@ -1,0 +1,82 @@
+{
+  "name": "gagyo",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "start:storybook": "STORYBOOK_ENABLED=true expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "bun jest",
+    "test:watch": "bun jest --watch",
+    "test:coverage": "bun jest --coverage",
+    "test:ui": "bun jest --coverage --verbose",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "format": "bunx prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "bunx prettier --check \"src/**/*.{ts,tsx}\"",
+    "type-check": "tsc --noEmit",
+    "typecheck": "bun run type-check",
+    "e2e:build:ios": "bunx detox build -c ios.sim.debug",
+    "e2e:test:ios": "bunx detox test -c ios.sim.debug",
+    "e2e:build:android": "bunx detox build -c android.emu.debug",
+    "e2e:test:android": "bunx detox test -c android.emu.debug",
+    "i18n:validate": "bun scripts/check-i18n.ts",
+    "storybook": "STORYBOOK_ENABLED=true expo start",
+    "storybook:android": "STORYBOOK_ENABLED=true expo start --android",
+    "storybook:ios": "STORYBOOK_ENABLED=true expo start --ios",
+    "ci": "bun run typecheck && bun run lint && bun run test",
+    "ci:coverage": "bun run typecheck && bun run lint && bun run test:coverage",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@sentry/react-native": "^7.8.0",
+    "@supabase/supabase-js": "^2.89.0",
+    "@tamagui/config": "^1.142.0",
+    "date-fns": "^4.1.0",
+    "expo": "~54.0.30",
+    "expo-localization": "^17.0.8",
+    "expo-notifications": "^0.32.15",
+    "expo-status-bar": "~3.0.9",
+    "i18next": "^25.7.3",
+    "jotai": "^2.16.1",
+    "posthog-react-native": "^4.17.2",
+    "react": "19.1.0",
+    "react-i18next": "^16.5.1",
+    "react-native": "0.81.5",
+    "sentry-expo": "^7.2.0",
+    "tamagui": "^1.142.0",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@storybook/react-native": "^10.1.1",
+    "@tamagui/babel-plugin": "^1.142.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/react": "~19.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
+    "detox": "^20.46.3",
+    "eslint-config-expo": "^10.0.0",
+    "eslint-plugin-i18n-json": "^4.0.1",
+    "eslint-plugin-react-native": "^5.0.0",
+    "husky": "^9.1.7",
+    "jest": "^30.2.0",
+    "jest-expo": "^54.0.16",
+    "lint-staged": "^15.2.11",
+    "prettier": "^3.7.4",
+    "typescript": "~5.9.2"
+  },
+  "private": true,
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "locales/**/*.json": [
+      "bun scripts/check-i18n.ts"
+    ]
+  }
+}

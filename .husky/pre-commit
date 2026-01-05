@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-commit checks..."
+
+# Run lint-staged
+bunx lint-staged
+
+# Run i18n validation
+bun run i18n:validate
+
+echo "Pre-commit checks complete!"
