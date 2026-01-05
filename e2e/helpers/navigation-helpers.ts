@@ -23,9 +23,29 @@ export async function navigateToTab(
 
   await element(by.text(tabName)).tap();
 
-  // Wait for the target screen to appear
-  const tabId = tabName.toLowerCase().replace(' ', '-');
-  await waitFor(element(by.id(`${tabId}-screen`)))
+  // Explicit mapping from tab display names to screen testIDs
+  // Screen testIDs follow the pattern: {filename}-screen
+  const tabToScreenId: Record<string, string> = {
+    'Home': 'home-screen',
+    'Chat': 'chat-screen',
+    'Prayer': 'prayer-screen',
+    'Pastoral Journal': 'pastoral-screen',
+    'Images': 'images-screen',
+    'Settings': 'settings-screen',
+    // Korean labels for i18n tests
+    '홈': 'home-screen',
+    '채팅': 'chat-screen',
+    '기도': 'prayer-screen',
+    '목회 일지': 'pastoral-screen',
+    '이미지': 'images-screen',
+    '설정': 'settings-screen',
+  };
+
+  const screenId = tabToScreenId[tabName];
+  if (!screenId) {
+    throw new Error(`Unknown tab: ${tabName}`);
+  }
+  await waitFor(element(by.id(screenId)))
     .toBeVisible()
     .withTimeout(timeout);
 }

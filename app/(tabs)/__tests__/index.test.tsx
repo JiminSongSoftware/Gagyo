@@ -57,7 +57,7 @@ describe('HomeScreen', () => {
   });
 
   it('should render dashboard title', () => {
-    const { getByText } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
     expect(getByTestId('dashboard-title')).toBeTruthy();
   });
 
@@ -76,12 +76,12 @@ describe('HomeScreen', () => {
   });
 
   it('should render quick actions section', () => {
-    const { getByText } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
     expect(getByTestId('quick-actions-section')).toBeTruthy();
   });
 
   it('should render quick action buttons', () => {
-    const { getByText } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
     expect(getByTestId('start-conversation-button')).toBeTruthy();
     expect(getByTestId('create-prayer-button')).toBeTruthy();
     expect(getByTestId('write-journal-button')).toBeTruthy();
