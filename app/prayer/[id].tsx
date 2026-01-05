@@ -22,6 +22,7 @@ import { useTranslation } from '@/i18n';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { usePrayerCardById } from '@/features/prayer/hooks/usePrayerCards';
 import { useMarkPrayerAnswered } from '@/features/prayer/hooks/useMarkPrayerAnswered';
+import type { PrayerCardWithAuthor } from '@/types/database';
 
 // ============================================================================
 // STYLIZED COMPONENTS
@@ -102,7 +103,7 @@ export default function PrayerCardDetailScreen() {
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationScale = useSharedValue(0);
 
-  const prayer = prayerCards[0];
+  const prayer = prayerCards[0] as PrayerCardWithAuthor | undefined;
 
   const isAuthor = membershipId && prayer?.author_id === membershipId;
   const canMarkAnswered = isAuthor && prayer && !prayer.answered;
@@ -114,10 +115,9 @@ export default function PrayerCardDetailScreen() {
     }
   }, [id, router]);
 
-  const handleMarkAnswered = useCallback(async () => {
+  const handleMarkAnswered = useCallback(() => {
     if (!prayer?.id) return;
-
-    try {
+    void (async () => {
       const success = await markAnswered(prayer.id);
       if (success) {
         setShowCelebration(true);
@@ -128,9 +128,7 @@ export default function PrayerCardDetailScreen() {
         }, 2000);
         void refetch();
       }
-    } catch (err) {
-      console.error('Failed to mark prayer as answered:', err);
-    }
+    })();
   }, [prayer?.id, markAnswered, refetch, celebrationScale]);
 
   const handleBack = useCallback(() => {

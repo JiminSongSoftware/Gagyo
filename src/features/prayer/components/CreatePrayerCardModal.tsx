@@ -12,7 +12,7 @@
  * - i18n support
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Stack, Text as TamaguiText, XStack, YStack, Button, useTheme, styled } from 'tamagui';
 import { useTranslation } from '@/i18n';

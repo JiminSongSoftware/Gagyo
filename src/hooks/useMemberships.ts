@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import type { Membership } from '@/types/database';
 
 export interface MembershipsState {
-  memberships: Array<Membership>;
+  memberships: Membership[];
   loading: boolean;
   error: Error | null;
 }
@@ -41,7 +41,7 @@ export interface MembershipsState {
  * ```
  */
 export function useMemberships(userId: string | undefined): MembershipsState {
-  const [memberships, setMemberships] = useState<Array<Membership>>([]);
+  const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -72,7 +72,7 @@ export function useMemberships(userId: string | undefined): MembershipsState {
         }
 
         if (!cancelled) {
-          setMemberships((data ?? []) as Array<Membership>);
+          setMemberships((data ?? []) as Membership[]);
         }
       } catch (err) {
         if (!cancelled) {
@@ -86,7 +86,7 @@ export function useMemberships(userId: string | undefined): MembershipsState {
       }
     }
 
-    fetchMemberships();
+    void fetchMemberships();
 
     return () => {
       cancelled = true;
@@ -100,9 +100,7 @@ export function useMemberships(userId: string | undefined): MembershipsState {
  * Convenience hook that returns only active memberships.
  * Same as useMemberships since we already filter by status='active'.
  */
-export function useActiveMemberships(
-  userId: string | undefined
-): MembershipsState {
+export function useActiveMemberships(userId: string | undefined): MembershipsState {
   return useMemberships(userId);
 }
 

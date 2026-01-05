@@ -129,10 +129,10 @@ export default function PrayerScreen() {
     }
   }, [showCreateModal, reset]);
 
-  const handleCreate = useCallback(async () => {
-    try {
-      if (!isValid) return;
+  const handleCreate = useCallback(() => {
+    if (!isValid) return;
 
+    void (async () => {
       const prayerCardId = await createPrayerCard({
         content,
         recipientScope: recipientScope!,
@@ -143,9 +143,7 @@ export default function PrayerScreen() {
         setShowCreateModal(false);
         void refetch();
       }
-    } catch (err) {
-      console.error('Failed to create prayer card:', err);
-    }
+    })();
   }, [content, recipientScope, recipientIds, isValid, createPrayerCard, refetch]);
 
   const handleCardPress = useCallback(
