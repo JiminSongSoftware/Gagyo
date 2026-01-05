@@ -228,6 +228,140 @@ export interface Database {
           updated_at?: string;
         };
       };
+      messages: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          conversation_id: string;
+          sender_id: string;
+          parent_id: string | null;
+          content: string | null;
+          content_type: 'text' | 'image' | 'prayer_card' | 'system';
+          is_event_chat: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          conversation_id: string;
+          sender_id: string;
+          parent_id?: string | null;
+          content?: string | null;
+          content_type?: 'text' | 'image' | 'prayer_card' | 'system';
+          is_event_chat?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          content?: string | null;
+          content_type?: 'text' | 'image' | 'prayer_card' | 'system';
+          is_event_chat?: boolean;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'messages_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      conversation_participants: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          membership_id: string;
+          last_read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          membership_id: string;
+          last_read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          last_read_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'conversation_participants_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'conversation_participants_membership_id_fkey';
+            columns: ['membership_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      event_chat_exclusions: {
+        Row: {
+          id: string;
+          message_id: string;
+          excluded_membership_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          excluded_membership_id: string;
+          created_at?: string;
+        };
+        Update: {
+          message_id?: string;
+          excluded_membership_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'event_chat_exclusions_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'event_chat_exclusions_excluded_membership_id_fkey';
+            columns: ['excluded_membership_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -272,3 +406,71 @@ export type MembershipStatus = Database['public']['Tables']['memberships']['Inse
  * Locale type.
  */
 export type Locale = Database['public']['Tables']['users']['Insert']['locale'];
+
+/**
+ * Conversation type enum.
+ */
+export type ConversationType = Database['public']['Tables']['conversations']['Row']['type'];
+
+/**
+ * Message content type enum.
+ */
+export type MessageContentType = Database['public']['Tables']['messages']['Row']['content_type'];
+
+/**
+ * Message type.
+ */
+export type Message = Database['public']['Tables']['messages']['Row'];
+
+/**
+ * Conversation type.
+ */
+export type Conversation = Database['public']['Tables']['conversations']['Row'];
+
+/**
+ * Conversation participant type.
+ */
+export type ConversationParticipant = Database['public']['Tables']['conversation_participants']['Row'];
+
+/**
+ * Event chat exclusion type.
+ */
+export type EventChatExclusion = Database['public']['Tables']['event_chat_exclusions']['Row'];
+
+/**
+ * Message with sender information joined.
+ * Used for displaying messages in the chat UI.
+ */
+export type MessageWithSender = Message & {
+  sender: {
+    id: string;
+    user: {
+      id: string;
+      display_name: string | null;
+      photo_url: string | null;
+    };
+  };
+  reply_count?: number;
+};
+
+/**
+ * Conversation with last message and participant info.
+ * Used for displaying conversation list items.
+ */
+export type ConversationWithLastMessage = Conversation & {
+  last_message: {
+    id: string;
+    content: string | null;
+    content_type: MessageContentType;
+    created_at: string;
+    sender: {
+      id: string;
+      user: {
+        id: string;
+        display_name: string | null;
+      };
+    };
+  } | null;
+  unread_count: number;
+  participant_names?: string[];
+};

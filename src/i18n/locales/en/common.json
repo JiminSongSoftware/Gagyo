@@ -9,5 +9,22 @@
   "save": "Save",
   "delete": "Delete",
   "edit": "Edit",
-  "network_error": "A network error occurred. Please check your connection and try again."
+  "network_error": "A network error occurred. Please check your connection and try again.",
+  "chat": {
+    "title": "Chat",
+    "chat": "Chat",
+    "empty_state": "No conversations yet",
+    "empty_state_description": "Start a conversation with someone to get started",
+    "message_placeholder": "Type a message...",
+    "send": "Send",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "new_messages": "New messages",
+    "loading_messages": "Loading messages...",
+    "no_messages": "No messages yet",
+    "start_conversation": "Start the conversation",
+    "small_group": "Small Group",
+    "ministry": "Ministry",
+    "church_wide": "Church Wide"
+  }
 }

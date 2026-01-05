@@ -50,6 +50,11 @@ const colorTokens = createTokens({
     backgroundSecondary: '#f5f5f5',
     backgroundTertiary: '#eaeaea',
 
+    // Room type background colors for chat
+    backgroundWarm: '#FFF8F0', // Small Group
+    backgroundCool: '#F0F8FF', // Ministry
+    backgroundAccent: '#FFF0F8', // Church Wide
+
     text: '#11181C',
     textSecondary: '#687076',
     textTertiary: '#9BA1A6',
@@ -60,6 +65,7 @@ const colorTokens = createTokens({
     primaryHover: '#086688',
     primaryActive: '#065570',
     primaryLight: '#e6f4f9',
+    primaryDark: '#064d66',
 
     // Secondary
     secondary: '#6366f1',
@@ -100,6 +106,11 @@ const colorTokens = createTokens({
     backgroundSecondary: '#1a1c1e',
     backgroundTertiary: '#202224',
 
+    // Room type background colors for chat
+    backgroundWarm: '#2A2520', // Small Group
+    backgroundCool: '#1A2530', // Ministry
+    backgroundAccent: '#2A1A25', // Church Wide
+
     text: '#ECEDEE',
     textSecondary: '#9BA1A6',
     textTertiary: '#687076',
@@ -110,6 +121,7 @@ const colorTokens = createTokens({
     primaryHover: '#f0f0f0',
     primaryActive: '#e0e0e0',
     primaryLight: 'rgba(255, 255, 255, 0.1)',
+    primaryDark: 'rgba(255, 255, 255, 0.2)',
 
     // Secondary
     secondary: '#818cf8',
@@ -234,6 +246,11 @@ const config = createTamagui({
       backgroundSecondary: colorTokens.light.backgroundSecondary,
       backgroundTertiary: colorTokens.light.backgroundTertiary,
 
+      // Room type background colors for chat
+      backgroundWarm: colorTokens.light.backgroundWarm,
+      backgroundCool: colorTokens.light.backgroundCool,
+      backgroundAccent: colorTokens.light.backgroundAccent,
+
       color: colorTokens.light.text,
       colorHover: colorTokens.light.text,
 
@@ -242,6 +259,7 @@ const config = createTamagui({
       primaryHover: colorTokens.light.primaryHover,
       primaryActive: colorTokens.light.primaryActive,
       primaryLight: colorTokens.light.primaryLight,
+      primaryDark: colorTokens.light.primaryDark,
 
       // Secondary colors
       secondary: colorTokens.light.secondary,
@@ -291,6 +309,11 @@ const config = createTamagui({
       backgroundSecondary: colorTokens.dark.backgroundSecondary,
       backgroundTertiary: colorTokens.dark.backgroundTertiary,
 
+      // Room type background colors for chat
+      backgroundWarm: colorTokens.dark.backgroundWarm,
+      backgroundCool: colorTokens.dark.backgroundCool,
+      backgroundAccent: colorTokens.dark.backgroundAccent,
+
       color: colorTokens.dark.text,
       colorHover: colorTokens.dark.text,
 
@@ -299,6 +322,7 @@ const config = createTamagui({
       primaryHover: colorTokens.dark.primaryHover,
       primaryActive: colorTokens.dark.primaryActive,
       primaryLight: colorTokens.dark.primaryLight,
+      primaryDark: colorTokens.dark.primaryDark,
 
       // Secondary colors
       secondary: colorTokens.dark.secondary,

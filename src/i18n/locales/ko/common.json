@@ -9,5 +9,22 @@
   "save": "저장",
   "delete": "삭제",
   "edit": "편집",
-  "network_error": "네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도해 주세요."
+  "network_error": "네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도해 주세요.",
+  "chat": {
+    "title": "채팅",
+    "chat": "채팅",
+    "empty_state": "대화가 없습니다",
+    "empty_state_description": "대화를 시작하려면 누군가에게 메시지를 보내세요",
+    "message_placeholder": "메시지를 입력하세요...",
+    "send": "전송",
+    "today": "오늘",
+    "yesterday": "어제",
+    "new_messages": "새 메시지",
+    "loading_messages": "메시지 로딩 중...",
+    "no_messages": "메시지가 없습니다",
+    "start_conversation": "대화를 시작하세요",
+    "small_group": "소그룹",
+    "ministry": "사역",
+    "church_wide": "교회 전체"
+  }
 }

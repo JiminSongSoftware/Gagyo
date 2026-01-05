@@ -541,3 +541,231 @@ export default function FeatureScreen() {
   );
 }
 ```
+
+## Lessons Learned: Chat Feature
+
+### Chat Architecture Overview
+
+**Multi-Tenant Chat Isolation**:
+- All messages and conversations are scoped by `tenant_id`
+- RLS policies ensure users can only access conversations from their tenant
+- Conversation participants table controls access to individual conversations
+- Cross-tenant message access is prevented at database level
+
+**Conversation Types**:
+- `direct`: 1-on-1 messaging between two users
+- `small_group`: Group chat for small group members
+- `ministry`: Ministry-wide communication
+- `church_wide`: Entire church announcements
+
+**Room Type Visual Differentiation**:
+- Each conversation type has a unique background color in the theme
+- `small_group`: `$backgroundWarm` (warm tone)
+- `ministry`: `$backgroundCool` (cool tone)
+- `church_wide`: `$backgroundAccent` (accent/pink tone)
+- `direct`: `$background` (default background)
+
+### Message Display Patterns
+
+**Inverted FlatList for Chat**:
+```typescript
+<FlatList
+  inverted // Messages flow from bottom to top (newest at bottom)
+  data={messages}
+  renderItem={renderItem}
+  onEndReached={handleLoadMore} // Load older messages at top
+  onScroll={handleScroll}
+  scrollEventThrottle={400}
+/>
+```
+
+**Auto-Scroll Logic**:
+- Track scroll position with `isNearBottomRef`
+- Only auto-scroll when user is already near bottom
+- Prevents jumping when user is reading older messages
+- Uses `scrollToEnd({ animated: true })` for smooth UX
+
+**Real-Time Message State Management**:
+```typescript
+// Local state for real-time updates
+const [realTimeMessages, setRealTimeMessages] = useState<MessageWithSender[]>([]);
+
+// Initialize from useMessages hook
+useEffect(() => {
+  if (!loading && messages.length > 0) {
+    setRealTimeMessages(messages);
+  }
+}, [messages, loading]);
+
+// Subscribe to updates
+useMessageSubscription(conversationId, tenantId, {
+  onInsert: useCallback((message: MessageWithSender) => {
+    setRealTimeMessages((prev) => appendMessage(prev, message));
+  }, []),
+  onUpdate: useCallback((message: MessageWithSender) => {
+    setRealTimeMessages((prev) => updateMessage(prev, message));
+  }, []),
+  onDelete: useCallback((messageId: string) => {
+    setRealTimeMessages((prev) => removeMessage(prev, messageId));
+  }, []),
+});
+```
+
+### Message Bubbles
+
+**Styling by Ownership**:
+- Own messages: Right-aligned, `$primary` background color
+- Others' messages: Left-aligned, room-type background color
+- System messages: Centered, muted `$color3` text
+
+**Content Types Support**:
+- `text`: Standard text message
+- `image`: Image with thumbnail and expand-on-press
+- `prayer_card`: Styled card with prayer request content
+- `system`: Centered informational message (e.g., user joined)
+
+**Date Separators**:
+- Inserted between messages from different days
+- Uses localized labels: "Today", "Yesterday", or formatted date
+- Minimal padding and rounded background
+
+### Hooks Pattern
+
+**useMessages Hook**:
+```typescript
+interface UseMessagesResult {
+  messages: MessageWithSender[];
+  loading: boolean;
+  error: Error | null;
+  hasMore: boolean;
+  loadMore: () => Promise<void>;
+  refetch: () => Promise<void>;
+}
+
+// Pagination via cursor
+const { messages, loading, hasMore, loadMore } = useMessages(conversationId, tenantId);
+```
+
+**useMessageSubscription Hook**:
+```typescript
+useMessageSubscription(conversationId, tenantId, {
+  onInsert: (message) => { /* handle new message */ },
+  onUpdate: (message) => { /* handle update */ },
+  onDelete: (messageId) => { /* handle delete */ },
+  onError: (error) => { /* handle error */ },
+});
+```
+
+**useSendMessage Hook**:
+```typescript
+const { sendMessage, sending, error } = useSendMessage(
+  conversationId,
+  tenantId,
+  membershipId
+);
+
+await sendMessage('Hello world');
+```
+
+### Translation Keys
+
+**Chat Keys** (`common.chat.*`):
+- `title`: "Chat" / "채팅"
+- `chat`: "Chat" / "채팅"
+- `empty_state`: "No conversations yet" / "아직 대화가 없습니다"
+- `message_placeholder`: "Type a message..." / "메시지를 입력하세요..."
+- `send`: "Send" / "전송"
+- `today`: "Today" / "오늘"
+- `yesterday`: "Yesterday" / "어제"
+- `new_messages`: "New messages" / "새 메시지"
+- `loading_messages`: "Loading messages..." / "메시지 로딩 중..."
+- `no_messages`: "No messages yet" / "메시지가 없습니다"
+- `start_conversation`: "Start a conversation" / "대화를 시작하세요"
+- `small_group`: "Small Group" / "소그룹"
+- `ministry`: "Ministry" / "사역"
+- `church_wide`: "Church Wide" / "교회 전체"
+
+### Component Structure
+
+**Chat Feature Directory**:
+```
+src/features/chat/
+  components/
+    ConversationList.tsx      // List of all conversations
+    ConversationListItem.tsx   // Individual conversation item
+    MessageBubble.tsx          // Single message display
+    MessageList.tsx            // Paginated message list
+    MessageInput.tsx           // Text input with send button
+    index.ts                   // Barrel exports
+  hooks/
+    index.ts                   // Barrel exports
+    useConversations.ts        // Fetch conversation list
+    useMessages.ts             // Fetch messages with pagination
+    useSendMessage.ts          // Send message mutation
+    useMessageSubscription.ts  // Real-time message updates
+```
+
+**Dynamic Route**:
+```
+app/chat/[id].tsx  // Chat detail screen
+```
+
+### Common Patterns
+
+**Conversation List Item**:
+```typescript
+<ConversationListItem
+  conversation={conversation}
+  onPress={() => router.push(`/chat/${conversation.id}`)}
+  testID={`conversation-item-${conversation.id}`}
+/>
+```
+
+**Message Input**:
+```typescript
+<MessageInput
+  onSend={handleSend}
+  sending={sendingMessage}
+  error={sendError}
+  maxLength={2000}
+  placeholderKey="chat.message_placeholder"
+/>
+```
+
+**Room Type Background**:
+```typescript
+<TamaguiStack
+  backgroundColor={
+    conversationType === 'small_group'
+      ? '$backgroundWarm'
+      : conversationType === 'ministry'
+      ? '$backgroundCool'
+      : conversationType === 'church_wide'
+      ? '$backgroundAccent'
+      : '$background'
+  }
+>
+  {/* Chat content */}
+</TamaguiStack>
+```
+
+### Testing Considerations
+
+**Unit Tests**:
+- Mock `useMessages` with empty/loaded/error states
+- Test message bubble rendering for each content type
+- Verify room type background color application
+- Test real-time subscription callback behavior
+
+**Integration Tests**:
+- Test RLS policies for cross-tenant isolation
+- Verify real-time message subscriptions work
+- Test message pagination (loadMore)
+- Verify conversation participants control access
+
+**E2E Tests**:
+- Navigate to chat and verify list displays
+- Tap conversation and verify detail screen opens
+- Send message and verify it appears
+- Verify room type backgrounds apply correctly
+- Test navigation back to list preserves state
