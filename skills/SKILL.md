@@ -769,3 +769,245 @@ app/chat/[id].tsx  // Chat detail screen
 - Send message and verify it appears
 - Verify room type backgrounds apply correctly
 - Test navigation back to list preserves state
+
+## Lessons Learned: Event Chat Feature
+
+### Event Chat Overview
+
+**What is Event Chat?**
+Event Chat allows users to send messages in group chats while excluding specific members from seeing them. Primary use case: planning surprise events without the subject knowing.
+
+**Core Capabilities**:
+- Sender can select 1-5 users to exclude from seeing the message
+- Excluded users never see the message in any view (list, detail, search, notifications)
+- Only sender sees visual indicator (eye emoji 👁️) on Event Chat messages
+- Exclusions are immutable once message is sent
+
+### Database Schema
+
+**messages table**:
+```sql
+is_event_chat BOOLEAN DEFAULT false  -- Marks Event Chat messages
+```
+
+**event_chat_exclusions table**:
+```sql
+message_id UUID REFERENCES messages(id) ON DELETE CASCADE
+excluded_membership_id UUID REFERENCES memberships(id)
+```
+
+**RLS Policy Pattern**:
+```sql
+-- Messages SELECT policy filters out excluded messages
+CREATE POLICY event_chat_visibility ON messages
+  FOR SELECT
+  USING (
+    NOT EXISTS (
+      SELECT 1 FROM event_chat_exclusions
+      WHERE event_chat_exclusions.message_id = messages.id
+        AND event_chat_exclusions.excluded_membership_id =
+            (SELECT id FROM memberships WHERE user_id = auth.uid())
+    )
+  );
+```
+
+### API Contract
+
+**Send Event Chat Message**:
+```typescript
+interface SendMessageOptions {
+  content: string;
+  contentType?: MessageContentType;
+  excludedMembershipIds?: string[];  // For Event Chat
+}
+
+// Usage
+await sendMessageWithOptions({
+  content: 'Surprise party planning!',
+  excludedMembershipIds: ['user-id-1', 'user-id-2'],
+});
+```
+
+### Validation Rules
+
+| Rule | Description | Enforcement |
+|------|-------------|--------------|
+| **Cannot exclude self** | Sender cannot be in exclusion list | Client + Database |
+| **Max 5 exclusions** | Cannot select more than 5 users | Client + Database |
+| **Must be member** | Excluded users must be conversation participants | Client + Database |
+| **Immutable** | Once sent, exclusions cannot be modified | Database (no UPDATE) |
+
+### UI Components
+
+**EventChatSelector Modal** (`src/features/chat/components/EventChatSelector.tsx`):
+```typescript
+interface EventChatSelectorProps {
+  conversationId: string;
+  tenantId: string;
+  currentMembershipId: string;
+  visible: boolean;
+  onConfirm: (excludedMembershipIds: string[]) => void;
+  onCancel: () => void;
+}
+```
+
+Features:
+- Fetches conversation participants via Supabase
+- Filters out current user from exclusion list
+- Multi-select with checkboxes (max 5)
+- Displays selected count (e.g., "2 of 5 selected")
+- Disabled state after 5 selections with error message
+
+**MessageInput Integration**:
+```typescript
+interface MessageInputProps {
+  onSend: (content: string) => Promise<void>;
+  onSendEventChat?: (options: SendMessageOptions) => Promise<void>;
+  conversationId?: string;
+  tenantId?: string;
+  currentMembershipId?: string;
+  // ... other props
+}
+```
+
+**Event Chat Button** (👁️ icon):
+- Only shown when `onSendEventChat` + all IDs are provided
+- Opens EventChatSelector modal
+- Disabled during message sending
+
+**Event Chat Mode Indicator**:
+- Shows when Event Chat mode is active
+- Displays excluded count: "Event Chat mode (2 excluded)"
+- Cancel button to exit Event Chat mode
+- Warning color theme to distinguish from normal mode
+
+### Hook Extension
+
+**useSendMessage Hook** (`src/features/chat/hooks/useSendMessage.ts`):
+```typescript
+interface SendMessageState {
+  sendMessage: (content: string) => Promise<MessageWithSender | null>;
+  sendMessageWithOptions: (options: SendMessageOptions) => Promise<MessageWithSender | null>;
+  sending: boolean;
+  error: Error | null;
+}
+
+// Returns both simple and advanced send methods
+const { sendMessage, sendMessageWithOptions, sending, error } = useSendMessage(
+  conversationId,
+  tenantId,
+  membershipId
+);
+```
+
+**Validation Logic** (in `sendMessageWithOptions`):
+```typescript
+// Validate max 5 exclusions
+if (excludedMembershipIds.length > 5) {
+  setError(new Error('Cannot exclude more than 5 users'));
+  return null;
+}
+
+// Validate sender not in exclusion list
+if (excludedMembershipIds.includes(senderMembershipId)) {
+  setError(new Error('Cannot exclude yourself'));
+  return null;
+}
+
+// Insert message first, then exclusions
+const { data } = await supabase.from('messages').insert({...}).select().single();
+
+if (isEventChat && excludedMembershipIds) {
+  const exclusions = excludedMembershipIds.map((id) => ({
+    message_id: data.id,
+    excluded_membership_id: id,
+  }));
+  await supabase.from('event_chat_exclusions').insert(exclusions);
+}
+```
+
+### Translation Keys
+
+**Event Chat Keys** (`chat.json`):
+```json
+{
+  "event_chat_selector_title": "Select users to exclude" / "제외할 사용자 선택",
+  "event_chat_selected_count": "{{count}} of 5 selected" / "5명 중 {{count}}명 선택",
+  "event_chat_max_reached": "Maximum 5 users can be excluded" / "최대 5명까지 제외 가능",
+  "event_chat_mode_active": "Event Chat mode ({{count}} excluded)" / "이벤트 채팅 모드 ({{count}}명 제외)",
+  "cancel_event_chat": "Cancel" / "취소",
+  "confirm_event_chat": "Confirm" / "확인"
+}
+```
+
+### Testing
+
+**Integration Tests** (`__tests__/integration/event-chat-rls.test.ts`):
+- Sender can see their own Event Chat message
+- Excluded user cannot see Event Chat message (RLS blocks it)
+- Non-excluded user can see Event Chat message
+- `event_chat_exclusions` table only readable by sender
+- Multiple exclusions (up to 5) work correctly
+- Regular messages unaffected by Event Chat RLS
+
+**E2E Tests** (`e2e/event-chat.test.ts`):
+- Open Event Chat selector modal
+- Display list of conversation participants
+- Select/deselect users for exclusion
+- Max 5 validation enforced
+- Event Chat mode indicator shows excluded count
+- Send Event Chat message with eye indicator
+- Multi-user visibility (excluded vs non-excluded)
+- Mode resets after sending message
+
+**Test IDs**:
+- `event-chat-button` - Event Chat toggle button
+- `event-chat-selector-modal` - Selector modal
+- `participant-list` - List of participants
+- `exclude-user-{displayName}` - User exclusion checkbox
+- `event-chat-confirm-button` - Confirm selections
+- `event-chat-cancel-button` - Cancel/close selector
+- `event-chat-mode-indicator` - Active mode badge
+- `event-chat-indicator` - Eye emoji on message bubble
+- `event-chat-send-button` - Send button in Event Chat mode
+
+### Common Patterns
+
+**Sending Event Chat Message**:
+```typescript
+const handleSendEventChat = useCallback(
+  async (options: SendMessageOptions) => {
+    await sendMessageWithOptions(options);
+  },
+  [sendMessageWithOptions]
+);
+
+<MessageInput
+  onSend={handleSend}
+  onSendEventChat={handleSendEventChat}
+  conversationId={conversationId}
+  tenantId={tenantId}
+  currentMembershipId={membershipId}
+/>
+```
+
+**Checking Event Chat Support**:
+```typescript
+const hasEventChatSupport =
+  onSendEventChat && conversationId && tenantId && currentMembershipId;
+```
+
+### Security Considerations
+
+**RLS Enforcement**:
+- Messages table RLS filters out messages where user is in exclusions
+- `event_chat_exclusions` table only readable by message sender
+- Tenant isolation enforced at RLS level (tenant_id check)
+
+**Client-Side Validation**:
+- Max 5 exclusions enforced in UI (disabled after 5)
+- Current user filtered from participant list
+- Validation errors shown to user with i18n messages
+
+### Figma References
+- Event Chat UI: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=202-1163

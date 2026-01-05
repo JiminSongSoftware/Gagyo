@@ -30,6 +30,7 @@ import { MessageList, MessageInput } from '@/features/chat/components';
 import { getRoomBackgroundColor } from '@/features/chat/utils/getRoomBackgroundColor';
 import { supabase } from '@/lib/supabase';
 import type { ConversationType, MessageWithSender } from '@/types/database';
+import type { SendMessageOptions } from '@/features/chat/hooks/useSendMessage';
 
 export default function ChatDetailScreen() {
   const { t } = useTranslation();
@@ -67,6 +68,7 @@ export default function ChatDetailScreen() {
   // Send message mutation
   const {
     sendMessage,
+    sendMessageWithOptions,
     sending: sendingMessage,
     error: sendError,
   } = useSendMessage(conversationId, tenantId, membershipId);
@@ -129,6 +131,13 @@ export default function ChatDetailScreen() {
       await sendMessage(content);
     },
     [sendMessage]
+  );
+
+  const handleSendEventChat = useCallback(
+    async (options: SendMessageOptions) => {
+      await sendMessageWithOptions(options);
+    },
+    [sendMessageWithOptions]
   );
 
   const handleBack = useCallback(() => {
@@ -203,7 +212,15 @@ export default function ChatDetailScreen() {
             borderTopWidth={1}
             borderTopColor="$borderLight"
           >
-            <MessageInput onSend={handleSend} sending={sendingMessage} error={sendError} />
+            <MessageInput
+              onSend={handleSend}
+              onSendEventChat={handleSendEventChat}
+              sending={sendingMessage}
+              error={sendError}
+              conversationId={conversationId}
+              tenantId={tenantId}
+              currentMembershipId={membershipId}
+            />
           </TamaguiStack>
         </KeyboardAvoidingView>
       </TamaguiStack>

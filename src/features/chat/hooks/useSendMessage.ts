@@ -2,16 +2,26 @@
  * Hook for sending messages in a conversation.
  *
  * Provides a mutation function for sending messages with tenant isolation.
+ * Supports Event Chat mode for selective message visibility.
  */
 
 import { useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { MessageContentType, MessageWithSender } from '@/types/database';
 
+export interface SendMessageOptions {
+  content: string;
+  contentType?: MessageContentType;
+  excludedMembershipIds?: string[]; // For Event Chat
+}
+
 export interface SendMessageState {
   sendMessage: (
     content: string,
     contentType?: MessageContentType
+  ) => Promise<MessageWithSender | null>;
+  sendMessageWithOptions: (
+    options: SendMessageOptions
   ) => Promise<MessageWithSender | null>;
   sending: boolean;
   error: Error | null;
@@ -28,7 +38,7 @@ export interface SendMessageState {
  * @example
  * ```tsx
  * function MessageInput() {
- *   const { sendMessage, sending, error } = useSendMessage(
+ *   const { sendMessage, sendMessageWithOptions, sending, error } = useSendMessage(
  *     conversationId,
  *     tenantId,
  *     membershipId
@@ -36,6 +46,14 @@ export interface SendMessageState {
  *
  *   const handleSend = async () => {
  *     await sendMessage(inputText);
+ *     setInputText('');
+ *   };
+ *
+ *   const handleEventChatSend = async (excludedIds: string[]) => {
+ *     await sendMessageWithOptions({
+ *       content: inputText,
+ *       excludedMembershipIds: excludedIds,
+ *     });
  *     setInputText('');
  *   };
  *
@@ -59,11 +77,12 @@ export function useSendMessage(
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const sendMessage = useCallback(
+  const sendMessageWithOptions = useCallback(
     async (
-      content: string,
-      contentType: MessageContentType = 'text'
+      options: SendMessageOptions
     ): Promise<MessageWithSender | null> => {
+      const { content, contentType = 'text', excludedMembershipIds } = options;
+
       if (!conversationId || !tenantId || !senderMembershipId) {
         setError(new Error('Missing required parameters'));
         return null;
@@ -74,10 +93,28 @@ export function useSendMessage(
         return null;
       }
 
+      // Event Chat validation
+      if (excludedMembershipIds && excludedMembershipIds.length > 0) {
+        // Validate max 5 exclusions
+        if (excludedMembershipIds.length > 5) {
+          setError(new Error('Cannot exclude more than 5 users'));
+          return null;
+        }
+
+        // Validate sender not in exclusion list
+        if (excludedMembershipIds.includes(senderMembershipId)) {
+          setError(new Error('Cannot exclude yourself'));
+          return null;
+        }
+      }
+
       setSending(true);
       setError(null);
 
       try {
+        const isEventChat =
+          excludedMembershipIds && excludedMembershipIds.length > 0;
+
         const { data, error: insertError } = await supabase
           .from('messages')
           .insert({
@@ -86,6 +123,7 @@ export function useSendMessage(
             sender_id: senderMembershipId,
             content: content.trim(),
             content_type: contentType,
+            is_event_chat: isEventChat,
           })
           .select(
             `
@@ -114,6 +152,26 @@ export function useSendMessage(
 
         if (insertError) {
           throw insertError;
+        }
+
+        // If Event Chat, insert exclusions after message creation
+        if (data && isEventChat && excludedMembershipIds) {
+          const exclusions = excludedMembershipIds.map((membershipId) => ({
+            message_id: data.id,
+            excluded_membership_id: membershipId,
+          }));
+
+          const { error: exclusionsError } = await supabase
+            .from('event_chat_exclusions')
+            .insert(exclusions);
+
+          if (exclusionsError) {
+            // Log error but don't fail the message send
+            console.error(
+              'Failed to insert event chat exclusions:',
+              exclusionsError
+            );
+          }
         }
 
         // Update conversation updated_at to move it to top of list
@@ -163,8 +221,19 @@ export function useSendMessage(
     [conversationId, tenantId, senderMembershipId]
   );
 
+  const sendMessage = useCallback(
+    async (
+      content: string,
+      contentType: MessageContentType = 'text'
+    ): Promise<MessageWithSender | null> => {
+      return sendMessageWithOptions({ content, contentType });
+    },
+    [sendMessageWithOptions]
+  );
+
   return {
     sendMessage,
+    sendMessageWithOptions,
     sending,
     error,
   };

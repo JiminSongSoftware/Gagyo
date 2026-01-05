@@ -7,13 +7,16 @@
  * - Character limit indicator
  * - Send button disabled when empty or sending
  * - Error display
+ * - Event Chat mode for selective message visibility
  * - Typing indicator support (future)
  */
 
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { TextInput, Pressable, Platform } from 'react-native';
-import { Stack, Text as TamaguiText, useTheme } from 'tamagui';
+import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
+import type { SendMessageOptions } from '../hooks/useSendMessage';
+import { EventChatSelector } from './EventChatSelector';
 
 export interface MessageInputProps {
   /**
@@ -21,6 +24,12 @@ export interface MessageInputProps {
    * @param content - The message content to send
    */
   onSend: (content: string) => Promise<void>;
+
+  /**
+   * Callback when Event Chat message is sent.
+   * @param options - Message options including excluded user IDs
+   */
+  onSendEventChat?: (options: SendMessageOptions) => Promise<void>;
 
   /**
    * Whether a message is currently being sent.
@@ -46,6 +55,21 @@ export interface MessageInputProps {
    * Test ID for E2E testing.
    */
   testID?: string;
+
+  /**
+   * Conversation ID for Event Chat participant fetching.
+   */
+  conversationId?: string;
+
+  /**
+   * Tenant ID for Event Chat.
+   */
+  tenantId?: string;
+
+  /**
+   * Current user's membership ID (filtered from exclusion list).
+   */
+  currentMembershipId?: string;
 }
 
 const DEFAULT_MAX_LENGTH = 2000;
@@ -55,11 +79,15 @@ const DEFAULT_MAX_LENGTH = 2000;
  */
 export function MessageInput({
   onSend,
+  onSendEventChat,
   sending,
   error,
   maxLength = DEFAULT_MAX_LENGTH,
   placeholder,
   testID,
+  conversationId,
+  tenantId,
+  currentMembershipId,
 }: MessageInputProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -67,6 +95,11 @@ export function MessageInput({
   const [inputText, setInputText] = useState('');
   const [inputHeight, setInputHeight] = useState(40);
   const textInputRef = useRef<TextInput>(null);
+
+  // Event Chat state
+  const [isEventChatMode, setIsEventChatMode] = useState(false);
+  const [excludedMembershipIds, setExcludedMembershipIds] = useState<string[]>([]);
+  const [selectorVisible, setSelectorVisible] = useState(false);
 
   const actualPlaceholder = placeholder || t('chat.message_placeholder');
 
@@ -89,12 +122,44 @@ export function MessageInput({
     setInputHeight(40);
 
     try {
-      await onSend(trimmed);
+      if (isEventChatMode && onSendEventChat && excludedMembershipIds.length > 0) {
+        await onSendEventChat({
+          content: trimmed,
+          excludedMembershipIds,
+        });
+      } else {
+        await onSend(trimmed);
+      }
+
+      // Reset Event Chat mode after successful send
+      setIsEventChatMode(false);
+      setExcludedMembershipIds([]);
     } catch {
       // Restore input on error
       setInputText(trimmed);
     }
-  }, [inputText, sending, onSend]);
+  }, [
+    inputText,
+    sending,
+    onSend,
+    isEventChatMode,
+    onSendEventChat,
+    excludedMembershipIds,
+  ]);
+
+  const handleEventChatSelectorConfirm = useCallback(
+    (selectedIds: string[]) => {
+      setExcludedMembershipIds(selectedIds);
+      setIsEventChatMode(true);
+      setSelectorVisible(false);
+    },
+    []
+  );
+
+  const handleCancelEventChat = useCallback(() => {
+    setIsEventChatMode(false);
+    setExcludedMembershipIds([]);
+  }, []);
 
   const handleChangeText = useCallback((text: string) => {
     setInputText(text);
@@ -112,105 +177,175 @@ export function MessageInput({
   const charCount = inputText.length;
   const nearLimit = charCount > maxLength * 0.9;
 
+  const hasEventChatSupport =
+    onSendEventChat && conversationId && tenantId && currentMembershipId;
+
   return (
-    <Stack
-      testID={testID || 'message-input'}
-      borderWidth={1}
-      borderColor="$borderLight"
-      borderRadius="$3"
-      backgroundColor="$background"
-      padding="$2"
-      gap="$2"
-    >
-      {/* Error display */}
-      {error && (
-        <Stack
-          testID="message-input-error"
-          backgroundColor="$dangerLight"
-          borderRadius="$2"
-          paddingHorizontal="$3"
-          paddingVertical="$2"
-        >
-          <TamaguiText fontSize="$xs" color="$danger">
-            {error.message}
-          </TamaguiText>
-        </Stack>
-      )}
-
-      <Stack flexDirection="row" alignItems="flex-end" gap="$2">
-        {/* Text input */}
-        <Stack flex={1} backgroundColor="$backgroundTertiary" borderRadius="$2" minHeight={40}>
-          <TextInput
-            ref={textInputRef}
-            testID="message-text-input"
-            value={inputText}
-            onChangeText={handleChangeText}
-            onContentSizeChange={handleContentSizeChange}
-            placeholder={actualPlaceholder}
-            placeholderTextColor={theme.color3?.val}
-            multiline
-            maxLength={maxLength}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: Platform.select({
-                ios: 8,
-                android: 8,
-              }),
-              fontSize: 16,
-              color: theme.color1?.val,
-              minHeight: inputHeight,
-              maxHeight: 100,
-              textAlignVertical: 'top',
-            }}
-            returnKeyType="send"
-            onSubmitEditing={canSend ? () => void handleSend() : undefined}
-            blurOnSubmit={false}
-            editable={!sending}
-          />
-        </Stack>
-
-        {/* Send button */}
-        <Pressable
-          testID="send-message-button"
-          onPress={() => void handleSend()}
-          disabled={!canSend}
-          style={({ pressed }) => ({
-            opacity: pressed || !canSend ? 0.5 : 1,
-          })}
-        >
+    <>
+      <Stack
+        testID={testID || 'message-input'}
+        borderWidth={1}
+        borderColor="$borderLight"
+        borderRadius="$3"
+        backgroundColor="$background"
+        padding="$2"
+        gap="$2"
+      >
+        {/* Error display */}
+        {error && (
           <Stack
-            width={40}
-            height={40}
-            borderRadius={20}
-            backgroundColor={canSend ? '$primary' : '$backgroundTertiary'}
-            alignItems="center"
-            justifyContent="center"
+            testID="message-input-error"
+            backgroundColor="$dangerLight"
+            borderRadius="$2"
+            paddingHorizontal="$3"
+            paddingVertical="$2"
           >
-            {sending ? (
-              <TamaguiText fontSize="$xs" color="white">
-                ...
-              </TamaguiText>
-            ) : (
-              <TamaguiText fontSize="$md" color="white">
-                Send
-              </TamaguiText>
-            )}
+            <TamaguiText fontSize="$xs" color="$danger">
+              {error.message}
+            </TamaguiText>
           </Stack>
-        </Pressable>
+        )}
+
+        {/* Event Chat mode indicator */}
+        {isEventChatMode && (
+          <XStack
+            testID="event-chat-mode-indicator"
+            backgroundColor="$warningLight"
+            borderRadius="$2"
+            paddingHorizontal="$3"
+            paddingVertical="$2"
+            alignItems="center"
+            gap="$2"
+          >
+            <TamaguiText fontSize="$sm" color="$warning">
+              {t('chat.event_chat_mode_active', {
+                count: excludedMembershipIds.length,
+              })}
+            </TamaguiText>
+            <Pressable onPress={handleCancelEventChat}>
+              <TamaguiText fontSize="$xs" color="$warning" fontWeight="bold">
+                {t('chat.cancel_event_chat')}
+              </TamaguiText>
+            </Pressable>
+          </XStack>
+        )}
+
+        <Stack flexDirection="row" alignItems="flex-end" gap="$2">
+          {/* Text input */}
+          <Stack flex={1} backgroundColor="$backgroundTertiary" borderRadius="$2" minHeight={40}>
+            <TextInput
+              ref={textInputRef}
+              testID="message-text-input"
+              value={inputText}
+              onChangeText={handleChangeText}
+              onContentSizeChange={handleContentSizeChange}
+              placeholder={actualPlaceholder}
+              placeholderTextColor={theme.color3?.val}
+              multiline
+              maxLength={maxLength}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: Platform.select({
+                  ios: 8,
+                  android: 8,
+                }),
+                fontSize: 16,
+                color: theme.color1?.val,
+                minHeight: inputHeight,
+                maxHeight: 100,
+                textAlignVertical: 'top',
+              }}
+              returnKeyType="send"
+              onSubmitEditing={canSend ? () => void handleSend() : undefined}
+              blurOnSubmit={false}
+              editable={!sending}
+            />
+          </Stack>
+
+          {/* Event Chat button */}
+          {hasEventChatSupport && !isEventChatMode && (
+            <Pressable
+              testID="event-chat-button"
+              onPress={() => setSelectorVisible(true)}
+              disabled={sending}
+            >
+              <Stack
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor="$backgroundTertiary"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <TamaguiText fontSize="$lg">👁️</TamaguiText>
+              </Stack>
+            </Pressable>
+          )}
+
+          {/* Send button */}
+          <Pressable
+            testID={isEventChatMode ? 'event-chat-send-button' : 'send-message-button'}
+            onPress={() => void handleSend()}
+            disabled={!canSend}
+            style={({ pressed }) => ({
+              opacity: pressed || !canSend ? 0.5 : 1,
+            })}
+          >
+            <Stack
+              width={40}
+              height={40}
+              borderRadius={20}
+              backgroundColor={
+                isEventChatMode
+                  ? '$warning'
+                  : canSend
+                    ? '$primary'
+                    : '$backgroundTertiary'
+              }
+              alignItems="center"
+              justifyContent="center"
+            >
+              {sending ? (
+                <TamaguiText fontSize="$xs" color="white">
+                  ...
+                </TamaguiText>
+              ) : (
+                <TamaguiText
+                  fontSize="$md"
+                  color={isEventChatMode ? 'white' : 'white'}
+                >
+                  {isEventChatMode ? 'EC' : t('chat.send')}
+                </TamaguiText>
+              )}
+            </Stack>
+          </Pressable>
+        </Stack>
+
+        {/* Character count */}
+        {nearLimit && (
+          <Stack alignItems="flex-end">
+            <TamaguiText
+              testID="character-count"
+              fontSize="$xs"
+              color={charCount >= maxLength ? '$danger' : '$color3'}
+            >
+              {charCount}/{maxLength}
+            </TamaguiText>
+          </Stack>
+        )}
       </Stack>
 
-      {/* Character count */}
-      {nearLimit && (
-        <Stack alignItems="flex-end">
-          <TamaguiText
-            testID="character-count"
-            fontSize="$xs"
-            color={charCount >= maxLength ? '$danger' : '$color3'}
-          >
-            {charCount}/{maxLength}
-          </TamaguiText>
-        </Stack>
+      {/* Event Chat Selector Modal */}
+      {hasEventChatSupport && (
+        <EventChatSelector
+          conversationId={conversationId!}
+          tenantId={tenantId!}
+          currentMembershipId={currentMembershipId!}
+          visible={selectorVisible}
+          onConfirm={handleEventChatSelectorConfirm}
+          onCancel={() => setSelectorVisible(false)}
+        />
       )}
-    </Stack>
+    </>
   );
 }
