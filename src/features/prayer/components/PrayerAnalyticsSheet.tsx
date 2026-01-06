@@ -235,7 +235,7 @@ export function PrayerAnalyticsSheet({
             <YStack padding="$4" alignItems="center" testID="analytics-loading">
               <ActivityIndicator size="small" color={theme.primary?.val} />
               <TamaguiText fontSize="$sm" color="$color3" marginTop="$2">
-                Loading...
+                {t('common.loading')}
               </TamaguiText>
             </YStack>
           ) : error ? (

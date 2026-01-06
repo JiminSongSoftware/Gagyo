@@ -1465,5 +1465,356 @@ if (existingStatus !== 'granted') {
 
 ### Related Documentation
 - `claude_docs/06_push_notifications.md` - Full push notification specification
+- `claude_docs/19_prayer_analytics.md` - Prayer analytics specification
 - `supabase/functions/*/index.ts` - Edge Function implementations
 - `src/features/notifications/` - Client-side notification features
+
+---
+
+## Lessons Learned: Prayer Analytics
+
+### Overview
+
+**What is Prayer Analytics?**
+Prayer Analytics provides statistical insights into prayer activity across three scopes (individual, small group, church-wide) and five time periods (weekly, monthly, quarterly, semi-annual, annual). The feature displays total prayers, answered prayers, and answer rate with a simple bar chart visualization.
+
+**Key Capabilities**:
+- Three visibility scopes with RLS enforcement
+- Five configurable time periods with date range calculations
+- Three metrics: total prayers, answered prayers, answer rate (rounded to 1 decimal)
+- Custom bar chart visualization using Tamagui
+- Full i18n support (English + Korean)
+
+### Database Schema
+
+**prayer_cards table** (analytics queries this table):
+```sql
+id              UUID PRIMARY KEY
+tenant_id       UUID  -- Tenant ownership (RLS enforced)
+author_id       UUID  -- FK to memberships (creator)
+recipient_scope enum -- 'individual' | 'small_group' | 'church_wide'
+answered        BOOLEAN
+answered_at     TIMESTAMP
+created_at      TIMESTAMP
+title           TEXT
+content         TEXT
+```
+
+**RLS Policies for Analytics**:
+- Individual scope: `author_id = current_membership_id`
+- Small group scope: `recipient_scope='small_group'` + RLS checks small group membership
+- Church-wide scope: `recipient_scope='church_wide'` (all tenant members)
+- Tenant isolation: All queries include `tenant_id` filter
+
+### Query Patterns
+
+**Individual Scope**:
+```typescript
+supabase
+  .from('prayer_cards')
+  .select('id, answered, created_at')
+  .eq('tenant_id', tenantId)
+  .eq('author_id', membershipId)
+  .gte('created_at', startDate)
+  .lte('created_at', endDate)
+```
+
+**Small Group Scope**:
+```typescript
+supabase
+  .from('prayer_cards')
+  .select('id, answered, created_at')
+  .eq('tenant_id', tenantId)
+  .eq('recipient_scope', 'small_group')
+  .gte('created_at', startDate)
+  .lte('created_at', endDate)
+// RLS handles small group membership filtering
+```
+
+**Church-wide Scope**:
+```typescript
+supabase
+  .from('prayer_cards')
+  .select('id, answered, created_at')
+  .eq('tenant_id', tenantId)
+  .eq('recipient_scope', 'church_wide')
+  .gte('created_at', startDate)
+  .lte('created_at', endDate)
+```
+
+### Date Range Calculations
+
+```typescript
+function getDateRange(period: AnalyticsPeriod): { startDate: string; endDate: string } {
+  const now = new Date();
+  const endDate = now.toISOString();
+  let startDate: Date;
+
+  switch (period) {
+    case 'weekly':
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 7);
+      break;
+    case 'monthly':
+      startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 1);
+      break;
+    case 'quarterly':
+      startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 3);
+      break;
+    case 'semi_annual':
+      startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 6);
+      break;
+    case 'annual':
+      startDate = new Date(now);
+      startDate.setFullYear(now.getFullYear() - 1);
+      break;
+  }
+
+  return { startDate: startDate.toISOString(), endDate };
+}
+```
+
+### Metrics Calculation
+
+```typescript
+const totalPrayers = prayerCards.length;
+const answeredPrayers = prayerCards.filter(p => p.answered).length;
+const answerRate = totalPrayers > 0
+  ? Math.round((answeredPrayers / totalPrayers) * 100 * 10) / 10  // Round to 1 decimal
+  : 0;
+```
+
+**Edge Cases**:
+- Zero prayers: `answerRate = 0` (not NaN or undefined)
+- All answered: `answerRate = 100.0`
+- None answered: `answerRate = 0.0`
+- Rounding: 1 decimal place (e.g., 66.7%)
+
+### UI Components
+
+**PrayerAnalyticsSheet** (`src/features/prayer/components/PrayerAnalyticsSheet.tsx`):
+```typescript
+interface PrayerAnalyticsSheetProps {
+  tenantId: string;              // The tenant ID for analytics
+  membershipId: string;          // The current user's membership ID
+  smallGroupId: string | null;   // The current user's small group ID
+  onClose: () => void;           // Callback when sheet is closed
+  visible: boolean;              // Whether the sheet is visible
+}
+```
+
+**Component Structure**:
+- SheetOverlay (backdrop tap to close)
+- SheetContent (slide-up panel with rounded corners)
+- HandleBar (drag indicator)
+- Scope Tabs (My Statistics, Small Group Statistics, Church-wide Statistics)
+- Period Selector (horizontal scroll: Weekly, Monthly, Quarterly, Semi-annual, Annual)
+- Stat Cards (Total Prayers, Answered Prayers, Answer Rate)
+- SimpleBarChart (three proportional bars: Total, Answered, Unanswered)
+
+**Custom Bar Chart Decision**:
+- Used custom Tamagui Stack implementation instead of external charting library
+- Reasons: Bundle size efficiency, full Tamagui theme integration, simplicity for three-bar visualization
+- Evaluated: Victory Native, react-native-gifted-charts, react-native-svg-charts
+- Decision documented in SDD spec
+
+### Hook Interface
+
+**usePrayerAnalytics** (`src/features/prayer/hooks/usePrayerAnalytics.ts`):
+```typescript
+interface PrayerAnalyticsState {
+  analytics: PrayerAnalytics | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+interface PrayerAnalytics {
+  totalPrayers: number;
+  answeredPrayers: number;
+  answerRate: number;
+  period: AnalyticsPeriod;
+  scope: AnalyticsScope;
+}
+
+const { analytics, loading, error, refetch } = usePrayerAnalytics(
+  tenantId,
+  scope,      // 'individual' | 'small_group' | 'church_wide'
+  scopeId,    // membershipId | smallGroupId | null
+  period      // 'weekly' | 'monthly' | 'quarterly' | 'semi_annual' | 'annual'
+);
+```
+
+### Translation Keys
+
+**Prayer Analytics Keys** (`prayer.json`):
+```json
+{
+  "analytics_title": "Prayer Analytics" / "기도 통계",
+  "my_statistics": "My Statistics" / "내 통계",
+  "small_group_statistics": "Small Group Statistics" / "소그룹 통계",
+  "church_wide_statistics": "Church-wide Statistics" / "교회 전체 통계",
+  "total_prayers": "Total Prayers" / "총 기도",
+  "answered_prayers": "Answered Prayers" / "응답된 기도",
+  "answered_rate": "Answer Rate" / "응답률",
+  "weekly": "Weekly" / "주간",
+  "monthly": "Monthly" / "월간",
+  "quarterly": "Quarterly" / "분기",
+  "semi_annual": "Semi-annual" / "반기",
+  "annual": "Annual" / "연간",
+  "total": "Total" / "전체",
+  "answered": "Answered" / "응답됨",
+  "unanswered": "Unanswered" / "기도 중",
+  "no_prayers": "No prayer cards yet" / "기도 카드가 없습니다",
+  "start_praying": "Start by creating a prayer card" / "기도 카드를 작성해 보세요"
+}
+```
+
+### Key Implementation Gotchas
+
+**Answer Rate Calculation**:
+```typescript
+// WRONG - can result in NaN
+answerRate = (answeredPrayers / totalPrayers) * 100
+
+// CORRECT - handles zero case explicitly
+answerRate = totalPrayers > 0
+  ? (answeredPrayers / totalPrayers) * 100
+  : 0;
+```
+
+**Small Group Scope**:
+- Uses `recipient_scope='small_group'` filter (not a direct join)
+- RLS policy handles actual small group membership verification
+- Don't need to query `prayer_card_recipients` table
+
+**Church-wide Scope**:
+- Uses `recipient_scope='church_wide'` filter
+- Simpler than small group - no membership check needed in query
+- All tenant members can query these prayers
+
+**Date Range Boundary Edge Cases**:
+- Use ISO strings for consistent timezone handling
+- Inclusive range: `gte` for start date, `lte` for end date
+- Prayers created exactly at period boundaries are included
+
+### Testing
+
+**Unit Tests** (`src/features/prayer/hooks/__tests__/usePrayerAnalytics.test.ts`):
+- Analytics calculations for all scopes
+- Date range logic for all five periods
+- Edge cases: zero prayers, all answered, none answered
+- Rounding behavior (1 decimal place)
+- Loading state transitions
+- Error handling (network failures, invalid tenant ID)
+- `refetch` function behavior
+
+**Integration Tests** (`__tests__/integration/prayer-analytics-rls.test.ts`):
+- Individual scope: User can query own prayers, cannot see others
+- Small group scope: User can query small group prayers only
+- Church-wide scope: All tenant members can query
+- Cross-tenant isolation enforced
+- Date range filtering for all five periods
+
+**E2E Tests** (`e2e/prayer.test.ts`):
+- Opening analytics sheet from prayer screen
+- Switching between three scope tabs
+- Switching between five period buttons
+- Displaying stat cards with correct values
+- Displaying bar chart visualization
+- Empty state when no prayers exist
+- Closing analytics sheet
+- i18n: Analytics UI in both English and Korean
+
+**Test IDs**:
+- `analytics-sheet-overlay` - Backdrop overlay
+- `analytics-sheet-content` - Sheet content container
+- `analytics-title` - Sheet title
+- `close-analytics-button` - Close button
+- `tab-my-stats` - Individual scope tab
+- `tab-group-stats` - Small group scope tab
+- `tab-church-stats` - Church-wide scope tab
+- `period-{weekly|monthly|...}` - Period buttons
+- `analytics-loading` - Loading state
+- `analytics-error` - Error state
+- `stat-total` - Total prayers card
+- `stat-answered` - Answered prayers card
+- `stat-rate` - Answer rate card
+- `bar-answered` - Answered bar in chart
+- `bar-unanswered` - Unanswered bar in chart
+- `analytics-empty` - Empty state
+
+### Common Patterns
+
+**Opening Analytics Sheet**:
+```typescript
+const [analyticsVisible, setAnalyticsVisible] = useState(false);
+
+<PrayerAnalyticsSheet
+  tenantId={activeTenantId}
+  membershipId={membershipId}
+  smallGroupId={smallGroupId}
+  visible={analyticsVisible}
+  onClose={() => setAnalyticsVisible(false)}
+/>
+```
+
+**Fetching Analytics for Different Scopes**:
+```typescript
+// Individual stats
+const { analytics: individualStats } = usePrayerAnalytics(
+  tenantId,
+  'individual',
+  membershipId,
+  'monthly'
+);
+
+// Small group stats
+const { analytics: groupStats } = usePrayerAnalytics(
+  tenantId,
+  'small_group',
+  smallGroupId,
+  'monthly'
+);
+
+// Church-wide stats
+const { analytics: churchStats } = usePrayerAnalytics(
+  tenantId,
+  'church_wide',
+  null,
+  'monthly'
+);
+```
+
+**Handling Zero Prayers Edge Case**:
+```typescript
+// In PrayerAnalyticsSheet component
+{analytics && analytics.totalPrayers === 0 && (
+  <YStack testID="analytics-empty">
+    <Text>{t('prayer.no_prayers')}</Text>
+    <Text>{t('prayer.start_praying')}</Text>
+  </YStack>
+)}
+```
+
+### Figma References
+- Prayer Analytics UI: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=354-39531
+
+### Related Files
+
+**Source Files**:
+- `src/features/prayer/hooks/usePrayerAnalytics.ts` - Analytics hook
+- `src/features/prayer/components/PrayerAnalyticsSheet.tsx` - Bottom sheet component
+
+**Test Files**:
+- `src/features/prayer/hooks/__tests__/usePrayerAnalytics.test.ts` - Unit tests
+- `__tests__/integration/prayer-analytics-rls.test.ts` - Integration tests
+- `e2e/prayer.test.ts` - E2E tests
+
+**Documentation**:
+- `claude_docs/19_prayer_analytics.md` - SDD specification
+- `locales/en/prayer.json` - English translations
+- `locales/ko/prayer.json` - Korean translations
