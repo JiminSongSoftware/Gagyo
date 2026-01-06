@@ -9,7 +9,6 @@
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import type { FileInfo } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system';
 import {
   uploadImage,
@@ -36,33 +35,12 @@ jest.mock('../supabase', () => ({
   },
 }));
 
-type FileSystemMock = {
-  getInfoAsync: jest.Mock<Promise<FileInfo>, [string, FileSystem.InfoOptions?]>;
-  readAsStringAsync: jest.Mock<Promise<string>, [string, FileSystem.ReadingOptions?]>;
-};
-
-type StorageMock = {
-  upload: jest.Mock<
-    Promise<{ error: null | { message: string }; data?: { path: string } }>,
-    [string, Uint8Array, Record<string, unknown>]
-  >;
-  getPublicUrl: jest.Mock<{ data: { publicUrl: string } }, [string]>;
-  remove: jest.Mock<Promise<{ error: null | { message: string } }>, [string[]]>;
-};
-
-type DatabaseMock = {
-  insert: jest.Mock;
-  select: jest.Mock;
-  single: jest.Mock;
-  delete: jest.Mock;
-  update: jest.Mock;
-};
-
-const mockFileSystem = FileSystem as unknown as FileSystemMock;
-const mockSupabase = supabase as unknown as {
-  storage: { from: jest.Mock<StorageMock, [string]> };
-  from: jest.Mock<DatabaseMock, [string]>;
-};
+const mockFileSystem = FileSystem as jest.Mocked<typeof FileSystem>;
+const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+const mockStorageFrom = mockSupabase.storage.from as jest.MockedFunction<
+  typeof mockSupabase.storage.from
+>;
+const mockDbFrom = mockSupabase.from as jest.MockedFunction<typeof mockSupabase.from>;
 
 describe('imageUpload', () => {
   const mockTenantId = 'tenant-123';
@@ -95,7 +73,9 @@ describe('imageUpload', () => {
       }),
       remove: jest.fn().mockResolvedValue({ error: null }),
     };
-    mockSupabase.storage.from.mockReturnValue(mockStorage);
+    mockStorageFrom.mockReturnValue(
+      mockStorage as unknown as ReturnType<typeof mockSupabase.storage.from>
+    );
 
     // Default Supabase database mock
     const mockDatabase = {
@@ -108,7 +88,7 @@ describe('imageUpload', () => {
       delete: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }),
       update: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }),
     };
-    mockSupabase.from.mockReturnValue(mockDatabase);
+    mockDbFrom.mockReturnValue(mockDatabase as unknown as ReturnType<typeof mockSupabase.from>);
   });
 
   // ============================================================================

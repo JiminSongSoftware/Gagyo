@@ -85,7 +85,7 @@ export function formatRelativeTime(date: Date, locale: AppLocale = 'en'): string
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   const translations: Record<
-    Locale,
+    AppLocale,
     {
       justNow: string;
       minute: string;

@@ -391,9 +391,8 @@ describe('Prayer Cards RLS - Integration Tests', () => {
         .eq('recipient_scope', 'church_wide')
         .limit(1);
 
-      if (prayers && prayers.length > 0) {
-        const prayerId = prayers[0].id;
-
+      const prayerId = prayers?.[0]?.id;
+      if (prayerId) {
         const { data, error } = await user1Client
           .from('prayer_card_recipients')
           .select('*')
@@ -471,9 +470,8 @@ describe('Prayer Cards RLS - Integration Tests', () => {
         .eq('answered', false)
         .limit(1);
 
-      if (prayers && prayers.length > 0) {
-        const prayerId = prayers[0].id;
-
+      const prayerId = prayers?.[0]?.id;
+      if (prayerId) {
         const { data, error } = await user1Client
           .from('prayer_cards')
           .update({ answered: true, answered_at: new Date().toISOString() })

@@ -2,6 +2,15 @@
  * i18n type definitions and module augmentations.
  */
 
+import type enCommon from '../../locales/en/common.json';
+import type enAuth from '../../locales/en/auth.json';
+import type enChat from '../../locales/en/chat.json';
+import type enPrayer from '../../locales/en/prayer.json';
+import type enPastoral from '../../locales/en/pastoral.json';
+import type enSettings from '../../locales/en/settings.json';
+import type enErrors from '../../locales/en/errors.json';
+import type enImages from '../../locales/en/images.json';
+
 /**
  * Available translation namespaces.
  */
@@ -12,7 +21,8 @@ export type TranslationNamespace =
   | 'prayer'
   | 'pastoral'
   | 'settings'
-  | 'errors';
+  | 'errors'
+  | 'images';
 
 /**
  * Helper type for translation keys with namespace.
@@ -75,13 +85,14 @@ export interface TranslationResources {
  * Namespace resources mapping.
  */
 export interface NamespaceResources {
-  common: TranslationResources;
-  auth: TranslationResources;
-  chat: TranslationResources;
-  prayer: TranslationResources;
-  pastoral: TranslationResources;
-  settings: TranslationResources;
-  errors: TranslationResources;
+  common: typeof enCommon;
+  auth: typeof enAuth;
+  chat: typeof enChat;
+  prayer: typeof enPrayer;
+  pastoral: typeof enPastoral;
+  settings: typeof enSettings;
+  errors: typeof enErrors;
+  images: typeof enImages;
 }
 
 /**
@@ -97,20 +108,7 @@ declare module 'i18next' {
     /**
      * Available namespaces.
      */
-    resources: {
-      common: true;
-      auth: true;
-      chat: true;
-      prayer: true;
-      pastoral: true;
-      settings: true;
-      errors: true;
-    };
-
-    /**
-     * Supported locales.
-     */
-    locales: ['en', 'ko'];
+    resources: NamespaceResources;
 
     /**
      * Return type for t function.

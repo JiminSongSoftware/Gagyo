@@ -72,25 +72,42 @@ async function getUser(client: SupabaseClient) {
 /**
  * Get user profile from users table
  */
-async function getUserProfile(client: SupabaseClient, userId: string) {
-  const { data, error } = await client
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+type NotificationPreferences = {
+  messages: boolean;
+  prayers: boolean;
+  journals: boolean;
+  system: boolean;
+};
+
+type UserProfileRow = {
+  display_name: string | null;
+  locale: string | null;
+  notification_preferences: NotificationPreferences;
+  photo_url: string | null;
+};
+
+type StorageUploadResult = {
+  path: string;
+};
+
+async function getUserProfile<T extends Record<string, unknown> = UserProfileRow>(
+  client: SupabaseClient,
+  userId: string
+): Promise<T> {
+  const { data, error } = await client.from('users').select('*').eq('id', userId).single();
 
   if (error) throw error;
-  return data as unknown;
+  return data as T;
 }
 
 /**
  * Update user profile
  */
-async function updateUserProfile(
+async function updateUserProfile<T extends Record<string, unknown> = UserProfileRow>(
   client: SupabaseClient,
   userId: string,
   updates: Record<string, unknown>
-) {
+): Promise<T> {
   const { data, error } = await client
     .from('users')
     .update(updates)
@@ -99,7 +116,7 @@ async function updateUserProfile(
     .single();
 
   if (error) throw error;
-  return data as unknown;
+  return data as T;
 }
 
 /**
@@ -109,19 +126,18 @@ async function uploadProfilePhoto(
   client: SupabaseClient,
   userId: string,
   fileName: string,
-  fileData: Uint8Array
+  fileData: Uint8Array,
+  upsert: boolean = false
 ) {
   const filePath = `${userId}/${fileName}`;
 
-  const { data, error } = await client.storage
-    .from('profile-photos')
-    .upload(filePath, fileData, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
+  const { data, error } = await client.storage.from('profile-photos').upload(filePath, fileData, {
+    contentType: 'image/jpeg',
+    upsert,
+  });
 
   if (error) throw error;
-  return data as unknown;
+  return data as StorageUploadResult;
 }
 
 /**
@@ -190,9 +206,9 @@ describe('Settings Profile Updates - Integration Tests', () => {
   describe('Profile Display Name Updates', () => {
     it('should update display name successfully', async () => {
       const newDisplayName = 'Updated Test User';
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         display_name: newDisplayName,
-      }) as { display_name: string };
+      })) as { display_name: string };
 
       expect(profile).toBeDefined();
       expect(profile.display_name).toBe(newDisplayName);
@@ -203,18 +219,18 @@ describe('Settings Profile Updates - Integration Tests', () => {
       await updateUserProfile(client, userId, { display_name: 'Test User' });
 
       // Then clear it
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         display_name: null,
-      }) as { display_name: string | null };
+      })) as { display_name: string | null };
 
       expect(profile.display_name).toBeNull();
     });
 
     it('should handle special characters in display name', async () => {
       const specialName = '김철수 (John) 🎉';
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         display_name: specialName,
-      }) as { display_name: string };
+      })) as { display_name: string };
 
       expect(profile.display_name).toBe(specialName);
     });
@@ -239,12 +255,16 @@ describe('Settings Profile Updates - Integration Tests', () => {
 
   describe('Locale Updates', () => {
     it('should update locale to English', async () => {
-      const profile = await updateUserProfile(client, userId, { locale: 'en' }) as { locale: string };
+      const profile = (await updateUserProfile(client, userId, { locale: 'en' })) as {
+        locale: string;
+      };
       expect(profile.locale).toBe('en');
     });
 
     it('should update locale to Korean', async () => {
-      const profile = await updateUserProfile(client, userId, { locale: 'ko' }) as { locale: string };
+      const profile = (await updateUserProfile(client, userId, { locale: 'ko' })) as {
+        locale: string;
+      };
       expect(profile.locale).toBe('ko');
     });
 
@@ -264,9 +284,9 @@ describe('Settings Profile Updates - Integration Tests', () => {
       await updateUserProfile(client, userId, { locale: 'ko' });
 
       // Update another field
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         display_name: 'Test',
-      }) as { locale: string };
+      })) as { locale: string };
 
       expect(profile.locale).toBe('ko');
     });
@@ -285,7 +305,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
     };
 
     it('should have default notification preferences', async () => {
-      const profile = await getUserProfile(client, userId) as {
+      const profile = (await getUserProfile(client, userId)) as {
         notification_preferences: typeof defaultPreferences;
       };
       expect(profile.notification_preferences).toBeDefined();
@@ -293,12 +313,12 @@ describe('Settings Profile Updates - Integration Tests', () => {
     });
 
     it('should update individual notification preference', async () => {
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         notification_preferences: {
           ...defaultPreferences,
           messages: false,
         },
-      }) as { notification_preferences: typeof defaultPreferences };
+      })) as { notification_preferences: typeof defaultPreferences };
 
       expect(profile.notification_preferences.messages).toBe(false);
       expect(profile.notification_preferences.prayers).toBe(true);
@@ -312,9 +332,9 @@ describe('Settings Profile Updates - Integration Tests', () => {
         system: false,
       };
 
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         notification_preferences: newPreferences,
-      }) as { notification_preferences: typeof newPreferences };
+      })) as { notification_preferences: typeof newPreferences };
 
       expect(profile.notification_preferences).toEqual(newPreferences);
     });
@@ -326,10 +346,10 @@ describe('Settings Profile Updates - Integration Tests', () => {
         journals: false,
       };
 
-      const profile = await updateUserProfile(client, userId, {
+      const profile = (await updateUserProfile(client, userId, {
         // @ts-ignore - Testing partial update
         notification_preferences: partialUpdate,
-      }) as { notification_preferences: typeof partialUpdate };
+      })) as { notification_preferences: typeof partialUpdate };
 
       // Other preferences should remain unchanged
       expect(profile.notification_preferences.messages).toBe(false);
@@ -344,7 +364,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
   describe('Profile Photo Storage', () => {
     it('should upload profile photo to user folder', async () => {
       const fileName = 'test-photo.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]); // JPEG header
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]); // JPEG header
 
       const result = await uploadProfilePhoto(client, userId, fileName, fileData);
 
@@ -354,7 +374,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
 
     it('should generate public URL for uploaded photo', async () => {
       const fileName = 'public-test.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]);
 
       await uploadProfilePhoto(client, userId, fileName, fileData);
 
@@ -367,7 +387,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
 
     it('should delete uploaded profile photo', async () => {
       const fileName = 'delete-test.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]);
 
       await uploadProfilePhoto(client, userId, fileName, fileData);
 
@@ -375,9 +395,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
       await deleteProfilePhoto(client, filePath);
 
       // Verify file no longer accessible
-      const { data } = await client.storage
-        .from('profile-photos')
-        .list(userId);
+      const { data } = await client.storage.from('profile-photos').list(userId);
 
       const fileExists = data?.some((f) => f.name === fileName);
       expect(fileExists).toBe(false);
@@ -385,8 +403,8 @@ describe('Settings Profile Updates - Integration Tests', () => {
 
     it('should upsert existing photo (replace)', async () => {
       const fileName = 'upsert-test.jpg';
-      const fileData1 = new Uint8Array([0xFF, 0xD8, 0xFF]);
-      const fileData2 = new Uint8Array([0xFF, 0xD8, 0xFF, 0x00]);
+      const fileData1 = new Uint8Array([0xff, 0xd8, 0xff]);
+      const fileData2 = new Uint8Array([0xff, 0xd8, 0xff, 0x00]);
 
       await uploadProfilePhoto(client, userId, fileName, fileData1);
       await uploadProfilePhoto(client, userId, fileName, fileData2, true);
@@ -400,7 +418,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
 
     it('should update photo_url in users table', async () => {
       const fileName = 'url-update-test.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]);
 
       await uploadProfilePhoto(client, userId, fileName, fileData);
 
@@ -455,7 +473,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
   describe('Storage RLS for Profile Photos', () => {
     it('should allow user to upload to own folder', async () => {
       const fileName = 'own-folder-test.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]);
 
       const result = await uploadProfilePhoto(client, userId, fileName, fileData);
 
@@ -465,7 +483,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
     it('should reject upload to different user folder', async () => {
       const otherUserId = '00000000-0000-0000-0000-000000000000';
       const fileName = 'unauthorized-upload.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]);
 
       const { error } = await client.storage
         .from('profile-photos')
@@ -477,14 +495,12 @@ describe('Settings Profile Updates - Integration Tests', () => {
 
     it('should allow public read of profile photos', async () => {
       const fileName = 'public-read-test.jpg';
-      const fileData = new Uint8Array([0xFF, 0xD8, 0xFF]);
+      const fileData = new Uint8Array([0xff, 0xd8, 0xff]);
 
       await uploadProfilePhoto(client, userId, fileName, fileData);
 
       const filePath = `${userId}/${fileName}`;
-      const { data } = await client.storage
-        .from('profile-photos')
-        .createSignedUrl(filePath, 60);
+      const { data } = await client.storage.from('profile-photos').createSignedUrl(filePath, 60);
 
       // Should succeed for authenticated user
       expect(data).toBeDefined();
@@ -514,10 +530,7 @@ describe('Settings Profile Updates - Integration Tests', () => {
       await deleteAccount(client);
 
       // Try to query user profile
-      const { data, error } = await client
-        .from('users')
-        .select('*')
-        .eq('id', userId);
+      const { data, error } = await client.from('users').select('*').eq('id', userId);
 
       // User should no longer exist or be inaccessible
       expect(error || data).toBeDefined();

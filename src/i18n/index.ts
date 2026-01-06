@@ -2,7 +2,7 @@
  * i18n configuration and initialization using i18next.
  */
 
-import i18n, { type TOptions } from 'i18next';
+import i18n, { type Resource, type TOptions } from 'i18next';
 import { initReactI18next, useTranslation, Trans } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import enCommon from '../../locales/en/common.json';
@@ -12,6 +12,7 @@ import enPrayer from '../../locales/en/prayer.json';
 import enPastoral from '../../locales/en/pastoral.json';
 import enSettings from '../../locales/en/settings.json';
 import enErrors from '../../locales/en/errors.json';
+import enImages from '../../locales/en/images.json';
 import koCommon from '../../locales/ko/common.json';
 import koAuth from '../../locales/ko/auth.json';
 import koChat from '../../locales/ko/chat.json';
@@ -19,6 +20,8 @@ import koPrayer from '../../locales/ko/prayer.json';
 import koPastoral from '../../locales/ko/pastoral.json';
 import koSettings from '../../locales/ko/settings.json';
 import koErrors from '../../locales/ko/errors.json';
+import koImages from '../../locales/ko/images.json';
+import type { TranslationKey } from './types';
 
 // Resources object with all translations
 const resources = {
@@ -30,6 +33,7 @@ const resources = {
     pastoral: enPastoral,
     settings: enSettings,
     errors: enErrors,
+    images: enImages,
   },
   ko: {
     common: koCommon,
@@ -39,8 +43,9 @@ const resources = {
     pastoral: koPastoral,
     settings: koSettings,
     errors: koErrors,
+    images: koImages,
   },
-} as const;
+} satisfies Resource;
 
 /**
  * Detects the best locale to use based on user preference and device settings.
@@ -74,7 +79,7 @@ export async function initI18n(): Promise<typeof i18n> {
   await i18n.use(initReactI18next).init({
     lng: detectedLocale,
     fallbackLng: 'en',
-    ns: ['common', 'auth', 'chat', 'prayer', 'pastoral', 'settings', 'errors'],
+    ns: ['common', 'auth', 'chat', 'prayer', 'pastoral', 'settings', 'errors', 'images'],
     defaultNS: 'common',
     nsSeparator: '.',
     keySeparator: '.',
@@ -85,7 +90,7 @@ export async function initI18n(): Promise<typeof i18n> {
     react: {
       useSuspense: false,
     },
-    resources: resources as unknown as Record<string, unknown>,
+    resources,
   });
 
   return i18n;
@@ -127,11 +132,8 @@ export { i18n };
 /**
  * Export translation function for use outside React components.
  */
-export function translate(
-  key: string,
-  options?: Record<string, string | number | boolean> | string
-): string {
-  return i18n.t(key, options as TOptions);
+export function translate(key: TranslationKey | string, options?: TOptions): string {
+  return i18n.t(key as string, options);
 }
 
 /**
@@ -148,6 +150,8 @@ export {
   detectDeviceLocale,
   isI18nInitialized,
 } from './init';
+
+export type { Locale } from './types';
 
 /**
  * Default export for convenience.

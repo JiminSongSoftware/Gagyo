@@ -294,7 +294,7 @@ describe('useLocale hook', () => {
       const initialChangeLocale = result.current.changeLocale;
 
       // Trigger a re-render
-      rerender();
+      rerender(undefined);
 
       expect(result.current.changeLocale).toBe(initialChangeLocale);
     });

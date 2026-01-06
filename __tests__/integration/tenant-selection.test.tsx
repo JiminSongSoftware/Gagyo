@@ -45,10 +45,12 @@ describe('Tenant Selection Integration', () => {
 
     const mockQuery = {
       eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({
-        data: mockMemberships,
-        error: null,
-      } as unknown),
+      order: jest.fn(() =>
+        Promise.resolve({
+          data: mockMemberships,
+          error: null,
+        })
+      ),
     };
 
     const mockSelect = jest.fn().mockReturnValue(mockQuery);
@@ -107,10 +109,12 @@ describe('Tenant Selection Integration', () => {
 
     const mockQuery = {
       eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({
-        data: mockMemberships,
-        error: null,
-      } as unknown),
+      order: jest.fn(() =>
+        Promise.resolve({
+          data: mockMemberships,
+          error: null,
+        })
+      ),
     };
 
     const mockSelect = jest.fn().mockReturnValue(mockQuery);
@@ -131,10 +135,12 @@ describe('Tenant Selection Integration', () => {
   it('should handle fetch errors gracefully', async () => {
     const mockQuery = {
       eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({
-        data: null,
-        error: { message: 'Database error' },
-      } as unknown),
+      order: jest.fn(() =>
+        Promise.resolve({
+          data: null,
+          error: { message: 'Database error' },
+        })
+      ),
     };
 
     const mockSelect = jest.fn().mockReturnValue(mockQuery);

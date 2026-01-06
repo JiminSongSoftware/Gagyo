@@ -17,10 +17,16 @@ jest.mock('@/lib/supabase', () => ({
 }));
 
 // Mock global fetch
-global.fetch = jest.fn();
+global.fetch = jest.fn() as unknown as typeof fetch;
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+const mockGetUser = mockSupabase.auth.getUser as jest.MockedFunction<
+  typeof mockSupabase.auth.getUser
+>;
+const mockGetSession = mockSupabase.auth.getSession as jest.MockedFunction<
+  typeof mockSupabase.auth.getSession
+>;
 
 describe('useDeleteAccount', () => {
   const mockUserId = 'user-123';
@@ -33,12 +39,12 @@ describe('useDeleteAccount', () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = mockSupabaseUrl;
 
     // Default auth mock - user is authenticated
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: { id: mockUserId } },
       error: null,
     });
 
-    mockSupabase.auth.getSession = jest.fn().mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: {
         session: { access_token: mockToken },
       },
@@ -58,7 +64,7 @@ describe('useDeleteAccount', () => {
           profile_photo_deleted: true,
         },
       }),
-    } as Response);
+    } as unknown as Response);
   });
 
   it('should initialize with idle state', () => {
@@ -71,7 +77,7 @@ describe('useDeleteAccount', () => {
   });
 
   it('should return null when user is not authenticated', async () => {
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -88,7 +94,7 @@ describe('useDeleteAccount', () => {
   });
 
   it('should return null when no auth token is available', async () => {
-    mockSupabase.auth.getSession = jest.fn().mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: { session: null },
       error: null,
     });
@@ -127,17 +133,14 @@ describe('useDeleteAccount', () => {
     expect(result.current.error).toBeNull();
 
     // Verify fetch was called correctly
-    expect(mockFetch).toHaveBeenCalledWith(
-      `${mockSupabaseUrl}/functions/v1/delete-user-account`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${mockToken}`,
-        },
-        body: JSON.stringify({ user_id: mockUserId }),
-      }
-    );
+    expect(mockFetch).toHaveBeenCalledWith(`${mockSupabaseUrl}/functions/v1/delete-user-account`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${mockToken}`,
+      },
+      body: JSON.stringify({ user_id: mockUserId }),
+    });
   });
 
   it('should handle Edge Function errors', async () => {
@@ -145,7 +148,7 @@ describe('useDeleteAccount', () => {
       ok: false,
       status: 400,
       text: async () => 'Bad Request',
-    } as Response);
+    } as unknown as Response);
 
     const { result } = renderHook(() => useDeleteAccount());
 
@@ -172,7 +175,7 @@ describe('useDeleteAccount', () => {
           profile_photo_deleted: false,
         },
       }),
-    } as Response);
+    } as unknown as Response);
 
     const { result } = renderHook(() => useDeleteAccount());
 
@@ -187,7 +190,7 @@ describe('useDeleteAccount', () => {
 
   it('should handle auth errors gracefully', async () => {
     const authError = new Error('Auth session expired');
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: authError,
     });
@@ -219,32 +222,29 @@ describe('useDeleteAccount', () => {
   });
 
   it('should set deleting state during deletion', async () => {
-    let resolveFetch: (value: unknown) => void;
-     
-    const fetchPromise = new Promise((resolve) => {
+    let resolveFetch: (value: Response | PromiseLike<Response>) => void;
+
+    const fetchPromise = new Promise<Response>((resolve) => {
       resolveFetch = resolve;
     });
 
-    mockFetch.mockImplementation(() =>
-      new Promise((resolve) => {
-        setTimeout(() => {
-          resolveFetch!({
-            ok: true,
-            json: async () => ({
-              success: true,
-              message: 'Account deleted successfully',
-              deleted_counts: {
-                memberships: 0,
-                device_tokens: 0,
-                notifications: 0,
-                profile_photo_deleted: false,
-              },
-            }),
-          });
-        }, 50);
-        return fetchPromise;
-      })
-    );
+    mockFetch.mockImplementation(() => fetchPromise);
+
+    setTimeout(() => {
+      resolveFetch!({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Account deleted successfully',
+          deleted_counts: {
+            memberships: 0,
+            device_tokens: 0,
+            notifications: 0,
+            profile_photo_deleted: false,
+          },
+        }),
+      } as unknown as Response);
+    }, 50);
 
     const { result } = renderHook(() => useDeleteAccount());
 
@@ -276,7 +276,7 @@ describe('useDeleteAccount', () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
-    } as Response);
+    } as unknown as Response);
 
     const { result } = renderHook(() => useDeleteAccount());
 

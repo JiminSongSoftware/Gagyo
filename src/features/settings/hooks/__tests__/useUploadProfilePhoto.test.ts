@@ -5,6 +5,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useUploadProfilePhoto } from '../useUploadProfilePhoto';
 import { supabase } from '@/lib/supabase';
+import * as ImagePicker from 'expo-image-picker';
 
 // Mock Supabase client
 jest.mock('@/lib/supabase', () => ({
@@ -22,18 +23,23 @@ jest.mock('@/lib/supabase', () => ({
 // Mock expo-image-picker
 jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(),
+  MediaTypeOptions: { Images: 'Images' },
 }));
 
 // Mock fetch for file reading
-global.fetch = jest.fn();
+global.fetch = jest.fn() as unknown as typeof fetch;
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockImagePicker = {
-  launchImageLibraryAsync: jest.fn(),
-  MediaTypeOptions: {
-    Images: 'Images',
-  },
-} as unknown as jest.Mocked<typeof import('expo-image-picker')>;
+const mockGetUser = mockSupabase.auth.getUser as jest.MockedFunction<
+  typeof mockSupabase.auth.getUser
+>;
+const mockFrom = mockSupabase.from as jest.MockedFunction<typeof mockSupabase.from>;
+const mockStorageFrom = mockSupabase.storage.from as jest.MockedFunction<
+  typeof mockSupabase.storage.from
+>;
+const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.MockedFunction<
+  typeof ImagePicker.launchImageLibraryAsync
+>;
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
 describe('useUploadProfilePhoto', () => {
@@ -43,13 +49,13 @@ describe('useUploadProfilePhoto', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default auth mock - user is authenticated
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: { id: mockUserId } },
       error: null,
     });
 
     // Default storage mock
-    (mockSupabase.storage.from as jest.Mock).mockReturnValue({
+    mockStorageFrom.mockReturnValue({
       upload: jest.fn().mockResolvedValue({
         data: { path: 'user-123/1234567890.jpg' },
         error: null,
@@ -72,16 +78,14 @@ describe('useUploadProfilePhoto', () => {
         error: null,
       }),
     });
-    (mockSupabase.from as jest.Mock).mockReturnValue({ update: updateMock });
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<typeof mockFrom>);
 
     // Mock fetch for file reading
     mockFetch.mockImplementation(() =>
       Promise.resolve({
         ok: true,
-        blob: () =>
-          Promise.resolve(new Blob(['fake image data'], { type: 'image/jpeg' })),
-        arrayBuffer: () =>
-          Promise.resolve(new ArrayBuffer(1024 * 100)), // 100 KB
+        blob: () => Promise.resolve(new Blob(['fake image data'], { type: 'image/jpeg' })),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024 * 100)), // 100 KB
       } as Response)
     );
   });
@@ -97,7 +101,7 @@ describe('useUploadProfilePhoto', () => {
   });
 
   it('should return null when user is not authenticated', async () => {
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -114,7 +118,7 @@ describe('useUploadProfilePhoto', () => {
   });
 
   it('should return null when image picker is canceled', async () => {
-    (mockImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+    mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: true,
       assets: [],
     });
@@ -132,7 +136,7 @@ describe('useUploadProfilePhoto', () => {
   });
 
   it('should upload photo successfully', async () => {
-    (mockImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+    mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [
         {
@@ -162,13 +166,11 @@ describe('useUploadProfilePhoto', () => {
       Promise.resolve({
         ok: true,
         blob: () =>
-          Promise.resolve(
-            new Blob(['x'.repeat(6 * 1024 * 1024)], { type: 'image/jpeg' })
-          ), // 6 MB
+          Promise.resolve(new Blob(['x'.repeat(6 * 1024 * 1024)], { type: 'image/jpeg' })), // 6 MB
       } as Response)
     );
 
-    (mockImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+    mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [
         {
@@ -192,7 +194,7 @@ describe('useUploadProfilePhoto', () => {
   });
 
   it('should validate MIME type (reject non-image files)', async () => {
-    (mockImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+    mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [
         {
@@ -212,15 +214,13 @@ describe('useUploadProfilePhoto', () => {
     });
 
     expect(url).toBeNull();
-    expect(result.current.error?.message).toBe(
-      'Only JPEG, PNG, and WebP images are allowed'
-    );
+    expect(result.current.error?.message).toBe('Only JPEG, PNG, and WebP images are allowed');
   });
 
   it('should handle upload errors gracefully', async () => {
     const uploadError = new Error('Storage bucket not found');
 
-    (mockImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+    mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [
         {
@@ -232,8 +232,7 @@ describe('useUploadProfilePhoto', () => {
       ],
     });
 
-    const storageFromMock = mockSupabase.storage.from as jest.Mock;
-    storageFromMock.mockReturnValue({
+    mockStorageFrom.mockReturnValue({
       upload: jest.fn().mockResolvedValue({
         data: null,
         error: uploadError,
@@ -253,8 +252,7 @@ describe('useUploadProfilePhoto', () => {
 
   it('should delete profile photo successfully', async () => {
     // Mock existing photos
-    const storageFromMock = mockSupabase.storage.from as jest.Mock;
-    storageFromMock.mockReturnValue({
+    mockStorageFrom.mockReturnValue({
       list: jest.fn().mockResolvedValue({
         data: [{ name: 'photo1.jpg' }, { name: 'photo2.jpg' }],
         error: null,
@@ -277,8 +275,7 @@ describe('useUploadProfilePhoto', () => {
 
   it('should handle delete gracefully when user has no photos', async () => {
     // Mock no existing photos
-    const storageFromMock = mockSupabase.storage.from as jest.Mock;
-    storageFromMock.mockReturnValue({
+    mockStorageFrom.mockReturnValue({
       list: jest.fn().mockResolvedValue({
         data: [],
         error: null,
@@ -299,8 +296,7 @@ describe('useUploadProfilePhoto', () => {
   it('should handle delete errors gracefully', async () => {
     const deleteError = new Error('Failed to delete file');
 
-    const storageFromMock = mockSupabase.storage.from as jest.Mock;
-    storageFromMock.mockReturnValue({
+    mockStorageFrom.mockReturnValue({
       list: jest.fn().mockResolvedValue({
         data: [{ name: 'photo1.jpg' }],
         error: null,
@@ -327,7 +323,7 @@ describe('useUploadProfilePhoto', () => {
       resolveUpload = resolve;
     });
 
-    (mockImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+    mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [
         {
@@ -339,8 +335,7 @@ describe('useUploadProfilePhoto', () => {
       ],
     });
 
-    const storageFromMock = mockSupabase.storage.from as jest.Mock;
-    storageFromMock.mockReturnValue({
+    mockStorageFrom.mockReturnValue({
       upload: jest.fn().mockImplementation(() => {
         setTimeout(() => {
           resolveUpload!({

@@ -23,9 +23,11 @@ jest.mock('@/i18n', () => ({
 }));
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockChangeLocale = i18n.changeLocale as jest.MockedFunction<
-  typeof i18n.changeLocale
+const mockChangeLocale = i18n.changeLocale as jest.MockedFunction<typeof i18n.changeLocale>;
+const mockGetUser = mockSupabase.auth.getUser as jest.MockedFunction<
+  typeof mockSupabase.auth.getUser
 >;
+const mockFrom = mockSupabase.from as jest.MockedFunction<typeof mockSupabase.from>;
 
 describe('useUpdateProfile', () => {
   const mockUserId = 'user-123';
@@ -33,7 +35,7 @@ describe('useUpdateProfile', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default auth mock - user is authenticated
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: { id: mockUserId } },
       error: null,
     });
@@ -48,7 +50,7 @@ describe('useUpdateProfile', () => {
   });
 
   it('should return false when user is not authenticated', async () => {
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -82,8 +84,9 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    const fromMock = jest.fn().mockReturnValue({ update: updateMock });
-    mockSupabase.from = fromMock;
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
+      typeof mockSupabase.from
+    >);
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -93,11 +96,8 @@ describe('useUpdateProfile', () => {
     });
 
     expect(success).toBe(true);
-    expect(fromMock).toHaveBeenCalledWith('users');
-    expect(updateMock).toHaveBeenCalledWith(
-      { display_name: 'John Doe' },
-      { __query: { key: 'id', value: mockUserId } }
-    );
+    expect(mockFrom).toHaveBeenCalledWith('users');
+    expect(updateMock).toHaveBeenCalledWith({ display_name: 'John Doe' });
   });
 
   it('should update locale and sync with i18n', async () => {
@@ -106,8 +106,9 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    const fromMock = jest.fn().mockReturnValue({ update: updateMock });
-    mockSupabase.from = fromMock;
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
+      typeof mockSupabase.from
+    >);
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -117,10 +118,7 @@ describe('useUpdateProfile', () => {
     });
 
     expect(success).toBe(true);
-    expect(updateMock).toHaveBeenCalledWith(
-      { locale: 'ko' },
-      { __query: { key: 'id', value: mockUserId } }
-    );
+    expect(updateMock).toHaveBeenCalledWith({ locale: 'ko' });
     expect(mockChangeLocale).toHaveBeenCalledWith('ko');
   });
 
@@ -130,8 +128,9 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    const fromMock = jest.fn().mockReturnValue({ update: updateMock });
-    mockSupabase.from = fromMock;
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
+      typeof mockSupabase.from
+    >);
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -148,10 +147,9 @@ describe('useUpdateProfile', () => {
     });
 
     expect(success).toBe(true);
-    expect(updateMock).toHaveBeenCalledWith(
-      { notification_preferences: notificationPreferences },
-      { __query: { key: 'id', value: mockUserId } }
-    );
+    expect(updateMock).toHaveBeenCalledWith({
+      notification_preferences: notificationPreferences,
+    });
   });
 
   it('should update multiple fields at once', async () => {
@@ -160,8 +158,9 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    const fromMock = jest.fn().mockReturnValue({ update: updateMock });
-    mockSupabase.from = fromMock;
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
+      typeof mockSupabase.from
+    >);
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -180,19 +179,16 @@ describe('useUpdateProfile', () => {
     });
 
     expect(success).toBe(true);
-    expect(updateMock).toHaveBeenCalledWith(
-      {
-        display_name: 'Jane Doe',
-        locale: 'en',
-        notification_preferences: {
-          messages: true,
-          prayers: true,
-          journals: false,
-          system: true,
-        },
+    expect(updateMock).toHaveBeenCalledWith({
+      display_name: 'Jane Doe',
+      locale: 'en',
+      notification_preferences: {
+        messages: true,
+        prayers: true,
+        journals: false,
+        system: true,
       },
-      { __query: { key: 'id', value: mockUserId } }
-    );
+    });
   });
 
   it('should handle update errors gracefully', async () => {
@@ -203,8 +199,9 @@ describe('useUpdateProfile', () => {
         error: mockError,
       }),
     });
-    const fromMock = jest.fn().mockReturnValue({ update: updateMock });
-    mockSupabase.from = fromMock;
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
+      typeof mockSupabase.from
+    >);
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -220,7 +217,7 @@ describe('useUpdateProfile', () => {
   it('should handle auth errors gracefully', async () => {
     const authError = new Error('Auth session expired');
 
-    mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: authError,
     });
@@ -237,30 +234,17 @@ describe('useUpdateProfile', () => {
   });
 
   it('should set updating state during update', async () => {
-    let resolveUpdate: (value: unknown) => void;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const updatePromise = new Promise((resolve) => {
-      resolveUpdate = resolve;
-    });
-
     const updateMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        error: null,
-      }),
+      eq: jest.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve({ error: null }), 50);
+          })
+      ),
     });
-    const fromMock = jest.fn().mockReturnValue({
-      update: jest.fn().mockImplementation(() => {
-        (updateMock as jest.Mock).mockReturnValue({
-          eq: jest.fn().mockResolvedValueOnce(
-            new Promise((r) => {
-              setTimeout(() => r({ error: null }), 50);
-            })
-          ),
-        });
-        return updateMock;
-      }),
-    });
-    mockSupabase.from = fromMock as unknown as typeof mockSupabase.from;
+    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
+      typeof mockSupabase.from
+    >);
 
     const { result } = renderHook(() => useUpdateProfile());
 

@@ -42,6 +42,16 @@ if (!connectionString) {
   );
 }
 
+type SqlRow = Record<string, unknown>;
+
+function requireRow<Row extends SqlRow>(rows: Row[], context: string): Row {
+  const [row] = rows;
+  if (!row) {
+    throw new Error(`Expected row for ${context}`);
+  }
+  return row;
+}
+
 // ============================================================================
 // TEST SETUP AND TEARDOWN
 // ============================================================================
@@ -76,12 +86,17 @@ describe('Device Token Management - Integration Tests', () => {
         RETURNING id, token, platform, revoked_at;
       `;
 
-      const result = await executeAsUser(TEST_DATA.user5Id, insertSql, connectionString);
+      const result = await executeAsUser<{
+        token: string;
+        platform: string;
+        revoked_at: string | null;
+      }>(TEST_DATA.user5Id, insertSql, connectionString);
 
       expect(result.rowCount).toBe(1);
-      expect(result.rows[0].token).toBe(tokenValue);
-      expect(result.rows[0].platform).toBe('ios');
-      expect(result.rows[0].revoked_at).toBeNull();
+      const row = requireRow(result.rows, 'insert device token');
+      expect(row.token).toBe(tokenValue);
+      expect(row.platform).toBe('ios');
+      expect(row.revoked_at).toBeNull();
     });
 
     it('User can register multiple device tokens for different platforms', async () => {
@@ -155,9 +170,13 @@ describe('Device Token Management - Integration Tests', () => {
           AND token = '${oldToken}'
         RETURNING id, revoked_at;
       `;
-      const revokeResult = await executeAsUser(TEST_DATA.user5Id, revokeOld, connectionString);
+      const revokeResult = await executeAsUser<{ revoked_at: string | null }>(
+        TEST_DATA.user5Id,
+        revokeOld,
+        connectionString
+      );
       expect(revokeResult.rowCount).toBe(1);
-      expect(revokeResult.rows[0].revoked_at).not.toBeNull();
+      expect(requireRow(revokeResult.rows, 'revoke token').revoked_at).not.toBeNull();
 
       // Insert new token
       const insertNew = `
@@ -165,9 +184,13 @@ describe('Device Token Management - Integration Tests', () => {
         VALUES ('${TEST_DATA.tenant1Id}', '${TEST_DATA.user5Id}', '${newToken}', 'ios')
         RETURNING id, token, revoked_at;
       `;
-      const newResult = await executeAsUser(TEST_DATA.user5Id, insertNew, connectionString);
+      const newResult = await executeAsUser<{ revoked_at: string | null }>(
+        TEST_DATA.user5Id,
+        insertNew,
+        connectionString
+      );
       expect(newResult.rowCount).toBe(1);
-      expect(newResult.rows[0].revoked_at).toBeNull();
+      expect(requireRow(newResult.rows, 'insert new token').revoked_at).toBeNull();
     });
   });
 
@@ -232,8 +255,12 @@ describe('Device Token Management - Integration Tests', () => {
         VALUES ('${TEST_DATA.tenant1Id}', '${TEST_DATA.user5Id}', '${tokenValue}', 'ios')
         RETURNING id;
       `;
-      const insertResult = await executeAsUser(TEST_DATA.user5Id, insertToken, connectionString);
-      const tokenId = insertResult.rows[0].id;
+      const insertResult = await executeAsUser<{ id: string }>(
+        TEST_DATA.user5Id,
+        insertToken,
+        connectionString
+      );
+      const tokenId = requireRow(insertResult.rows, 'insert token for delete').id;
 
       // Delete token
       const deleteSql = `
@@ -269,10 +296,14 @@ describe('Device Token Management - Integration Tests', () => {
           AND revoked_at IS NULL
         RETURNING id, revoked_at;
       `;
-      const revokeResult = await executeAsUser(TEST_DATA.user5Id, revokeSql, connectionString);
+      const revokeResult = await executeAsUser<{ revoked_at: string | null }>(
+        TEST_DATA.user5Id,
+        revokeSql,
+        connectionString
+      );
 
       expect(revokeResult.rowCount).toBe(1);
-      expect(revokeResult.rows[0].revoked_at).not.toBeNull();
+      expect(requireRow(revokeResult.rows, 'revoke token').revoked_at).not.toBeNull();
 
       // Verify token is no longer returned in active queries
       const querySql = `
@@ -439,8 +470,12 @@ describe('Device Token Management - Integration Tests', () => {
         VALUES ('${TEST_DATA.tenant1Id}', '${TEST_DATA.user5Id}', '${tokenValue}', 'ios')
         RETURNING id;
       `;
-      const insertResult = await executeAsUser(TEST_DATA.user5Id, insertToken, connectionString);
-      const tokenId = insertResult.rows[0].id;
+      const insertResult = await executeAsUser<{ id: string }>(
+        TEST_DATA.user5Id,
+        insertToken,
+        connectionString
+      );
+      const tokenId = requireRow(insertResult.rows, 'insert token for tenant update').id;
 
       // Try to update tenant_id (should fail due to RLS or FK constraint)
       const updateSql = `
@@ -569,11 +604,15 @@ describe('Device Token Management - Integration Tests', () => {
           AND user_id = '${TEST_DATA.user5Id}'
           AND revoked_at IS NULL;
       `;
-      const result = await executeAsUser(TEST_DATA.user5Id, querySql, connectionString);
+      const result = await executeAsUser<{ token: string }>(
+        TEST_DATA.user5Id,
+        querySql,
+        connectionString
+      );
 
       // Should only return active token
       expect(result.rowCount).toBe(1);
-      expect(result.rows[0].token).toBe(activeToken);
+      expect(requireRow(result.rows, 'active token query').token).toBe(activeToken);
     });
   });
 });

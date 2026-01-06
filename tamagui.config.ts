@@ -1,7 +1,21 @@
 import { createTamagui } from '@tamagui/core';
 
+const fontSizeTokens = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 30,
+  '4xl': 36,
+  '5xl': 48,
+  '6xl': 60,
+};
+
 // Design tokens based on the existing theme system
 const sizeTokens = {
+  ...fontSizeTokens,
   0: 0,
   1: 4,
   2: 8,
@@ -190,6 +204,7 @@ const bodyFont = {
   family:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   size: {
+    ...fontSizeTokens,
     1: 12,
     2: 14,
     3: 16,
@@ -201,6 +216,16 @@ const bodyFont = {
     9: 48,
   },
   lineHeight: {
+    xs: 16,
+    sm: 20,
+    md: 24,
+    lg: 28,
+    xl: 32,
+    '2xl': 36,
+    '3xl': 40,
+    '4xl': 44,
+    '5xl': 56,
+    '6xl': 72,
     1: 16,
     2: 20,
     3: 24,
@@ -223,12 +248,23 @@ const headingFont = {
   family:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   size: {
+    ...fontSizeTokens,
     1: 32,
     2: 28,
     3: 24,
     4: 20,
   },
   lineHeight: {
+    xs: 16,
+    sm: 20,
+    md: 24,
+    lg: 28,
+    xl: 32,
+    '2xl': 36,
+    '3xl': 40,
+    '4xl': 44,
+    '5xl': 56,
+    '6xl': 72,
     1: 40,
     2: 36,
     3: 32,
@@ -359,8 +395,6 @@ const config = createTamagui({
     ml: 'marginLeft',
 
     ta: 'textAlign',
-    fg: 'flexGrow',
-    fs: 'flexShrink',
     bw: 'borderWidth',
     bc: 'borderColor',
     br: 'borderRadius',
@@ -369,17 +403,8 @@ const config = createTamagui({
     brw: 'borderRightWidth',
     bb: 'borderBottomWidth',
 
-    shadow: 'shadowColor',
-    shadowOpacity: 'shadowOpacity',
-    shadowRadius: 'shadowRadius',
-    shadowOffset: 'shadowOffset',
-
-    ov: 'overflow',
-    ox: 'overflowX',
-    oy: 'overflowY',
-
-    pe: 'pointerEvents',
-    us: 'userSelect',
+    fg: 'flexGrow',
+    fs: 'flexShrink',
 
     bg: 'backgroundColor',
     w: 'width',
@@ -389,8 +414,6 @@ const config = createTamagui({
     minw: 'minWidth',
     maxw: 'maxWidth',
 
-    aspectRatio: 'aspectRatio',
-
     ai: 'alignItems',
     as: 'alignSelf',
     ac: 'alignContent',
@@ -398,33 +421,12 @@ const config = createTamagui({
     jc: 'justifyContent',
     ji: 'justifyItems',
 
-    ss: 'justifySelf',
     gg: 'gap',
 
-    flex: 'flex',
-    direction: 'flexDirection',
-    wrap: 'flexWrap',
-
-    pos: 'position',
-    top: 'top',
-    right: 'right',
-    bottom: 'bottom',
-    left: 'left',
-    z: 'zIndex',
-    zIndex: 'zIndex',
-
     op: 'opacity',
-    scale: 'scale',
-    rotate: 'rotate',
-    x: 'x',
-    y: 'y',
 
-    otl: 'outlineColor',
-    osw: 'outlineStyle',
-    owd: 'outlineWidth',
-
-    siz: 'size',
-    col: 'color',
+    pe: 'pointerEvents',
+    us: 'userSelect',
 
     fow: 'fontWeight',
     fos: 'fontSize',
@@ -433,12 +435,6 @@ const config = createTamagui({
 
     tt: 'textTransform',
     td: 'textDecoration',
-
-    softShadow: 'shadowColor',
-    softShadowTop: 'shadowColor',
-    softShadowBottom: 'shadowColor',
-    softShadowLeft: 'shadowColor',
-    softShadowRight: 'shadowColor',
   },
   settings: {
     // Disable SSR for React Native
