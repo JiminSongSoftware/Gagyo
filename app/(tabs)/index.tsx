@@ -1,14 +1,10 @@
-import { Container, Heading, Column, Text, Button } from '@/components/ui';
+import { Container, Heading, Column, Button } from '@/components/ui';
 import { DashboardWidget } from '@/components/home';
-import { useTranslation } from '@/i18n';
-import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useTenantContext } from '@/hooks/useTenantContext';
 import { useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
-  const { user, tenantId } = useRequireAuth();
   const { activeTenantName } = useTenantContext();
   const router = useRouter();
 
@@ -55,7 +51,11 @@ export default function HomeScreen() {
           />
 
           {/* Quick Actions Section */}
-          <Heading level="h3" i18nKey="common.home_screen.quick_actions" testID="quick-actions-section" />
+          <Heading
+            level="h3"
+            i18nKey="common.home_screen.quick_actions"
+            testID="quick-actions-section"
+          />
           <Column gap="$2">
             <Button
               testID="start-conversation-button"

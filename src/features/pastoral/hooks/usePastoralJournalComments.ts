@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type PastoralJournalComment = Database['public']['Tables']['pastoral_journal_comments']['Row'];
 type Membership = Database['public']['Tables']['memberships']['Row'];

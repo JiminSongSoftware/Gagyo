@@ -362,57 +362,54 @@ export function PastoralJournalDetail({
 
   const [showCommentError, setShowCommentError] = useState<string | null>(null);
 
-  const handleSubmitForReview = async () => {
+  // Call hooks unconditionally to satisfy React Hooks rules
+  // Using default status when journal is null
+  const journalStatus = journal?.status ?? 'draft';
+  const canSubmitToReview = useCanUpdateStatus(membership, journalStatus, 'submitted');
+  const canForwardToPastor = useCanUpdateStatus(membership, journalStatus, 'zone_reviewed');
+  const canConfirmByPastor = useCanUpdateStatus(membership, journalStatus, 'pastor_confirmed');
+
+  const handleSubmitForReview = () => {
     if (!journal) return;
-    try {
-      await updateStatus({ journalId: journal.id, newStatus: 'submitted' });
-    } catch (err) {
-      setShowCommentError((err as Error).message);
-    }
+    void (async () => {
+      try {
+        await updateStatus({ journalId: journal.id, newStatus: 'submitted' });
+      } catch (err) {
+        setShowCommentError((err as Error).message);
+      }
+    })();
   };
 
-  const handleForwardToPastor = async () => {
+  const handleForwardToPastor = () => {
     if (!journal) return;
-    try {
-      await updateStatus({ journalId: journal.id, newStatus: 'zone_reviewed' });
-    } catch (err) {
-      setShowCommentError((err as Error).message);
-    }
+    void (async () => {
+      try {
+        await updateStatus({ journalId: journal.id, newStatus: 'zone_reviewed' });
+      } catch (err) {
+        setShowCommentError((err as Error).message);
+      }
+    })();
   };
 
-  const handleConfirmJournal = async () => {
+  const handleConfirmJournal = () => {
     if (!journal) return;
-    try {
-      await updateStatus({ journalId: journal.id, newStatus: 'pastor_confirmed' });
-    } catch (err) {
-      setShowCommentError((err as Error).message);
-    }
+    void (async () => {
+      try {
+        await updateStatus({ journalId: journal.id, newStatus: 'pastor_confirmed' });
+      } catch (err) {
+        setShowCommentError((err as Error).message);
+      }
+    })();
   };
 
   const handleCommentAdded = () => {
     void refetchComments();
   };
 
-  // Check if user can perform each action - call hooks unconditionally with default values
-  const canSubmitForReview = useCanUpdateStatus(
-    membership,
-    journal?.status || 'draft',
-    'submitted'
-  );
-  const canForwardToPastor = useCanUpdateStatus(
-    membership,
-    journal?.status || 'draft',
-    'zone_reviewed'
-  );
-  const canConfirmJournal = useCanUpdateStatus(
-    membership,
-    journal?.status || 'draft',
-    'pastor_confirmed'
-  );
-
-  const canSubmit = Boolean(journal && membership && canSubmitForReview);
-  const canForward = Boolean(journal && membership && canForwardToPastor);
-  const canConfirm = Boolean(journal && membership && canConfirmJournal);
+  // Check if user can perform each action (also requires journal to exist)
+  const canSubmit = !!(journal && canSubmitToReview);
+  const canForward = !!(journal && canForwardToPastor);
+  const canConfirm = !!(journal && canConfirmByPastor);
 
   if (loading) {
     return (
@@ -656,7 +653,7 @@ export function PastoralJournalDetail({
                 <ActionButton
                   testID="submit-for-review-button"
                   label={t('pastoral.submit_for_review')}
-                  onPress={() => void handleSubmitForReview()}
+                  onPress={handleSubmitForReview}
                   loading={updating}
                 />
               )}
@@ -664,7 +661,7 @@ export function PastoralJournalDetail({
                 <ActionButton
                   testID="forward-to-pastor-button"
                   label={t('pastoral.forward_to_pastor')}
-                  onPress={() => void handleForwardToPastor()}
+                  onPress={handleForwardToPastor}
                   loading={updating}
                 />
               )}
@@ -672,7 +669,7 @@ export function PastoralJournalDetail({
                 <ActionButton
                   testID="confirm-journal-button"
                   label={t('pastoral.confirm_journal')}
-                  onPress={() => void handleConfirmJournal()}
+                  onPress={handleConfirmJournal}
                   loading={updating}
                 />
               )}

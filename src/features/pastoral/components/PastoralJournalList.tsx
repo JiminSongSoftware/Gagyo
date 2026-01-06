@@ -13,10 +13,10 @@
  */
 
 import { ActivityIndicator, FlatList as RNFlatList, Pressable, RefreshControl } from 'react-native';
-import { Stack, Text as TamaguiText, XStack, YStack, useTheme, styled } from 'tamagui';
+import { Stack, Text as TamaguiText, XStack, YStack, styled } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { usePastoralJournals, type PastoralJournalsFilter } from '../hooks/usePastoralJournals';
-import type { PastoralJournalWithRelations, Database, Membership } from '@/types/database';
+import type { Database, PastoralJournalWithRelations, Membership } from '@/types/database';
 
 // ============================================================================
 // TYPES
@@ -42,11 +42,6 @@ export interface PastoralJournalListProps {
    * Callback when a journal is pressed.
    */
   onJournalPress: (journal: PastoralJournalWithRelations) => void;
-
-  /**
-   * Callback when the create journal FAB is pressed.
-   */
-  onCreatePress: () => void;
 
   /**
    * Current filter scope.
@@ -244,7 +239,6 @@ interface FilterTabsProps {
 
 function FilterTabs({ currentFilter, membership, onFilterChange }: FilterTabsProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   const filters: { key: PastoralJournalsFilter['scope']; label: string }[] = [];
 
@@ -342,12 +336,10 @@ export function PastoralJournalList({
   membershipId,
   membership,
   onJournalPress,
-  onCreatePress: _onCreatePress,
   filter,
   onFilterChange,
 }: PastoralJournalListProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   const { journals, loading, error, hasMore, loadMore, refetch } = usePastoralJournals(
     tenantId,

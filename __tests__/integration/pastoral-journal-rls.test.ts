@@ -498,7 +498,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
     it('Zone leaders can update submitted journals', async () => {
       // Zone leaders should be able to forward submitted journals
-      const { data: _data, error } = await zoneLeaderClient
+      const { error } = await zoneLeaderClient
         .from('pastoral_journals')
         .update({ status: 'zone_reviewed' })
         .eq('status', 'submitted');
@@ -511,7 +511,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
     it('Pastors can update any journal', async () => {
       // Pastors should be able to confirm zone-reviewed journals
-      const { data: _data, error } = await pastorClient
+      const { error } = await pastorClient
         .from('pastoral_journals')
         .update({ status: 'pastor_confirmed' })
         .eq('status', 'zone_reviewed');
@@ -562,7 +562,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
         // Cleanup
         if (data && data.length > 0) {
-          await zoneLeaderClient.from('pastoral_journal_comments').delete().eq('id', data[0].id);
+          await zoneLeaderClient.from('pastoral_journal_comments').delete().eq('id', data[0]?.id);
         }
       }
     });
@@ -607,37 +607,37 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
     it('Comments are visible to users who can view the journal', async () => {
       // First, create a test comment (as pastor, since they can see all)
-      const { data: journal } = await pastorClient
+      const { data: journalData } = await pastorClient
         .from('pastoral_journals')
         .select('id')
         .limit(1)
         .maybeSingle();
 
-      if (journal) {
-        const { data: comment } = await pastorClient
+      if (journalData) {
+        const { data: commentData } = await pastorClient
           .from('pastoral_journal_comments')
           .insert({
-            pastoral_journal_id: journal.id,
+            pastoral_journal_id: journalData.id,
             content: 'Test comment for visibility',
           })
           .select('id')
           .maybeSingle();
 
-        if (comment) {
+        if (commentData) {
           // Pastor should be able to see the comment
           const { data: visibleComments, error: viewError } = await pastorClient
             .from('pastoral_journal_comments')
             .select('*')
-            .eq('pastoral_journal_id', journal.id);
+            .eq('pastoral_journal_id', journalData.id);
 
           expect(viewError).toBeNull();
           expect(Array.isArray(visibleComments)).toBe(true);
 
           // Should include the comment we just created
-          expect(visibleComments?.some((c) => c.id === comment.id)).toBe(true);
+          expect(visibleComments?.some((c) => c.id === commentData.id)).toBe(true);
 
           // Cleanup
-          await pastorClient.from('pastoral_journal_comments').delete().eq('id', comment.id);
+          await pastorClient.from('pastoral_journal_comments').delete().eq('id', commentData.id);
         }
       }
     });
@@ -680,7 +680,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
     it('Cross-tenant journal access is blocked', async () => {
       // Try to insert a journal for a different tenant
-      const { data: _data, error } = await leaderClient
+      const { error } = await leaderClient
         .from('pastoral_journals')
         .insert({
           tenant_id: TEST_DATA.otherTenantId, // Different tenant
@@ -721,7 +721,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
         // Cleanup
         if (data && data.length > 0) {
-          await leaderClient.from('pastoral_journals').delete().eq('id', data[0].id);
+          void leaderClient.from('pastoral_journals').delete().eq('id', data[0].id);
         }
       }
     });
@@ -769,7 +769,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
     it('Prevents duplicate journals for same week and group', async () => {
       const weekStartDate = new Date().toISOString();
 
-      // Create first journal
+      // Try to create first journal
       const { data: journal1, error: createError1 } = await leaderClient
         .from('pastoral_journals')
         .insert({
@@ -783,7 +783,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
       if (journal1) {
         // Try to create duplicate journal for same week
-        const { data: _journal2, error: createError2 } = await leaderClient
+        const { error: createError2 } = await leaderClient
           .from('pastoral_journals')
           .insert({
             small_group_id: TEST_DATA.smallGroupId1,

@@ -12,16 +12,7 @@
 
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
-import {
-  Stack,
-  Text as TamaguiText,
-  XStack,
-  YStack,
-  Button,
-  Input,
-  useTheme,
-  styled,
-} from 'tamagui';
+import { Stack, Text as TamaguiText, XStack, YStack, Button, Input, styled } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import {
   useCreatePastoralJournal,
@@ -199,11 +190,11 @@ function ArrayInput({ label, items, onItemsChange, placeholder, testID }: ArrayI
     const trimmed = newItem.trim();
     if (!trimmed) return;
     if (items.length >= MAX_ARRAY_ITEMS) {
-      Alert.alert(t('pastoral.max_items_reached'), String(MAX_ARRAY_ITEMS));
+      Alert.alert(t('pastoral.max_items_reached', { max: MAX_ARRAY_ITEMS.toString() }));
       return;
     }
     if (trimmed.length > MAX_STRING_LENGTH) {
-      Alert.alert(t('pastoral.max_length_exceeded'), `${MAX_STRING_LENGTH}`);
+      Alert.alert(t('pastoral.max_length_exceeded', { max: MAX_STRING_LENGTH.toString() }));
       return;
     }
     onItemsChange([...items, trimmed]);
@@ -296,6 +287,7 @@ export function CreatePastoralJournalForm({
   initialWeekStartDate,
 }: CreatePastoralJournalFormProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   // Week state
   const [weekStartDate, setWeekStartDate] = useState(
@@ -636,7 +628,7 @@ export function CreatePastoralJournalForm({
           >
             {creating ? (
               <XStack alignItems="center" gap="$2">
-                <ActivityIndicator size="small" color="$color" />
+                <ActivityIndicator size="small" color={theme.color?.val} />
                 <TamaguiText>{t('common.saving')}</TamaguiText>
               </XStack>
             ) : (

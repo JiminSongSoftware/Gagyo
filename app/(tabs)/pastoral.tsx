@@ -98,17 +98,14 @@ export default function PastoralScreen() {
           accessibilityRole="button"
           accessibilityLabel="Create Journal"
         >
-          <TamaguiText fontSize="$8" color="white" fontWeight="bold">
+          <Text fontSize="$8" color="white" fontWeight="bold">
             +
-          </TamaguiText>
+          </Text>
         </FAB>
       )}
     </YStack>
   );
 }
 
-function TamaguiText({ children, ...props }: React.ComponentProps<typeof Text>) {
-  // Inline text component to avoid circular dependencies
-  const { Text } = require('tamagui');
-  return <Text {...props}>{children}</Text>;
-}
+// Import Text locally to avoid circular dependencies
+const { Text } = require('tamagui');
