@@ -10,12 +10,6 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { supabase } from '@/lib/supabase';
 import { useMemberships } from '@/hooks/useMemberships';
 
-// Mock types
-type MockQuery = {
-  eq: jest.Mock;
-  order: jest.Mock;
-};
-
 // Mock Supabase
 jest.mock('@/lib/supabase', () => ({
   supabase: {
@@ -49,7 +43,7 @@ describe('Tenant Selection Integration', () => {
       },
     ];
 
-    const mockQuery: MockQuery = {
+    const mockQuery = {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({
         data: mockMemberships,
@@ -111,7 +105,7 @@ describe('Tenant Selection Integration', () => {
       },
     ];
 
-    const mockQuery: MockQuery = {
+    const mockQuery = {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({
         data: mockMemberships,
@@ -135,7 +129,7 @@ describe('Tenant Selection Integration', () => {
   });
 
   it('should handle fetch errors gracefully', async () => {
-    const mockQuery: MockQuery = {
+    const mockQuery = {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({
         data: null,

@@ -445,9 +445,6 @@ function getDateRange(period: 'weekly' | 'monthly' | 'quarterly' | 'semi_annual'
 describe('Prayer Analytics RLS Policies', () => {
   let userAClient: SupabaseClient;
   let userBClient: SupabaseClient;
-  // Reserved for future cross-user testing scenarios
-  let _userCClient: SupabaseClient;
-  let _userDClient: SupabaseClient;
 
   beforeAll(async () => {
     // Create test users
@@ -468,9 +465,6 @@ describe('Prayer Analytics RLS Policies', () => {
     // Get authenticated clients
     userAClient = await getAuthenticatedClient(TEST_DATA.userAEmail);
     userBClient = await getAuthenticatedClient(TEST_DATA.userBEmail);
-    // Reserved for future cross-user testing scenarios
-    _userCClient = await getAuthenticatedClient(TEST_DATA.userCEmail);
-    _userDClient = await getAuthenticatedClient(TEST_DATA.userDEmail);
   });
 
   afterAll(async () => {
@@ -613,7 +607,7 @@ describe('Prayer Analytics RLS Policies', () => {
 
     const { data, error } = await userAClient
       .from('prayer_cards')
-      .select('id, created_at')
+      .select('id, created_at, title')
       .eq('tenant_id', TEST_DATA.tenantId)
       .eq('author_id', TEST_DATA.userAMembershipId)
       .gte('created_at', startDate)

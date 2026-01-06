@@ -77,7 +77,7 @@ export async function initI18n(): Promise<typeof i18n> {
     ns: ['common', 'auth', 'chat', 'prayer', 'pastoral', 'settings', 'errors'],
     defaultNS: 'common',
     nsSeparator: '.',
-    keySeparator: false,
+    keySeparator: '.',
     debug: __DEV__,
     interpolation: {
       escapeValue: false, // React already handles XSS

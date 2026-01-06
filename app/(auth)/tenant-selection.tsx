@@ -10,8 +10,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { YStack, Button, Text, Heading, Spinner } from 'tamagui';
-import { useTranslation } from 'react-i18next';
+import { Button as TamaguiButton, Spinner, YStack } from 'tamagui';
+import { Button } from '@/components/ui/Button';
+import { Heading } from '@/components/ui/Heading';
+import { Text } from '@/components/ui/Text';
+import { useTranslation } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { useMemberships } from '@/hooks/useMemberships';
 import { useTenantContext } from '@/hooks/useTenantContext';
@@ -22,12 +25,10 @@ import type { Membership } from '@/types/database';
  * Loading state component while fetching memberships.
  */
 function LoadingState() {
-  const { t } = useTranslation('common');
-
   return (
     <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
       <Spinner size="large" />
-      <Text testID="tenant-loading-spinner">{t('loading', { defaultValue: 'Loading...' })}</Text>
+      <Text testID="tenant-loading-spinner" i18nKey="common.loading" />
     </YStack>
   );
 }
@@ -36,15 +37,14 @@ function LoadingState() {
  * Empty state when user has no active memberships.
  */
 function EmptyState() {
-  const { t } = useTranslation('auth');
-
   return (
     <YStack flex={1} padding="$4" justifyContent="center" alignItems="center" gap="$4">
-      <Text testID="no-tenants-message" fontSize="$6" textAlign="center">
-        {t('no_churches_found', {
-          defaultValue: 'No churches found. Please contact your church administrator.',
-        })}
-      </Text>
+      <Text
+        testID="no-tenants-message"
+        i18nKey="auth.no_churches_found"
+        size="lg"
+        textAlign="center"
+      />
     </YStack>
   );
 }
@@ -58,29 +58,30 @@ interface TenantButtonProps {
 }
 
 function TenantButton({ membership, onPress }: TenantButtonProps) {
-  const { t } = useTranslation('auth');
-  const tenantName = membership.tenant?.name ?? 'Unknown Church';
+  const { t } = useTranslation();
+  const tenantName =
+    membership.tenant?.name ?? t('auth.unknown_church', { defaultValue: 'Unknown Church' });
   const tenantId = membership.tenant_id;
   const role = membership.role;
 
   // Get display name for role using i18n keys
-  const getRoleDisplay = (r: string) => {
+  const getRoleKey = (r: string) => {
     switch (r) {
       case 'admin':
-        return t('roles.admin', { defaultValue: 'Admin' });
+        return 'auth.roles.admin';
       case 'pastor':
-        return t('roles.pastor', { defaultValue: 'Pastor' });
+        return 'auth.roles.pastor';
       case 'zone_leader':
-        return t('roles.zone_leader', { defaultValue: 'Zone Leader' });
+        return 'auth.roles.zone_leader';
       case 'small_group_leader':
-        return t('roles.small_group_leader', { defaultValue: 'Small Group Leader' });
+        return 'auth.roles.small_group_leader';
       default:
-        return t('roles.member', { defaultValue: 'Member' });
+        return 'auth.roles.member';
     }
   };
 
   return (
-    <Button
+    <TamaguiButton
       testID={`tenant-button-${tenantId}`}
       size="$5"
       onPress={() => onPress(tenantId, tenantName)}
@@ -90,14 +91,10 @@ function TenantButton({ membership, onPress }: TenantButtonProps) {
       padding="$4"
     >
       <YStack gap="$2">
-        <Text fontSize="$7" fontWeight="bold">
-          {tenantName}
-        </Text>
-        <Text fontSize="$4" opacity={0.7}>
-          {getRoleDisplay(role)}
-        </Text>
+        <Text i18nKey="auth.tenant_name" i18nParams={{ tenantName }} size="lg" weight="bold" />
+        <Text i18nKey={getRoleKey(role)} size="sm" opacity={0.7} />
       </YStack>
-    </Button>
+    </TamaguiButton>
   );
 }
 
@@ -105,7 +102,6 @@ function TenantButton({ membership, onPress }: TenantButtonProps) {
  * Main tenant selection screen component.
  */
 export default function TenantSelectionScreen() {
-  const { t } = useTranslation('auth');
   const router = useRouter();
   const { user } = useAuth();
   const { memberships, loading } = useMemberships(user?.id);
@@ -151,14 +147,8 @@ export default function TenantSelectionScreen() {
       gap="$6"
     >
       <YStack gap="$2">
-        <Heading size="$8" textAlign="center">
-          {t('select_church', { defaultValue: 'Select Your Church' })}
-        </Heading>
-        <Text textAlign="center" opacity={0.7}>
-          {t('select_church_description', {
-            defaultValue: 'Choose the church you want to access',
-          })}
-        </Text>
+        <Heading i18nKey="auth.select_church" level="h1" textAlign="center" />
+        <Text i18nKey="auth.select_church_description" textAlign="center" opacity={0.7} />
       </YStack>
 
       <YStack testID="tenant-list" gap="$3" maxHeight={400}>
@@ -174,22 +164,17 @@ export default function TenantSelectionScreen() {
       </YStack>
 
       <YStack gap="$2">
-        <Text fontSize="$3" opacity={0.5} textAlign="center">
-          {t('logout_prompt', { defaultValue: 'Not the right account?' })}
-        </Text>
+        <Text i18nKey="auth.logout_prompt" size="sm" opacity={0.5} textAlign="center" />
         <Button
           testID="logout-button"
-          variant="outlined"
-          size="$3"
-          onPress={handleLogout}
+          variant="outline"
+          size="sm"
+          onPress={() => {
+            void handleLogout();
+          }}
           disabled={loggingOut}
-        >
-          <Text>
-            {loggingOut
-              ? t('signing_out', { defaultValue: 'Signing out...' })
-              : t('sign_out', { defaultValue: 'Sign Out' })}
-          </Text>
-        </Button>
+          labelKey={loggingOut ? 'auth.signing_out' : 'auth.sign_out'}
+        />
       </YStack>
     </YStack>
   );

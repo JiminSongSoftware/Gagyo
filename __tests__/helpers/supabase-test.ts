@@ -64,11 +64,16 @@ export const TEST_DATA = {
  * Execute SQL as a specific user by setting auth.uid() via JWT claims simulation
  * Uses SET LOCAL to set request.jwt.claims which RLS policies use via auth.uid()
  */
-export async function executeAsUser(
+type SqlResult<Row extends Record<string, unknown> = Record<string, unknown>> = {
+  rows: Row[];
+  rowCount: number;
+};
+
+export async function executeAsUser<Row extends Record<string, unknown> = Record<string, unknown>>(
   userId: string,
   sql: string,
   connectionString: string
-): Promise<{ rows: unknown[]; rowCount: number }> {
+): Promise<SqlResult<Row>> {
   const client = new Client({ connectionString });
 
   try {
@@ -92,7 +97,7 @@ export async function executeAsUser(
     // Rollback to keep test isolated
     await client.query('ROLLBACK');
 
-    return { rows: result.rows, rowCount: result.rowCount || 0 };
+    return { rows: result.rows as Row[], rowCount: result.rowCount || 0 };
   } catch {
     await client.query('ROLLBACK').catch(() => {});
     throw new Error('Query execution failed');
@@ -104,16 +109,15 @@ export async function executeAsUser(
 /**
  * Execute SQL with service_role (bypasses RLS for setup/teardown)
  */
-export async function executeAsServiceRole(
-  sql: string,
-  connectionString: string
-): Promise<{ rows: unknown[]; rowCount: number }> {
+export async function executeAsServiceRole<
+  Row extends Record<string, unknown> = Record<string, unknown>,
+>(sql: string, connectionString: string): Promise<SqlResult<Row>> {
   const client = new Client({ connectionString });
 
   try {
     await client.connect();
     const result = await client.query(sql);
-    return { rows: result.rows, rowCount: result.rowCount || 0 };
+    return { rows: result.rows as Row[], rowCount: result.rowCount || 0 };
   } finally {
     await client.end();
   }

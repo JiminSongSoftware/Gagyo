@@ -444,18 +444,8 @@ const config = createTamagui({
     // Disable SSR for React Native
     disableSSR: true,
 
-    // Allowed CSS properties for React Native
-    // Note: Set to true to enable all style prop checks
-    allowedStyleValues: 'all',
-
-    // Enforce strict prop types
-    strictStyleProps: 'warn',
-
-    // Fast path for style resolution
-    fastStyleResolution: true,
-
-    // Default theme
-    defaultTheme: 'light',
+    // Allow tokens + common RN values without blocking valid styles.
+    allowedStyleValues: 'somewhat-strict',
   },
 });
 

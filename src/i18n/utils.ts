@@ -1,10 +1,11 @@
 import { format as formatDateFn } from 'date-fns';
 import { enUS, ko } from 'date-fns/locale';
-import type { DateFormatOptions, Locale, NumberFormatOptions } from './types';
+import type { Locale as DateFnsLocale } from 'date-fns';
+import type { DateFormatOptions, Locale as AppLocale, NumberFormatOptions } from './types';
 
-const dateFnsLocales: Record<Locale, Locale> = {
+const dateFnsLocales: Record<AppLocale, DateFnsLocale> = {
   en: enUS,
-  ko: ko,
+  ko,
 };
 
 /**
@@ -20,10 +21,7 @@ const dateFnsLocales: Record<Locale, Locale> = {
  * formatDate(new Date(), { format: 'short', locale: 'ko' }) // "2026. 1. 4."
  * ```
  */
-export function formatDate(
-  date: Date | number,
-  options: DateFormatOptions = {}
-): string {
+export function formatDate(date: Date | number, options: DateFormatOptions = {}): string {
   const { format = 'medium', locale = 'en' } = options;
 
   const formatMap = {
@@ -52,10 +50,7 @@ export function formatDate(
  * formatNumber(0.85, { style: 'percent', locale: 'en' }) // "85%"
  * ```
  */
-export function formatNumber(
-  num: number,
-  options: NumberFormatOptions = {}
-): string {
+export function formatNumber(num: number, options: NumberFormatOptions = {}): string {
   const {
     style = 'decimal',
     minimumFractionDigits = 0,
@@ -85,7 +80,7 @@ export function formatNumber(
  * formatRelativeTime(new Date(Date.now() - 60000), 'ko') // "1분 전"
  * ```
  */
-export function formatRelativeTime(date: Date, locale: Locale = 'en'): string {
+export function formatRelativeTime(date: Date, locale: AppLocale = 'en'): string {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 

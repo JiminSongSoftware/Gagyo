@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { render } from '@testing-library/react-native';
 import HomeScreen from '../index';
 
@@ -26,16 +27,15 @@ jest.mock('expo-router', () => ({
 
 // Mock UI components
 jest.mock('@/components/ui', () => {
-  const React = require('react');
   const { View, Text, TouchableOpacity } = require('react-native');
   return {
-    Container: ({ children, testID }: { children?: React.ReactNode; testID?: string }) => (
+    Container: ({ children, testID }: { children?: ReactNode; testID?: string }) => (
       <View testID={testID}>{children}</View>
     ),
     Heading: ({ i18nKey, testID }: { i18nKey?: string; testID?: string }) => (
       <Text testID={testID || i18nKey}>{i18nKey}</Text>
     ),
-    Column: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+    Column: ({ children }: { children?: ReactNode }) => <View>{children}</View>,
     Button: ({
       labelKey,
       onPress,

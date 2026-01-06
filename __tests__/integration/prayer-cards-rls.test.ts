@@ -183,7 +183,7 @@ describe('Prayer Cards RLS - Integration Tests', () => {
         expect(data).not.toBeNull();
         // Cleanup
         if (data && data.length > 0) {
-          await user1Client.from('prayer_cards').delete().eq('id', data[0].id);
+          await user1Client.from('prayer_cards').delete().eq('id', data[0]?.id);
         }
       }
     });
@@ -336,7 +336,7 @@ describe('Prayer Cards RLS - Integration Tests', () => {
 
         // Cleanup
         if (data && data.length > 0) {
-          await user1Client.from('prayer_cards').delete().eq('id', data[0].id);
+          await user1Client.from('prayer_cards').delete().eq('id', data[0]?.id);
         }
       }
     });
@@ -437,7 +437,8 @@ describe('Prayer Cards RLS - Integration Tests', () => {
             prayer_card_id: prayer.id,
             recipient_membership_id: TEST_DATA.user1MembershipId,
           })
-          .select('id');
+          .select('id')
+          .single();
 
         // This might fail due to RLS if the user doesn't have proper access
         if (recipientError) {
@@ -447,7 +448,7 @@ describe('Prayer Cards RLS - Integration Tests', () => {
           expect(recipient).not.toBeNull();
 
           // Cleanup
-          await user1Client.from('prayer_card_recipients').delete().eq('id', recipient.id);
+          await user1Client.from('prayer_card_recipients').delete().eq('id', recipient?.id);
         }
 
         // Cleanup prayer
@@ -486,7 +487,7 @@ describe('Prayer Cards RLS - Integration Tests', () => {
         } else {
           expect(data).not.toBeNull();
           if (data && data.length > 0) {
-            expect(data[0].answered).toBe(true);
+            expect(data[0]?.answered).toBe(true);
 
             // Reset for cleanup
             await user1Client.from('prayer_cards').update({ answered: false }).eq('id', prayerId);

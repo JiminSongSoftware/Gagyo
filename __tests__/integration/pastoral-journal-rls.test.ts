@@ -45,27 +45,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 type Role = 'member' | 'co_leader' | 'leader' | 'zone_leader' | 'pastor' | 'admin';
 
-interface _PastoralJournal {
-  id: string;
-  tenant_id: string;
-  small_group_id: string;
-  author_id: string;
-  status: 'draft' | 'submitted' | 'zone_reviewed' | 'pastor_confirmed';
-  week_start_date: string;
-  content: unknown;
-  created_at: string;
-  updated_at: string;
-}
-
-interface _PastoralJournalComment {
-  id: string;
-  tenant_id: string;
-  pastoral_journal_id: string;
-  author_id: string;
-  content: string;
-  created_at: string;
-}
-
 interface Membership {
   id: string;
   tenant_id: string;
@@ -483,7 +462,8 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
       const { data, error } = await leaderClient
         .from('pastoral_journals')
         .update({ status: 'draft' }) // Try to revert to draft
-        .eq('status', 'submitted');
+        .eq('status', 'submitted')
+        .select('id');
 
       // This should fail or return empty due to RLS
       expect(Array.isArray(data)).toBe(true);
@@ -527,7 +507,8 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
       const { data, error } = await memberClient
         .from('pastoral_journals')
         .update({ status: 'draft' })
-        .eq('id', TEST_DATA.draftJournalId);
+        .eq('id', TEST_DATA.draftJournalId)
+        .select('id');
 
       // Should return empty (no journals accessible to members)
       expect(Array.isArray(data)).toBe(true);
@@ -585,7 +566,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
         // Cleanup
         if (data && data.length > 0) {
-          await pastorClient.from('pastoral_journal_comments').delete().eq('id', data[0].id);
+          await pastorClient.from('pastoral_journal_comments').delete().eq('id', data[0]?.id);
         }
       }
     });
@@ -721,7 +702,7 @@ describe('Pastoral Journal RLS - Integration Tests', () => {
 
         // Cleanup
         if (data && data.length > 0) {
-          void leaderClient.from('pastoral_journals').delete().eq('id', data[0].id);
+          void leaderClient.from('pastoral_journals').delete().eq('id', data[0]?.id);
         }
       }
     });

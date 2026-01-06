@@ -8,14 +8,18 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { YStack, XStack, Button, Input, Text, Heading } from 'tamagui';
-import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { XStack, YStack } from 'tamagui';
+import { Button } from '@/components/ui/Button';
+import { Heading } from '@/components/ui/Heading';
+import { Input } from '@/components/ui/Input';
+import { Text } from '@/components/ui/Text';
+import { useTranslation } from '@/i18n';
 import { signUp, getAuthErrorMessage } from '@/lib/auth';
 
 export default function SignupScreen() {
-  const { t } = useTranslation('auth');
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -27,17 +31,28 @@ export default function SignupScreen() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
   }
 
-  function validateForm(): string | null {
+  type ValidationErrorKey =
+    | 'auth.invalid_email'
+    | 'auth.password_too_short'
+    | 'auth.passwords_dont_match';
+
+  const validationFallbacks: Record<ValidationErrorKey, string> = {
+    'auth.invalid_email': 'Please enter a valid email address',
+    'auth.password_too_short': 'Password must be at least 8 characters',
+    'auth.passwords_dont_match': "Passwords don't match",
+  };
+
+  function validateForm(): ValidationErrorKey | null {
     if (!validateEmail(email)) {
-      return 'invalid_email';
+      return 'auth.invalid_email';
     }
 
     if (password.length < 8) {
-      return 'password_too_short';
+      return 'auth.password_too_short';
     }
 
     if (password !== confirmPassword) {
-      return 'passwords_dont_match';
+      return 'auth.passwords_dont_match';
     }
 
     return null;
@@ -46,7 +61,11 @@ export default function SignupScreen() {
   async function handleSignup() {
     const validationError = validateForm();
     if (validationError) {
-      Alert.alert(t(validationError));
+      Alert.alert(
+        t(validationError, {
+          defaultValue: validationFallbacks[validationError],
+        })
+      );
       return;
     }
 
@@ -74,77 +93,63 @@ export default function SignupScreen() {
       backgroundColor="$background"
       gap="$4"
     >
-      <Heading size="$8" textAlign="center">
-        {t('create_account', { defaultValue: 'Create Account' })}
-      </Heading>
+      <Heading i18nKey="auth.create_account" level="h1" textAlign="center" />
 
       <YStack gap="$3">
         <Input
           testID="email-input"
-          placeholder={t('email', { defaultValue: 'Email' })}
+          placeholderKey="auth.email"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
           textContentType="emailAddress"
           autoComplete="email"
-          size="$5"
+          size="lg"
         />
 
         <Input
           testID="password-input"
-          placeholder={t('password', { defaultValue: 'Password' })}
+          placeholderKey="auth.password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           textContentType="newPassword"
           autoComplete="password-new"
-          size="$5"
+          size="lg"
         />
 
         <Input
           testID="confirm-password-input"
-          placeholder={t('confirm_password', { defaultValue: 'Confirm Password' })}
+          placeholderKey="auth.confirm_password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
           textContentType="newPassword"
           autoComplete="password-new"
-          size="$5"
+          size="lg"
         />
       </YStack>
 
       <Button
         testID="signup-button"
-        onPress={handleSignup}
+        onPress={() => {
+          void handleSignup();
+        }}
         disabled={loading || !isFormValid}
-        size="$5"
-        themeInverse
-      >
-        <InputText>
-          {loading
-            ? t('common:loading', { defaultValue: 'Loading...' })
-            : t('create_account', { defaultValue: 'Create Account' })}
-        </InputText>
-      </Button>
+        size="lg"
+        labelKey={loading ? 'common.loading' : 'auth.create_account'}
+      />
 
       <XStack justifyContent="center" gap="$2">
-        <Text>{t('already_have_account', { defaultValue: 'Already have an account?' })}</Text>
+        <Text i18nKey="auth.already_have_account" />
         <Text
-          color="$blue10"
+          i18nKey="auth.sign_in"
+          color="primary"
           onPress={() => router.back()}
           style={{ textDecorationLine: 'underline' }}
-        >
-          {t('sign_in', { defaultValue: 'Sign In' })}
-        </Text>
+        />
       </XStack>
     </YStack>
   );
-}
-
-/**
- * Helper component for button text with proper theming.
- */
-function InputText({ children }: { children: string }) {
-  return <Text>{children}</Text>;
 }

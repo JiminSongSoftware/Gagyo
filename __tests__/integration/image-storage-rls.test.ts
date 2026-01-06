@@ -136,10 +136,7 @@ async function cleanupStorageFiles(client: SupabaseClient, paths: string[]): Pro
 async function cleanupAttachments(client: SupabaseClient, attachmentIds: string[]): Promise<void> {
   if (attachmentIds.length === 0) return;
 
-  await client
-    .from('attachments')
-    .delete()
-    .in('id', `(${attachmentIds.join(',')})`);
+  await client.from('attachments').delete().in('id', attachmentIds);
 }
 
 // ============================================================================

@@ -8,14 +8,18 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { YStack, XStack, Button, Input, Text, Heading } from 'tamagui';
-import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { XStack, YStack } from 'tamagui';
+import { Button } from '@/components/ui/Button';
+import { Heading } from '@/components/ui/Heading';
+import { Input } from '@/components/ui/Input';
+import { Text } from '@/components/ui/Text';
+import { useTranslation } from '@/i18n';
 import { signIn, getAuthErrorMessage } from '@/lib/auth';
 
 export default function LoginScreen() {
-  const { t } = useTranslation('auth');
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -52,59 +56,52 @@ export default function LoginScreen() {
       backgroundColor="$background"
       gap="$4"
     >
-      <Heading size="$8" textAlign="center">
-        {t('welcome_back', { defaultValue: 'Welcome back!' })}
-      </Heading>
+      <Heading i18nKey="auth.welcome_back" level="h1" textAlign="center" />
 
       <YStack gap="$3">
         <Input
           testID="email-input"
-          placeholder={t('email', { defaultValue: 'Email' })}
+          placeholderKey="auth.email"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
           textContentType="emailAddress"
           autoComplete="email"
-          size="$5"
+          size="lg"
         />
 
         <Input
           testID="password-input"
-          placeholder={t('password', { defaultValue: 'Password' })}
+          placeholderKey="auth.password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           textContentType="password"
           autoComplete="password"
-          size="$5"
+          size="lg"
         />
       </YStack>
 
       <Button
         testID="login-button"
-        size="$5"
+        size="lg"
         onPress={() => {
           void handleLogin();
         }}
         disabled={!isFormValid || loading}
-        opacity={!isFormValid || loading ? 0.5 : 1}
-      >
-        {loading
-          ? t('common:loading', { defaultValue: 'Loading...' })
-          : t('sign_in', { defaultValue: 'Sign In' })}
-      </Button>
+        labelKey={loading ? 'common.loading' : 'auth.sign_in'}
+      />
 
       <XStack justifyContent="center" gap="$2">
-        <Text>{t('dont_have_account', { defaultValue: "Don't have an account?" })}</Text>
+        <Text i18nKey="auth.dont_have_account" />
         <Text
           testID="signup-link"
+          i18nKey="auth.sign_up"
           style={{ cursor: 'pointer' }}
           onPress={() => router.push('/(auth)/signup')}
-          color="$color12"
-        >
-          {t('sign_up', { defaultValue: 'Sign Up' })}
-        </Text>
+          color="primary"
+        />
       </XStack>
     </YStack>
   );

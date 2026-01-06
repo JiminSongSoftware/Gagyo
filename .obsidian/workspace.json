@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-pastoral-journal:-leader-entry-&-hierarchical-review-workflow.md",
+                "file": "plan-v1-:-settings:-profile,-preferences-&-locale-management.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-pastoral-journal:-leader-entry-&-hierarchical-review-workflow"
+              "title": "plan-v1-:-settings:-profile,-preferences-&-locale-management"
             }
           }
         ]
@@ -193,21 +193,24 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
-    "plan-v1-:-prayer-analytics:-individual,-small-group-&-church-wide-statistics.md",
+    "claude_docs/10_typescript_error_resolution.md",
     "plan-v1-:-pastoral-journal:-leader-entry-&-hierarchical-review-workflow.md",
+    "plan-v1-:-settings:-profile,-preferences-&-locale-management.md",
+    "src/features/pastoral/components/CreatePastoralJournalForm.tsx.bak",
+    "src/components/ui/AlertDialog.tsx",
+    "src/features/pastoral/hooks/useUpdatePastoralJournalStatus.ts",
+    "src/features/pastoral/hooks/usePastoralJournals.ts",
+    "src/features/pastoral/hooks/usePastoralJournalComments.ts",
+    "src/features/pastoral/hooks/useCreatePastoralJournal.ts",
+    "src/features/pastoral/components/PastoralJournalList.tsx",
+    "src/features/pastoral/components/PastoralJournalDetail.tsx",
+    "src/features/pastoral/components/CreatePastoralJournalForm.tsx",
+    "src/features/pastoral/hooks",
+    "claude_docs/20_pastoral_journal.md",
+    "plan-v1-:-prayer-analytics:-individual,-small-group-&-church-wide-statistics.md",
     "claude_docs/19_prayer_analytics.md",
-    "__tests__/integration/prayer-analytics-rls.test.ts",
-    "__tests__/integration/prayer-cards-rls.test.ts",
     "plan-v1-:-prayer-cards:-creation,-sharing-&-answered-notifications.md",
     "claude_docs/18_prayer_cards.md",
-    "e2e/prayer.test.ts",
-    "e2e/helpers/prayer-helpers.ts",
-    "src/features/prayer/components/__tests__/BackgroundMusicToggle.test.tsx",
-    "src/features/prayer/components/__tests__/CreatePrayerCardModal.test.tsx",
-    "src/features/prayer/components/__tests__",
-    "src/features/prayer/hooks/__tests__/usePrayerAnalytics.test.ts",
-    "src/features/prayer/hooks/__tests__/useCreatePrayerCard.test.ts",
-    "src/features/prayer/hooks/__tests__/usePrayerCards.test.ts",
     "plan-v1-:-push-notifications:-token-management-&-delivery.md",
     "plan-v1-:-unified-images-view:-cross-chat-image-gallery.md",
     "claude_docs/17_images_view.md",
@@ -227,9 +230,6 @@
     "node_modules/is-weakset/CHANGELOG.md",
     "node_modules/is-weakmap/README.md",
     "node_modules/is-weakmap/CHANGELOG.md",
-    "node_modules/is-map/README.md",
-    "node_modules/is-map/CHANGELOG.md",
-    "node_modules/async-function/README.md",
     "node_modules/psl/browserstack-logo.svg",
     "node_modules/stream-buffers/coverage/lcov-report/sort-arrow-sprite.png",
     "node_modules/istanbul-reports/lib/html-spa/assets/sort-arrow-sprite.png",

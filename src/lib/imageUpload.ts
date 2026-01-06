@@ -73,7 +73,7 @@ export interface ImageUploadOptions {
  */
 async function getFileInfo(uri: string): Promise<{ size: number; exists: boolean }> {
   try {
-    const info = await FileSystem.getInfoAsync(uri, { size: true });
+    const info = await FileSystem.getInfoAsync(uri);
     return {
       exists: info.exists,
       size: info.exists && 'size' in info ? (info.size ?? 0) : 0,

@@ -6,7 +6,7 @@
  */
 
 import { supabase } from './supabase';
-import type { AuthError, AuthTokenResponsePassword, AuthResponse } from '@supabase/supabase-js';
+import type { AuthTokenResponsePassword, AuthResponse } from '@supabase/supabase-js';
 
 /**
  * Sign in with email and password.
@@ -19,7 +19,7 @@ import type { AuthError, AuthTokenResponsePassword, AuthResponse } from '@supaba
 export async function signIn(
   email: string,
   password: string
-): Promise<AuthTokenResponsePassword> {
+): Promise<AuthTokenResponsePassword['data']> {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -43,10 +43,7 @@ export async function signIn(
  * @returns Auth response with session and user data
  * @throws AuthError if signup fails
  */
-export async function signUp(
-  email: string,
-  password: string
-): Promise<AuthResponse> {
+export async function signUp(email: string, password: string): Promise<AuthResponse['data']> {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -184,10 +181,7 @@ export const AuthErrorType = {
  * @param type - Expected error type
  * @returns True if error matches the type
  */
-export function isAuthError(
-  error: unknown,
-  type: keyof typeof AuthErrorType
-): boolean {
+export function isAuthError(error: unknown, type: keyof typeof AuthErrorType): boolean {
   if (error instanceof Error) {
     return error.message === AuthErrorType[type];
   }
@@ -206,19 +200,19 @@ export function getAuthErrorMessage(error: unknown): string {
 
     // Map common Supabase error messages to user-friendly strings
     if (message.includes('Invalid login credentials')) {
-      return 'auth:invalid_credentials';
+      return 'auth.invalid_credentials';
     }
     if (message.includes('Email not confirmed')) {
-      return 'auth:email_not_confirmed';
+      return 'auth.email_not_confirmed';
     }
     if (message.includes('Password should be at least')) {
-      return 'auth:password_too_short';
+      return 'auth.password_too_short';
     }
     if (message.includes('User already registered')) {
-      return 'auth:email_already_exists';
+      return 'auth.email_already_exists';
     }
     if (message.includes('Unable to validate email')) {
-      return 'auth:invalid_email';
+      return 'auth.invalid_email';
     }
   }
 

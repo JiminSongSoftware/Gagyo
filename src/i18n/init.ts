@@ -30,7 +30,6 @@
  * ```
  */
 
-import * as Localization from 'expo-localization';
 import { getLocales } from 'expo-localization';
 import { initI18n as baseInitI18n, changeLocale, getCurrentLocale } from './index';
 import type { Locale } from './types';

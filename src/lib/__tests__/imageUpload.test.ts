@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import type { FileInfo } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system';
 import {
   uploadImage,
@@ -21,10 +22,8 @@ import { supabase } from '../supabase';
 
 // Mock expo-file-system
 jest.mock('expo-file-system', () => ({
-  FileSystem: {
-    getInfoAsync: jest.fn(),
-    readAsStringAsync: jest.fn(),
-  },
+  getInfoAsync: jest.fn(),
+  readAsStringAsync: jest.fn(),
 }));
 
 // Mock Supabase client
@@ -37,8 +36,33 @@ jest.mock('../supabase', () => ({
   },
 }));
 
-const mockFileSystem = FileSystem as jest.Mocked<typeof FileSystem>;
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+type FileSystemMock = {
+  getInfoAsync: jest.Mock<Promise<FileInfo>, [string, FileSystem.InfoOptions?]>;
+  readAsStringAsync: jest.Mock<Promise<string>, [string, FileSystem.ReadingOptions?]>;
+};
+
+type StorageMock = {
+  upload: jest.Mock<
+    Promise<{ error: null | { message: string }; data?: { path: string } }>,
+    [string, Uint8Array, Record<string, unknown>]
+  >;
+  getPublicUrl: jest.Mock<{ data: { publicUrl: string } }, [string]>;
+  remove: jest.Mock<Promise<{ error: null | { message: string } }>, [string[]]>;
+};
+
+type DatabaseMock = {
+  insert: jest.Mock;
+  select: jest.Mock;
+  single: jest.Mock;
+  delete: jest.Mock;
+  update: jest.Mock;
+};
+
+const mockFileSystem = FileSystem as unknown as FileSystemMock;
+const mockSupabase = supabase as unknown as {
+  storage: { from: jest.Mock<StorageMock, [string]> };
+  from: jest.Mock<DatabaseMock, [string]>;
+};
 
 describe('imageUpload', () => {
   const mockTenantId = 'tenant-123';
@@ -56,17 +80,18 @@ describe('imageUpload', () => {
       exists: true,
       size: 1024 * 1024, // 1MB
       uri: mockImageUri,
+      isDirectory: false,
+      modificationTime: 0,
     });
 
     // Default file read mock
-    mockFileSystem.readFileSync.mockResolvedValue(mockBase64Data);
     mockFileSystem.readAsStringAsync.mockResolvedValue(mockBase64Data);
 
     // Default Supabase storage mock
     const mockStorage = {
       upload: jest.fn().mockResolvedValue({ error: null, data: { path: 'uploaded-path' } }),
       getPublicUrl: jest.fn().mockReturnValue({
-        publicUrl: 'https://example.com/image.jpg',
+        data: { publicUrl: 'https://example.com/image.jpg' },
       }),
       remove: jest.fn().mockResolvedValue({ error: null }),
     };
@@ -101,40 +126,55 @@ describe('imageUpload', () => {
       const result = await validateImage(mockImageUri, 'application/pdf');
 
       expect(result.valid).toBe(false);
-      expect(result.error).toBeInstanceOf(ImageUploadError);
-      expect(result.error?.code).toBe('INVALID_MIME_TYPE');
-      expect(result.error?.message).toContain('Invalid image format');
+      if (!result.valid) {
+        expect(result.error).toBeInstanceOf(ImageUploadError);
+        expect(result.error.code).toBe('INVALID_MIME_TYPE');
+        expect(result.error.message).toContain('Invalid image format');
+      }
     });
 
     it('should reject non-existent file', async () => {
       mockFileSystem.getInfoAsync.mockResolvedValue({
         exists: false,
         size: 0,
+        uri: mockImageUri,
+        isDirectory: false,
+        modificationTime: 0,
       });
 
       const result = await validateImage(mockImageUri, mockMimeType);
 
       expect(result.valid).toBe(false);
-      expect(result.error?.code).toBe('FILE_READ_FAILED');
+      if (!result.valid) {
+        expect(result.error.code).toBe('FILE_READ_FAILED');
+      }
     });
 
     it('should reject file exceeding 5MB limit', async () => {
       mockFileSystem.getInfoAsync.mockResolvedValue({
         exists: true,
         size: 6 * 1024 * 1024, // 6MB
+        uri: mockImageUri,
+        isDirectory: false,
+        modificationTime: 0,
       });
 
       const result = await validateImage(mockImageUri, mockMimeType);
 
       expect(result.valid).toBe(false);
-      expect(result.error?.code).toBe('FILE_TOO_LARGE');
-      expect(result.error?.message).toContain('too large');
+      if (!result.valid) {
+        expect(result.error.code).toBe('FILE_TOO_LARGE');
+        expect(result.error.message).toContain('too large');
+      }
     });
 
     it('should accept file exactly at 5MB limit', async () => {
       mockFileSystem.getInfoAsync.mockResolvedValue({
         exists: true,
         size: 5 * 1024 * 1024, // Exactly 5MB
+        uri: mockImageUri,
+        isDirectory: false,
+        modificationTime: 0,
       });
 
       const result = await validateImage(mockImageUri, mockMimeType);
@@ -167,6 +207,9 @@ describe('imageUpload', () => {
       mockFileSystem.getInfoAsync.mockResolvedValue({
         exists: false,
         size: 0,
+        uri: mockImageUri,
+        isDirectory: false,
+        modificationTime: 0,
       });
 
       await expect(
@@ -188,15 +231,15 @@ describe('imageUpload', () => {
         error: { message: 'Database error', code: '23503' },
       });
 
-      const result = await uploadImage({
-        tenantId: mockTenantId,
-        messageId: mockMessageId,
-        imageUri: mockImageUri,
-        fileName: mockFileName,
-        mimeType: mockMimeType,
-      });
-
-      expect(result).rejects;
+      await expect(
+        uploadImage({
+          tenantId: mockTenantId,
+          messageId: mockMessageId,
+          imageUri: mockImageUri,
+          fileName: mockFileName,
+          mimeType: mockMimeType,
+        })
+      ).rejects.toThrow('Failed to create attachment record');
     });
 
     it('should generate unique storage path with timestamp', async () => {
