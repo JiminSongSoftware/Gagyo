@@ -20,16 +20,22 @@
 
 ## Test Files Overview
 
-| Test File | Test Suites | Test Cases | Locale Support |
-|-----------|-------------|------------|----------------|
-| `auth.test.ts` | 3 | 15 | EN |
-| `chat.test.ts` | 4 | 22 | EN + KO |
-| `event-chat.test.ts` | 3 | 18 | EN + KO |
-| `prayer.test.ts` | 3 | 24 | EN + KO |
-| `pastoral-journal.test.ts` | 5 | 32 | EN + KO |
-| `settings.test.ts` | 3 | 16 | EN |
-| `tenant-isolation.test.ts` | 2 | 12 | EN |
-| **TOTAL** | **23** | **139** | **EN + KO** |
+| Test File | Test Cases | Locale Support |
+|-----------|-------------|----------------|
+| `auth.test.ts` | 20 | EN + KO |
+| `chat.test.ts` | 29 | EN + KO |
+| `event-chat.test.ts` | 24 | EN + KO |
+| `home-navigation.test.ts` | 20 | EN |
+| `i18n.test.ts` | 18 | Dedicated i18n |
+| `images.test.ts` | 33 | EN |
+| `pastoral-journal.test.ts` | 88 | EN + KO |
+| `prayer.test.ts` | 85 | EN + KO |
+| `push-notifications.test.ts` | 35 | EN |
+| `settings.test.ts` | 62 | EN + KO |
+| `starter.test.ts` | 3 | EN |
+| `tenant-isolation.test.ts` | 26 | EN + KO |
+| `thread.test.ts` | 20 | EN |
+| **TOTAL** | **463** | **EN + KO** |
 
 ---
 
@@ -250,12 +256,13 @@
 
 | Feature | Test Coverage |
 |---------|---------------|
-| Authentication | ⚠️ Via chat navigation |
-| Chat | ✅ 6 dedicated tests |
-| Event Chat | ✅ 8 dedicated tests |
-| Prayer | ✅ 8 dedicated tests |
-| Pastoral Journal | ✅ 12 dedicated tests (3 roles) |
-| Settings | ⚠️ Via general settings tests |
+| Authentication | ✅ Dedicated Korean tests in auth.test.ts |
+| Chat | ✅ Korean locale variants in dedicated i18n tests |
+| Event Chat | ✅ Korean locale variants |
+| Prayer | ✅ Korean locale variants |
+| Pastoral Journal | ✅ Korean locale variants (3 roles) |
+| Settings | ✅ Korean locale tests (locale switching) |
+| Tenant Isolation | ✅ Korean locale tests |
 
 ### Korean UI Elements Verified
 
@@ -344,8 +351,6 @@
 
 | Area | Gap | Priority |
 |------|-----|----------|
-| Authentication Korean tests | No dedicated Korean auth tests | Medium |
-| Settings Korean tests | Limited Korean locale verification | Low |
 | Push notifications | E2E tests exist but need expansion | Medium |
 | Offline mode | No offline E2E coverage | Low |
 | Performance tests | No performance regression tests | Low |
@@ -415,7 +420,7 @@ The E2E test suite provides comprehensive coverage of the Gagyo app's core funct
 - **Flake mitigation** - 97% pass rate in CI
 - **Critical user paths** - All major flows covered
 
-**Total Test Count:** 139 E2E tests
+**Total Test Count:** 463 E2E tests
 **Platforms:** iOS + Android
 **Locales:** English + Korean
 **CI Pass Rate:** ~97%

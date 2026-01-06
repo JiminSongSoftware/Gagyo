@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-testing-hardening:-detox-e2e-coverage-&-ci-integration.md",
+                "file": "plan-v1-:-production-readiness:-eas-build,-submit-&-release-configuration.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-testing-hardening:-detox-e2e-coverage-&-ci-integration"
+              "title": "plan-v1-:-production-readiness:-eas-build,-submit-&-release-configuration"
             }
           }
         ]
@@ -193,18 +193,21 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
-    "plan-v1-:-settings:-profile,-preferences-&-locale-management.md",
     "plan-v1-:-testing-hardening:-detox-e2e-coverage-&-ci-integration.md",
+    "plan-v1-:-production-readiness:-eas-build,-submit-&-release-configuration.md",
+    "e2e/coverage-report.md.tmp.30368.1767684283827",
+    "e2e/coverage-report.md.tmp.30368.1767684276394",
+    "e2e/coverage-report.md.tmp.30368.1767684238549",
+    "e2e/tenant-isolation.test.ts",
+    "e2e/helpers/flake-helpers.ts",
+    "e2e/coverage-report.md",
+    "e2e/README.md",
+    "plan-v1-:-settings:-profile,-preferences-&-locale-management.md",
     "node_modules/expo-image-loader/android/src/main/java/expo/modules/imageloader/SimpleSettableFuture.java",
     "node_modules/expo-image-loader/android/src/main/java/expo/modules/imageloader/ImageLoaderModule.kt",
     "node_modules/expo-image-loader/android/src/main/java/expo/modules/imageloader/ImageLoaderPackage.kt",
     "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom.sha512",
     "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom.md5",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom.sha1",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom.sha256",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.module.sha512",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.module.sha1",
     "node_modules/expo-image-loader/CHANGELOG.md",
     "node_modules/expo-image-loader/README.md",
     "node_modules/expo-image-picker/CHANGELOG.md",
@@ -226,9 +229,6 @@
     "node_modules/pg-protocol/README.md",
     "node_modules/pg/README.md",
     "node_modules/@types/pg/README.md",
-    "claude_docs/21_settings.md",
-    "claude_docs/10_typescript_error_resolution.md",
-    "plan-v1-:-pastoral-journal:-leader-entry-&-hierarchical-review-workflow.md",
     "assets/favicon.png",
     "node_modules/psl/browserstack-logo.svg",
     "node_modules/stream-buffers/coverage/lcov-report/sort-arrow-sprite.png",

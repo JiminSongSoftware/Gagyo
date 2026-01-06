@@ -97,7 +97,9 @@ describe('Signup Flow', () => {
   });
 
   it('should validate password confirmation match', async () => {
-    await completeSignup('newuser@test.com', 'password123', 'password456', { expectSuccess: false });
+    await completeSignup('newuser@test.com', 'password123', 'password456', {
+      expectSuccess: false,
+    });
     await expectError("Passwords don't match");
   });
 
@@ -171,7 +173,7 @@ describe('Session Persistence', () => {
   });
 });
 
-describe('Auth i18n', () => {
+describe('Auth (Korean Locale)', () => {
   it('should display Korean text when locale is ko', async () => {
     await device.launchApp({
       languageAndRegion: {

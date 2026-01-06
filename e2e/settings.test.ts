@@ -549,7 +549,9 @@ describe('Settings E2E Tests', () => {
 
       // Warning text should be visible
       await expect(element(by.text('All your data will be permanently deleted'))).toBeVisible();
-      await expect(element(by.text('This includes messages, prayers, journals, and profile'))).toBeVisible();
+      await expect(
+        element(by.text('This includes messages, prayers, journals, and profile'))
+      ).toBeVisible();
     });
 
     it('should have cancel button in confirmation dialog', async () => {
@@ -744,6 +746,198 @@ describe('Settings E2E Tests', () => {
 
       expect(width).toBeGreaterThanOrEqual(44);
       expect(height).toBeGreaterThanOrEqual(44);
+    });
+  });
+});
+
+/**
+ * ============================================================================
+ * KOREAN LOCALE TESTS
+ * ============================================================================
+ */
+
+describe('Settings (Korean Locale)', () => {
+  const testUser = {
+    email: uniqueEmail('settings-ko'),
+    password: 'Test123!',
+    tenantName: 'Test Church',
+  };
+
+  beforeAll(async () => {
+    // Launch app with Korean locale
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    await completeAuthFlow(testUser.email, testUser.password, testUser.tenantName);
+  });
+
+  describe('Navigation to Settings (Korean)', () => {
+    it('should display Korean Settings screen labels', async () => {
+      await element(by.id('settings-tab')).tap();
+      await expectScreen('settings-screen');
+
+      // Settings in Korean is '설정'
+      await expect(element(by.text('설정'))).toBeVisible();
+    });
+
+    it('should display Korean section labels', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      // Profile section - '프로필' or similar
+      await expect(element(by.id('profile-section'))).toBeVisible();
+
+      // Appearance section - contains locale selector
+      await expect(element(by.id('appearance-section'))).toBeVisible();
+
+      // Notifications section - '알림' or similar
+      await expect(element(by.id('notifications-section'))).toBeVisible();
+    });
+  });
+
+  describe('Profile Editing (Korean)', () => {
+    it('should display Korean profile editing labels', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      // Tap edit button
+      await element(by.id('edit-profile-button')).tap();
+
+      // Display name input - Korean label would be '표시 이름' or similar
+      await expect(element(by.id('display-name-input'))).toBeVisible();
+
+      // Save button - '저장'
+      await expect(element(by.id('save-profile-button'))).toBeVisible();
+    });
+
+    it('should display Korean validation error for empty name', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      await element(by.id('edit-profile-button')).tap();
+      await element(by.id('display-name-input')).clearText();
+
+      // Try to save with empty name
+      await element(by.id('save-profile-button')).tap();
+
+      // Should show Korean validation error - '표시 이름이 필요합니다'
+      await expect(element(by.text('필수 항목'))).toBeVisible();
+    });
+  });
+
+  describe('Locale Switching (Korean)', () => {
+    it('should display Korean locale selector with Korean selected', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      // Locale selector should show 한국어 as current
+      await expect(element(by.id('locale-selector'))).toBeVisible();
+      await expect(element(by.id('current-locale'))).toHaveText('한국어');
+    });
+
+    it('should switch from Korean to English', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      // Open locale selector
+      await element(by.id('locale-selector')).tap();
+
+      // Select English
+      await element(by.text('English')).tap();
+
+      // UI should immediately refresh with English
+      await expect(element(by.text('Settings'))).toBeVisible();
+      await expect(element(by.id('current-locale'))).toHaveText('English');
+    });
+
+    it('should switch back to Korean and persist', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      // First switch to English
+      await element(by.id('locale-selector')).tap();
+      await element(by.text('English')).tap();
+
+      // Verify English is active
+      await expect(element(by.text('Settings'))).toBeVisible();
+
+      // Switch back to Korean
+      await element(by.id('locale-selector')).tap();
+      await element(by.text('한국어')).tap();
+
+      // Verify Korean is displayed
+      await expect(element(by.text('설정'))).toBeVisible();
+
+      // Restart app
+      await device.reloadReactNative();
+
+      // Navigate to Settings
+      await element(by.id('settings-tab')).tap();
+
+      // Should still be in Korean
+      await expect(element(by.id('current-locale'))).toHaveText('한국어');
+    });
+  });
+
+  describe('Notification Preferences (Korean)', () => {
+    it('should display Korean notification labels', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      // Notifications section should be visible
+      await expect(element(by.id('notifications-section'))).toBeVisible();
+
+      // Toggle labels in Korean - '메시지 알림', '기도 알림', etc.
+      await expect(element(by.id('message-notifications-toggle'))).toBeVisible();
+      await expect(element(by.id('prayer-notifications-toggle'))).toBeVisible();
+    });
+  });
+
+  describe('Logout (Korean)', () => {
+    it('should display Korean logout button', async () => {
+      await element(by.id('settings-tab')).tap();
+
+      await expect(element(by.id('logout-button'))).toBeVisible();
+      // Logout in Korean is '로그아웃'
+      await expect(element(by.label('로그아웃'))).toBeVisible();
+    });
+
+    it('should logout and redirect to login screen with Korean labels', async () => {
+      await element(by.id('settings-tab')).tap();
+      await element(by.id('logout-button')).tap();
+
+      // Should redirect to login screen
+      await expectScreen('login-screen');
+
+      // Login screen should show Korean labels
+      await expect(element(by.text('로그인'))).toBeVisible();
+      await expect(element(by.text('이메일'))).toBeVisible();
+      await expect(element(by.text('비밀번호'))).toBeVisible();
+    });
+  });
+
+  describe('Account Deletion (Korean)', () => {
+    it('should display Korean account deletion dialog', async () => {
+      await element(by.id('settings-tab')).tap();
+      await element(by.id('delete-account-button')).tap();
+
+      // Confirmation dialog should appear
+      await expect(element(by.id('delete-account-dialog'))).toBeVisible();
+
+      // Korean confirmation text - '계정 삭제', '이 작업은 되돌릴 수 없습니다'
+      await expect(element(by.text('계정 삭제'))).toBeVisible();
+    });
+
+    it('should have Korean cancel and confirm buttons', async () => {
+      await element(by.id('settings-tab')).tap();
+      await element(by.id('delete-account-button')).tap();
+
+      // Cancel button - '취소'
+      await expect(element(by.id('cancel-delete-button'))).toBeVisible();
+
+      // Confirm button - '확인'
+      await expect(element(by.id('confirm-delete-button'))).toBeVisible();
     });
   });
 });

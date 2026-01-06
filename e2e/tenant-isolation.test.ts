@@ -21,7 +21,7 @@ import { device, expect, element, by, waitFor } from 'detox';
 import { loginAsUser, selectTenant, logout, completeAuthFlow } from './helpers/auth-helpers';
 import { navigateToChat, expectConversationListVisible } from './helpers/chat-helpers';
 import { navigateToTab, expectScreen } from './helpers/navigation-helpers';
-import { waitForNetworkIdle, waitForElementStable, tapWithRetry } from './helpers/flake-mitigation';
+import { waitForNetworkIdle, waitForVisible, safeTap, settle } from './helpers/flake-helpers';
 
 /**
  * Test user configuration for multi-tenant testing.
