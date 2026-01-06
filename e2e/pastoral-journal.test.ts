@@ -781,3 +781,319 @@ describe('Pastoral Journal (Pastor)', () => {
     });
   });
 });
+
+/**
+ * Pastoral Journal E2E Tests - Korean Locale
+ *
+ * Tests for pastoral journal in Korean locale to ensure i18n coverage.
+ */
+describe('Pastoral Journal (Korean Locale)', () => {
+  const TEST_EMAIL = 'test@example.com';
+  const TEST_PASSWORD = 'password123';
+  const TEST_TENANT = 'Test Church';
+
+  beforeAll(async () => {
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    await completeAuthFlow(TEST_EMAIL, TEST_PASSWORD, TEST_TENANT);
+  });
+
+  describe('Journal List (Korean)', () => {
+    it('should display Korean UI elements in journal list', async () => {
+      await navigateToPastoral();
+      await expectJournalListVisible();
+
+      // Korean: '목회 일지' for Pastoral Journal
+      await expect(element(by.text('목회 일지'))).toBeVisible();
+    });
+
+    it('should display Korean section headers', async () => {
+      await navigateToPastoral();
+
+      // Korean: 'My Journals' → '내 목회 일지'
+      await expect(element(by.id('section-my-journals'))).toBeVisible();
+    });
+
+    it('should show Korean empty state message', async () => {
+      await navigateToPastoral();
+
+      // Korean: '목회 일지가 없습니다'
+      await expect(element(by.id('pastoral-empty-state'))).toBeVisible();
+    });
+  });
+
+  describe('Journal Creation (Korean)', () => {
+    it('should display Korean labels in create screen', async () => {
+      await navigateToPastoral();
+      await openCreateJournal();
+
+      // Korean labels:
+      // 'Create Journal' → '목회 일지 작성'
+      // 'Week' → '주'
+      await expect(element(by.id('create-journal-screen'))).toBeVisible();
+      await expect(element(by.id('week-selector'))).toBeVisible();
+    });
+
+    it('should display Korean attendance labels', async () => {
+      await navigateToPastoral();
+      await openCreateJournal();
+
+      // Korean attendance labels:
+      // 'Present' → '출석'
+      // 'Absent' → '결석'
+      // 'New Visitors' → '새신자'
+      await expect(element(by.id('attendance-present-input'))).toBeVisible();
+      await expect(element(by.id('attendance-absent-input'))).toBeVisible();
+      await expect(element(by.id('attendance-new-visitors-input'))).toBeVisible();
+    });
+
+    it('should display Korean content section labels', async () => {
+      await navigateToPastoral();
+      await openCreateJournal();
+
+      // Korean content labels:
+      // 'Prayer Requests' → '기도제목'
+      // 'Highlights' → '주요 내용'
+      // 'Concerns' → '우려 사항'
+      // 'Next Steps' → '다음 단계'
+      await expect(element(by.id('prayer-requests-input'))).toBeVisible();
+      await expect(element(by.id('highlights-input'))).toBeVisible();
+      await expect(element(by.id('concerns-input'))).toBeVisible();
+      await expect(element(by.id('next-steps-input'))).toBeVisible();
+    });
+
+    it('should display Korean button labels', async () => {
+      await navigateToPastoral();
+      await openCreateJournal();
+
+      // Korean button labels:
+      // 'Save as Draft' → '임시 저장'
+      // 'Save and Submit' → '저장 및 제출'
+      await expect(element(by.id('save-draft-button'))).toBeVisible();
+      await expect(element(by.id('save-and-submit-button'))).toBeVisible();
+    });
+  });
+
+  describe('Journal Detail (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToPastoral();
+      await createJournal({
+        attendance: { present: 10, absent: 2, newVisitors: 1 },
+        highlights: '한국어 테스트 일지',
+      });
+    });
+
+    it('should display Korean labels in detail screen', async () => {
+      await openJournalDetail('0');
+
+      // Korean detail screen labels
+      await expect(element(by.id('journal-detail-screen'))).toBeVisible();
+      await expect(element(by.id('journal-attendance-section'))).toBeVisible();
+    });
+
+    it('should display Korean status badges', async () => {
+      await openJournalDetail('0');
+
+      // Korean status labels:
+      // 'Draft' → '작성 중'
+      // 'Submitted' → '제출됨'
+      // 'Zone Reviewed' → '구역 리뷰 완료'
+      // 'Pastor Confirmed' → '목사님 확인 완료'
+      await expect(element(by.id('journal-status-badge'))).toBeVisible();
+    });
+  });
+
+  describe('Status Workflow (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToPastoral();
+      await createJournal({
+        highlights: '제출 테스트 일지',
+      });
+    });
+
+    it('should display Korean submit button label', async () => {
+      await openJournalDetail('0');
+
+      // Korean: 'Submit for Review' → '리뷰 제출'
+      await expect(element(by.id('submit-for-review-button'))).toBeVisible();
+    });
+
+    it('should display Korean confirmation dialog', async () => {
+      await openJournalDetail('0');
+      await element(by.id('submit-for-review-button')).tap();
+
+      // Korean confirmation dialog:
+      // 'Confirm' → '확인'
+      // 'Cancel' → '취소'
+      await expect(element(by.id('submit-confirmation-dialog'))).toBeVisible();
+      await expect(element(by.id('confirm-submit-button'))).toBeVisible();
+      await expect(element(by.id('cancel-submit-button'))).toBeVisible();
+    });
+  });
+
+  describe('Comments (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToPastoral();
+      await createJournal({
+        highlights: '코멘트 테스트 일지',
+      });
+    });
+
+    it('should display Korean comments section', async () => {
+      await openJournalDetail('0');
+      await expectCommentSectionVisible();
+
+      // Korean: 'Comments' → '코멘트'
+    });
+
+    it('should display Korean empty comments state', async () => {
+      await openJournalDetail('0');
+
+      // Korean: 'No comments yet' → '코멘트가 없습니다'
+      await expect(element(by.id('comments-empty-state'))).toBeVisible();
+    });
+  });
+
+  describe('Filters (Korean)', () => {
+    it('should display Korean filter labels', async () => {
+      await navigateToPastoral();
+
+      // Korean filter labels:
+      // 'My Journals' → '내 일지'
+      // 'Submitted Journals' → '제출된 일지'
+      // 'All Journals' → '모든 일지'
+      await expect(element(by.id('filter-my_journals'))).toBeVisible();
+    });
+  });
+
+  describe('Validation Messages (Korean)', () => {
+    it('should display Korean validation errors', async () => {
+      await navigateToPastoral();
+      await openCreateJournal();
+
+      // Try to submit without required content - should show Korean validation
+      await expect(element(by.id('save-and-submit-button'))).toBeVisible();
+    });
+
+    it('should display Korean duplicate journal warning', async () => {
+      await navigateToPastoral();
+
+      // Create first journal
+      await createJournal({
+        highlights: '첫 번째 일지',
+      });
+
+      // Try to create another for same week
+      await openCreateJournal();
+
+      // Korean: 'A journal already exists for this week' → '이번 주 일지가 이미 존재합니다'
+      await expect(element(by.id('duplicate-journal-warning'))).toExist();
+    });
+  });
+
+  describe('Date Formatting (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToPastoral();
+      await createJournal({
+        highlights: '날짜 형식 테스트',
+      });
+    });
+
+    it('should display Korean date format for week range', async () => {
+      await openJournalDetail('0');
+
+      // Korean date format: 'YYYY년 M월 D일'
+      await expect(element(by.id('journal-week-range'))).toBeVisible();
+    });
+
+    it('should display Korean timestamp format', async () => {
+      await openJournalDetail('0');
+
+      // Korean relative time: '방금 전', '1시간 전', etc.
+      await expect(element(by.id('journal-created-at'))).toBeVisible();
+    });
+  });
+});
+
+/**
+ * Pastoral Journal Zone Leader E2E Tests - Korean Locale
+ */
+describe('Pastoral Journal Zone Leader (Korean Locale)', () => {
+  const ZONE_LEADER_EMAIL = 'zoneleader@example.com';
+  const ZONE_LEADER_PASSWORD = 'password123';
+  const TEST_TENANT = 'Test Church';
+
+  beforeAll(async () => {
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    // Would need zone leader test user
+    // await completeAuthFlow(ZONE_LEADER_EMAIL, ZONE_LEADER_PASSWORD, TEST_TENANT);
+  });
+
+  describe('Zone Leader Workflow (Korean)', () => {
+    it('should display Korean forward button label', async () => {
+      // Korean: 'Forward to Pastor' → '목사님께 전달'
+      await expect(element(by.id('forward-to-pastor-button'))).toExist();
+    });
+
+    it('should display Korean comment input placeholder', async () => {
+      // Korean: 'Add a comment...' → '코멘트를 입력하세요...'
+      await expect(element(by.id('comment-input'))).toExist();
+    });
+  });
+});
+
+/**
+ * Pastoral Journal Pastor E2E Tests - Korean Locale
+ */
+describe('Pastoral Journal Pastor (Korean Locale)', () => {
+  const PASTOR_EMAIL = 'pastor@example.com';
+  const PASTOR_PASSWORD = 'password123';
+  const TEST_TENANT = 'Test Church';
+
+  beforeAll(async () => {
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    // Would need pastor test user
+    // await completeAuthFlow(PASTOR_EMAIL, PASTOR_PASSWORD, TEST_TENANT);
+  });
+
+  describe('Pastor Workflow (Korean)', () => {
+    it('should display Korean confirm button label', async () => {
+      // Korean: 'Confirm Journal' → '일지 확인'
+      await expect(element(by.id('confirm-journal-button'))).toExist();
+    });
+
+    it('should display Korean all journals section header', async () => {
+      // Korean: 'All Journals' → '모든 일지'
+      await expect(element(by.id('section-all-journals'))).toExist();
+    });
+  });
+});

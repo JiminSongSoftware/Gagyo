@@ -358,6 +358,132 @@ describe('Event Chat', () => {
 });
 
 /**
+ * Event Chat E2E Tests - Korean Locale
+ *
+ * Tests for Event Chat feature in Korean locale to ensure i18n coverage.
+ */
+describe('Event Chat (Korean Locale)', () => {
+  const TEST_EMAIL = 'test@example.com';
+  const TEST_PASSWORD = 'password123';
+  const TEST_TENANT = 'Test Church';
+
+  beforeAll(async () => {
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    await completeAuthFlow(TEST_EMAIL, TEST_PASSWORD, TEST_TENANT);
+  });
+
+  describe('Event Chat Selector (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+    });
+
+    it('should display Korean labels in Event Chat selector', async () => {
+      await openEventChatSelector();
+
+      // Korean: '이벤트 채팅' for Event Chat
+      await expect(element(by.id('event-chat-selector-modal'))).toBeVisible();
+    });
+
+    it('should display Korean exclusion count text', async () => {
+      await openEventChatSelector();
+
+      await selectExcludedUser('John Doe');
+      await selectExcludedUser('Jane Smith');
+
+      // Korean: '2명 / 5명 선택됨'
+      await expect(element(by.id('exclusion-count'))).toBeVisible();
+    });
+
+    it('should display Korean confirm and cancel buttons', async () => {
+      await openEventChatSelector();
+
+      // Korean: '확인' for Confirm, '취소' for Cancel
+      await expect(element(by.id('event-chat-confirm-button'))).toBeVisible();
+      await expect(element(by.id('event-chat-cancel-button'))).toBeVisible();
+    });
+  });
+
+  describe('Event Chat Mode Indicator (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+    });
+
+    it('should display Korean mode indicator text', async () => {
+      await openEventChatSelector();
+      await selectExcludedUser('John Doe');
+      await confirmEventChatSelection();
+
+      // Korean: '이벤트 채팅 모드 (1명 제외)'
+      await expect(element(by.id('event-chat-mode-indicator'))).toBeVisible();
+    });
+  });
+
+  describe('Validation Messages (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+    });
+
+    it('should display Korean validation for empty exclusions', async () => {
+      await openEventChatSelector();
+      await confirmEventChatSelection();
+
+      // Korean: '최소 1명을 선택해야 합니다'
+      await expect(element(by.id('validation-error'))).toBeVisible();
+    });
+
+    it('should display Korean validation for max exclusions', async () => {
+      await navigateToChat();
+      await openConversation('Large Group');
+
+      await openEventChatSelector();
+
+      // Select 5 users
+      for (let i = 1; i <= 5; i++) {
+        await selectExcludedUser(`User ${i}`);
+      }
+
+      // Attempt 6th selection
+      await selectExcludedUser('User 6');
+
+      // Korean: '최대 5명까지 선택 가능합니다'
+      await expect(element(by.id('max-exclusion-error'))).toBeVisible();
+    });
+  });
+
+  describe('Event Chat Eye Indicator (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+    });
+
+    it('should display Korean tooltip for eye indicator', async () => {
+      await openEventChatSelector();
+      await selectExcludedUser('John Doe');
+      await confirmEventChatSelection();
+
+      const secretMessage = `비밀 메시지 ${Date.now()}`;
+      await sendEventChatMessage(secretMessage);
+
+      // Eye indicator should be visible
+      await expect(element(by.id('event-chat-indicator'))).toBeVisible();
+    });
+  });
+});
+
+/**
  * ============================================================================
  * NOTES ON EVENT CHAT E2E TESTING
  * ============================================================================

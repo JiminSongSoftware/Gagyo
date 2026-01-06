@@ -1,10 +1,13 @@
 import { element, by, waitFor } from 'detox';
+import { settle, waitForVisible, safeTap, safeType } from './flake-helpers';
 
 /**
  * Reusable helper functions for authentication E2E tests.
  *
  * These functions encapsulate common auth actions to reduce
  * test code duplication and improve maintainability.
+ *
+ * Updated to use flake mitigation utilities for more reliable tests.
  */
 
 /**
@@ -23,14 +26,13 @@ export async function loginAsUser(
 ) {
   const { expectSuccess = true, timeout = 5000 } = options;
 
-  await element(by.id('email-input')).typeText(email);
-  await element(by.id('password-input')).typeText(password);
-  await element(by.id('login-button')).tap();
+  // Use safe typing with settle delays
+  await safeType(element(by.id('email-input')), email);
+  await safeType(element(by.id('password-input')), password);
+  await safeTap(element(by.id('login-button')));
 
   if (expectSuccess) {
-    await waitFor(element(by.id('tenant-selection-screen')))
-      .toBeVisible()
-      .withTimeout(timeout);
+    await waitForVisible(element(by.id('tenant-selection-screen')), { timeout });
   }
 }
 
@@ -41,17 +43,12 @@ export async function loginAsUser(
  * @param options - Optional configuration
  * @param options.timeout - Timeout for navigation (default: 5000ms)
  */
-export async function selectTenant(
-  tenantName: string,
-  options: { timeout?: number } = {}
-) {
+export async function selectTenant(tenantName: string, options: { timeout?: number } = {}) {
   const { timeout = 5000 } = options;
 
-  await waitFor(element(by.id('tenant-selection-screen')))
-    .toBeVisible()
-    .withTimeout(timeout);
-
-  await element(by.text(tenantName)).tap();
+  await waitForVisible(element(by.id('tenant-selection-screen')), { timeout });
+  await safeTap(element(by.text(tenantName)));
+  await settle();
 }
 
 /**
@@ -149,10 +146,7 @@ export async function clearInputs() {
  * @param options - Optional configuration
  * @param options.timeout - Timeout for error appearance (default: 3000ms)
  */
-export async function expectError(
-  message: string,
-  options: { timeout?: number } = {}
-) {
+export async function expectError(message: string, options: { timeout?: number } = {}) {
   const { timeout = 3000 } = options;
 
   await waitFor(element(by.text(message)))
@@ -187,15 +181,131 @@ export function uniqueEmail(prefix: string = 'test'): string {
  * @param password - User password
  * @param tenantName - Name of the tenant to select
  */
-export async function completeAuthFlow(
-  email: string,
-  password: string,
-  tenantName: string
-) {
+export async function completeAuthFlow(email: string, password: string, tenantName: string) {
   await loginAsUser(email, password);
   await selectTenant(tenantName);
 
-  await waitFor(element(by.id('home-screen')))
-    .toBeVisible()
-    .withTimeout(5000);
+  // Use flake mitigation for home screen verification
+  await waitForVisible(element(by.id('home-screen')), { timeout: 5000 });
+}
+
+// ============================================================================
+// MULTI-TENANT TESTING HELPERS
+// ============================================================================
+
+/**
+ * Configuration for multi-tenant test users.
+ * These users have memberships in different tenants for isolation testing.
+ */
+export interface TenantTestUser {
+  email: string;
+  password: string;
+  tenant: string;
+  tenantId?: string;
+}
+
+/**
+ * Configuration for users with multiple tenant memberships.
+ */
+export interface MultiTenantTestUser {
+  email: string;
+  password: string;
+  tenants: string[];
+  tenantIds?: string[];
+}
+
+/**
+ * Login and select a specific tenant for multi-tenant testing.
+ * Useful when testing isolation between tenants.
+ *
+ * @param user - The tenant test user configuration
+ * @param options - Optional configuration
+ * @param options.verifyHome - Whether to verify home screen after login (default: true)
+ */
+export async function loginToTenant(user: TenantTestUser, options: { verifyHome?: boolean } = {}) {
+  const { verifyHome = true } = options;
+
+  await loginAsUser(user.email, user.password);
+  await selectTenant(user.tenant);
+
+  if (verifyHome) {
+    await waitForVisible(element(by.id('home-screen')), { timeout: 5000 });
+  }
+}
+
+/**
+ * Switch to a different tenant for the same user.
+ * Requires logout and re-login to change tenant context.
+ *
+ * @param user - The multi-tenant test user
+ * @param targetTenantIndex - Index of the tenant to switch to (0-based)
+ */
+export async function switchTenant(user: MultiTenantTestUser, targetTenantIndex: number) {
+  if (targetTenantIndex >= user.tenants.length) {
+    throw new Error(
+      `Invalid tenant index: ${targetTenantIndex}. User has ${user.tenants.length} tenants.`
+    );
+  }
+
+  await logout();
+  await loginAsUser(user.email, user.password);
+  await selectTenant(user.tenants[targetTenantIndex]);
+
+  await waitForVisible(element(by.id('home-screen')), { timeout: 5000 });
+}
+
+/**
+ * Verify that data is only visible for the current tenant.
+ *
+ * @param visibleData - Data that should be visible (current tenant)
+ * @param hiddenData - Data that should NOT be visible (other tenants)
+ * @param timeout - Timeout for visibility checks (default: 5000ms)
+ */
+export async function verifyTenantIsolation(
+  visibleData: string[],
+  hiddenData: string[],
+  timeout: number = 5000
+) {
+  // Verify visible data using flake mitigation
+  for (const data of visibleData) {
+    await waitForVisible(element(by.text(data)), { timeout });
+  }
+
+  // Verify hidden data is not visible
+  for (const data of hiddenData) {
+    await expect(element(by.text(data))).not.toBeVisible();
+  }
+}
+
+/**
+ * Get the current tenant context from the app.
+ * Useful for debugging tenant isolation issues.
+ *
+ * @returns The current tenant name or undefined if not set
+ */
+export async function getCurrentTenantContext(): Promise<string | undefined> {
+  try {
+    const indicator = element(by.id('tenant-context-indicator'));
+    const attributes = await indicator.getAttributes();
+    return (attributes as { text?: string }).text;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Verify that the tenant selection screen shows expected tenants.
+ *
+ * @param expectedTenants - Array of tenant names that should be visible
+ * @param timeout - Timeout for visibility checks (default: 5000ms)
+ */
+export async function verifyTenantSelectionOptions(
+  expectedTenants: string[],
+  timeout: number = 5000
+) {
+  await waitForVisible(element(by.id('tenant-selection-screen')), { timeout });
+
+  for (const tenant of expectedTenants) {
+    await expect(element(by.text(tenant))).toBeVisible();
+  }
 }

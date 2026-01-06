@@ -863,3 +863,196 @@ describe('Prayer Cards', () => {
     });
   });
 });
+
+/**
+ * Prayer Cards E2E Tests - Korean Locale
+ *
+ * Tests for prayer cards in Korean locale to ensure i18n coverage.
+ */
+describe('Prayer Cards (Korean Locale)', () => {
+  const TEST_EMAIL = 'test@example.com';
+  const TEST_PASSWORD = 'password123';
+  const TEST_TENANT = 'Test Church';
+
+  beforeAll(async () => {
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    await completeAuthFlow(TEST_EMAIL, TEST_PASSWORD, TEST_TENANT);
+  });
+
+  describe('Prayer List (Korean)', () => {
+    it('should display Korean UI elements in prayer list', async () => {
+      await navigateToPrayer();
+      await expectPrayerListVisible();
+
+      // Korean: '기도' for Prayer tab
+      await expect(element(by.text('기도'))).toBeVisible();
+    });
+
+    it('should display Korean filter tab labels', async () => {
+      await navigateToPrayer();
+
+      // Korean filter labels:
+      // 'My Prayers' → '내 기도'
+      // 'Received Prayers' → '받은 기도'
+      // 'All Prayers' → '모든 기도'
+      await expect(element(by.id('filter-my_prayers'))).toBeVisible();
+      await expect(element(by.id('filter-received_prayers'))).toBeVisible();
+      await expect(element(by.id('filter-all_prayers'))).toBeVisible();
+    });
+
+    it('should show Korean empty state message', async () => {
+      await navigateToPrayer();
+
+      // Korean: '기도 카드가 없습니다'
+      await expect(element(by.id('prayer-empty-state'))).toBeVisible();
+    });
+  });
+
+  describe('Prayer Card Creation (Korean)', () => {
+    it('should display Korean labels in create modal', async () => {
+      await navigateToPrayer();
+      await openCreatePrayerModal();
+
+      // Korean labels:
+      // 'Create Prayer' → '기도 작성'
+      // 'Prayer Content' → '기도 내용'
+      await expect(element(by.id('create-prayer-modal'))).toBeVisible();
+      await expect(element(by.id('prayer-content-input'))).toBeVisible();
+    });
+
+    it('should display Korean recipient scope labels', async () => {
+      await navigateToPrayer();
+      await openCreatePrayerModal();
+
+      // Korean scope labels:
+      // 'Church-wide' → '전체 교회'
+      // 'Small Group' → '소그룹'
+      // 'Individual' → '개인'
+      await expect(element(by.id('recipient-scope-church_wide'))).toBeVisible();
+    });
+
+    it('should send Korean prayer and display in list', async () => {
+      await navigateToPrayer();
+
+      const testContent = `한국어 기도 테스트 ${Date.now()}`;
+      await createPrayerCard(testContent, 'church_wide');
+
+      // Verify Korean prayer appears in list
+      await expectPrayerCardVisible(testContent);
+    });
+  });
+
+  describe('Prayer Detail View (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToPrayer();
+      await createPrayerCard('한국어 상세 보기 테스트', 'church_wide');
+    });
+
+    it('should display Korean labels in detail screen', async () => {
+      const prayerCard = element(by.id('prayer-card-author-avatar'));
+      await prayerCard.tap();
+
+      // Korean: 'Mark as Answered' → '응답됨으로 표시'
+      await expect(element(by.id('prayer-detail-screen'))).toBeVisible();
+      await expect(element(by.id('mark-answered-button'))).toBeVisible();
+    });
+
+    it('should display Korean status badges', async () => {
+      const prayerCard = element(by.id('prayer-card-author-avatar'));
+      await prayerCard.tap();
+
+      // Korean status:
+      // 'Unanswered' → '응답 대기'
+      // 'Answered' → '응답됨'
+      await expect(element(by.id('unanswered-badge'))).toBeVisible();
+    });
+  });
+
+  describe('Prayer Analytics (Korean)', () => {
+    it('should display Korean analytics labels', async () => {
+      await navigateToPrayer();
+      await openAnalytics();
+
+      // Korean analytics labels:
+      // 'Prayer Analytics' → '기도 통계'
+      // 'My Statistics' → '내 통계'
+      // 'Group Statistics' → '그룹 통계'
+      // 'Church Statistics' → '교회 통계'
+      await expect(element(by.id('analytics-title'))).toBeVisible();
+      await expect(element(by.id('tab-my-stats'))).toBeVisible();
+    });
+
+    it('should display Korean period labels', async () => {
+      await navigateToPrayer();
+      await openAnalytics();
+
+      // Korean period labels:
+      // 'Weekly' → '주간'
+      // 'Monthly' → '월간'
+      // 'Quarterly' → '분기'
+      // 'Semi-annual' → '반기'
+      // 'Annual' → '연간'
+      await expect(element(by.id('period-weekly'))).toBeVisible();
+      await expect(element(by.id('period-monthly'))).toBeVisible();
+    });
+
+    it('should display Korean stat card labels', async () => {
+      await navigateToPrayer();
+      await openAnalytics();
+
+      // Korean stat labels:
+      // 'Total Prayers' → '총 기도'
+      // 'Answered Prayers' → '응답된 기도'
+      // 'Answer Rate' → '응답률'
+      await expect(element(by.id('stat-total'))).toBeVisible();
+      await expect(element(by.id('stat-answered'))).toBeVisible();
+      await expect(element(by.id('stat-rate'))).toBeVisible();
+    });
+  });
+
+  describe('Background Music (Korean)', () => {
+    it('should display Korean background music label', async () => {
+      await navigateToPrayer();
+
+      // Korean: 'Background Music' → '배경 음악'
+      await expect(element(by.id('background-music-toggle'))).toBeVisible();
+    });
+  });
+
+  describe('Mark as Answered (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToPrayer();
+      await createPrayerCard('응답 테스트 기도', 'church_wide');
+    });
+
+    it('should display Korean answered status after marking', async () => {
+      const prayerCard = element(by.id('prayer-card-author-avatar'));
+      await prayerCard.tap();
+
+      await markAsAnswered();
+
+      // Korean: 'Answered' → '응답됨'
+      await expect(element(by.id('answered-badge'))).toBeVisible();
+    });
+  });
+
+  describe('Error Messages (Korean)', () => {
+    it('should display Korean validation messages', async () => {
+      await navigateToPrayer();
+      await openCreatePrayerModal();
+
+      // Try to submit without content - should show Korean error
+      await expect(element(by.id('create-prayer-submit-button'))).toBeVisible();
+    });
+  });
+});

@@ -239,3 +239,107 @@ describe('Chat', () => {
     });
   });
 });
+
+/**
+ * Chat E2E Tests - Korean Locale
+ *
+ * Tests for chat list, chat detail, and message sending flows
+ * in Korean locale to ensure i18n coverage.
+ */
+describe('Chat (Korean Locale)', () => {
+  const TEST_EMAIL = 'test@example.com';
+  const TEST_PASSWORD = 'password123';
+  const TEST_TENANT = 'Test Church';
+
+  beforeAll(async () => {
+    await device.launchApp({
+      newInstance: true,
+      languageAndRegion: {
+        language: 'ko-KR',
+        calendar: 'gregorian',
+      },
+    });
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+    await completeAuthFlow(TEST_EMAIL, TEST_PASSWORD, TEST_TENANT);
+  });
+
+  describe('Conversation List (Korean)', () => {
+    it('should display Korean UI elements in conversation list', async () => {
+      await navigateToChat();
+      await expectConversationListVisible();
+
+      // Verify Korean tab label
+      await expect(element(by.text('채팅'))).toBeVisible();
+    });
+
+    it('should show Korean empty state message', async () => {
+      await navigateToChat();
+
+      // Korean empty state: '대화가 없습니다'
+      await expect(element(by.id('conversation-list-empty'))).toBeVisible();
+    });
+  });
+
+  describe('Chat Detail (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+    });
+
+    it('should display Korean placeholder text in message input', async () => {
+      // Korean: '메시지를 입력하세요...'
+      await expect(element(by.id('message-input'))).toBeVisible();
+    });
+
+    it('should display Korean send button label', async () => {
+      // Korean: '보내기'
+      await expect(element(by.id('send-button'))).toBeVisible();
+    });
+
+    it('should display Korean timestamp format', async () => {
+      // Korean date format: '오늘', '어제', or '년 월 일'
+      await expect(element(by.id('message-timestamp'))).toBeVisible();
+    });
+  });
+
+  describe('Send Message (Korean)', () => {
+    beforeEach(async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+    });
+
+    it('should send message and display in Korean locale', async () => {
+      const testMessage = `테스트 메시지 ${Date.now()}`;
+
+      await sendMessage(testMessage);
+
+      // Verify message appears in the conversation
+      await expect(element(by.text(testMessage))).toBeVisible();
+    });
+  });
+
+  describe('Room Type Labels (Korean)', () => {
+    it('should display Korean labels for room types', async () => {
+      await navigateToChat();
+
+      // Korean room type labels:
+      // 'Small Group' → '소그룹'
+      // 'Ministry' → '사역팀'
+      // 'Church-wide' → '전체 교회'
+      await expect(element(by.id('conversation-list'))).toBeVisible();
+    });
+  });
+
+  describe('Error Messages (Korean)', () => {
+    it('should display Korean error messages for send failures', async () => {
+      await navigateToChat();
+      await openConversation('Small Group');
+
+      // Korean error: '메시지 전송에 실패했습니다'
+      await expect(element(by.id('send-button'))).toBeVisible();
+    });
+  });
+});

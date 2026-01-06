@@ -15,7 +15,11 @@ jobs:
   e2e-ios:
     name: E2E Tests (iOS)
     runs-on: macos-14
-    timeout-minutes: 60
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,24 +59,38 @@ jobs:
       - name: Build for Detox
         run: bun run e2e:build:ios
 
-      - name: Run Detox tests
-        run: bun run e2e:test:ios
+      - name: Run Detox tests (Shard ${{ matrix.shard }})
+        run: bun run e2e:test:ios -- --shard ${{ matrix.shard }}/3
         env:
           DETOX_HEADLESS: true
+          DETOX_RECORD_FAILURE: 'true'
 
       - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-ios-shard-${{ matrix.shard }}-artifacts
+          path: |
+            e2e/artifacts/
+            e2e/**/*.log
+
+      - name: Upload failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: detox-ios-artifacts
+          name: detox-ios-shard-${{ matrix.shard }}-screenshots
           path: |
-            artifacts/
-            *.log
+            e2e/artifacts/**/*.png
+            e2e/screenshots/
 
   e2e-android:
     name: E2E Tests (Android)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,7 +152,7 @@ jobs:
       - name: Build for Detox
         run: bun run e2e:build:android
 
-      - name: Run Detox tests
+      - name: Run Detox tests (Shard ${{ matrix.shard }})
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -144,13 +162,158 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: bun run e2e:test:android
+          script: bun run e2e:test:android -- --shard ${{ matrix.shard }}/3
+        env:
+          DETOX_RECORD_FAILURE: 'true'
 
       - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-android-shard-${{ matrix.shard }}-artifacts
+          path: |
+            e2e/artifacts/
+            e2e/**/*.log
+
+      - name: Upload failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: detox-android-artifacts
+          name: detox-android-shard-${{ matrix.shard }}-screenshots
           path: |
-            artifacts/
-            *.log
+            e2e/artifacts/**/*.png
+            e2e/screenshots/
+
+  e2e-i18n:
+    name: E2E Tests (i18n)
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Detox CLI
+        run: bunx detox-cli --version || bun install -g detox-cli
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+        continue-on-error: true
+
+      - name: Cache Detox build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/build
+          key: ${{ runner.os }}-detox-ios-i18n-${{ hashFiles('ios/Podfile.lock', 'bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-detox-ios-
+
+      - name: Build for Detox
+        run: bun run e2e:build:ios
+
+      - name: Run Korean locale tests
+        run: bun run e2e:test:ios -- --grep "Korean Locale"
+        env:
+          DETOX_HEADLESS: true
+          DETOX_RECORD_FAILURE: 'true'
+
+      - name: Upload i18n test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-ios-i18n-artifacts
+          path: |
+            e2e/artifacts/
+            e2e/**/*.log
+
+  e2e-retry-flaky:
+    name: E2E Tests (Retry Flaky)
+    runs-on: macos-14
+    timeout-minutes: 45
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Detox CLI
+        run: bunx detox-cli --version || bun install -g detox-cli
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+        continue-on-error: true
+
+      - name: Build for Detox
+        run: bun run e2e:build:ios
+
+      - name: Run tests with retry on failure
+        run: bun run e2e:test:ios -- --retry 3
+        env:
+          DETOX_HEADLESS: true
+          DETOX_RECORD_FAILURE: 'true'
+
+      - name: Upload flaky test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-ios-flaky-artifacts
+          path: |
+            e2e/artifacts/
+            e2e/**/*.log
+
+  # Report test results summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [e2e-ios, e2e-android, e2e-i18n]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate test summary
+        run: |
+          echo "# E2E Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS Shard 1 | ${{ needs.e2e-ios.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS Shard 2 | ${{ needs.e2e-ios.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS Shard 3 | ${{ needs.e2e-ios.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Android Shard 1 | ${{ needs.e2e-android.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Android Shard 2 | ${{ needs.e2e-android.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Android Shard 3 | ${{ needs.e2e-android.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| i18n Tests | ${{ needs.e2e-i18n.result }} |" >> $GITHUB_STEP_SUMMARY
