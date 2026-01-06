@@ -86,22 +86,43 @@ See full environment variable reference in `.env.example`.
 - Configure alerts for detected secrets
 - Enable push protection where available
 
-#### Gitleaks in CI
+#### TruffleHog in CI
+We use TruffleHog for secret scanning in CI/CD pipelines:
+
 ```yaml
-- name: Gitleaks
-  uses: gitleaks/gitleaks-action@v2
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+- name: Check for secrets in code
+  uses: trufflesecurity/trufflehog@main
+  with:
+    path: ./
+    base: ${{ github.event.repository.default_branch }}
+    head: HEAD
+    extra_args: --only-verified --fail
 ```
 
+**TruffleHog advantages:**
+- Native GitHub integration
+- Verified secrets only (reduces false positives)
+- Comprehensive secret detection database
+- Real-time verification of leaked credentials
+
 #### Pre-commit Hook (Optional)
-```yaml
-repos:
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.x.x
-    hooks:
-      - id: gitleaks
-```
+To add TruffleHog as a pre-commit hook:
+
+1. Install TruffleHog:
+   ```bash
+   brew install trufflehog
+   ```
+
+2. Add to `.husky/pre-commit`:
+   ```bash
+   #!/bin/sh
+   . "$(dirname "$0")/_/husky.sh"
+
+   # Run TruffleHog secret scanning
+   trufflehog filesystem --directory ./ --only-verified --fail
+   ```
+
+**Note:** We use TruffleHog instead of Gitleaks for its superior GitHub integration and verified secret detection, which significantly reduces false positives compared to regex-only scanners.
 
 ### Incident Handling
 If a secret is exposed, follow the playbook in `agent_docs/05_incident_playbook.md`:
