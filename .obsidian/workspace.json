@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plan-v1-:-prayer-cards:-creation,-sharing-&-answered-notifications.md",
+                "file": "plan-v1-:-prayer-analytics:-individual,-small-group-&-church-wide-statistics.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "plan-v1-:-prayer-cards:-creation,-sharing-&-answered-notifications"
+              "title": "plan-v1-:-prayer-analytics:-individual,-small-group-&-church-wide-statistics"
             }
           }
         ]
@@ -193,19 +193,21 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
+    "__tests__/integration/prayer-cards-rls.test.ts",
+    "plan-v1-:-prayer-cards:-creation,-sharing-&-answered-notifications.md",
+    "plan-v1-:-prayer-analytics:-individual,-small-group-&-church-wide-statistics.md",
+    "claude_docs/18_prayer_cards.md",
+    "e2e/prayer.test.ts",
+    "e2e/helpers/prayer-helpers.ts",
+    "src/features/prayer/components/__tests__/BackgroundMusicToggle.test.tsx",
+    "src/features/prayer/components/__tests__/CreatePrayerCardModal.test.tsx",
+    "src/features/prayer/components/__tests__",
+    "src/features/prayer/hooks/__tests__/usePrayerAnalytics.test.ts",
+    "src/features/prayer/hooks/__tests__/useCreatePrayerCard.test.ts",
+    "src/features/prayer/hooks/__tests__/usePrayerCards.test.ts",
+    "src/features/prayer/hooks/__tests__/useBackgroundMusic.test.ts",
     "plan-v1-:-push-notifications:-token-management-&-delivery.md",
     "plan-v1-:-unified-images-view:-cross-chat-image-gallery.md",
-    "plan-v1-:-prayer-cards:-creation,-sharing-&-answered-notifications.md",
-    "src/lib/__tests__/imageUpload.test.ts",
-    "src/lib/__tests__",
-    "src/features/images/hooks/__tests__/useImages.test.ts",
-    "src/features/images/hooks/__tests__",
-    "__tests__/integration/image-storage-rls.test.ts",
-    "supabase/migrations/20250106000000_create_images_storage.sql",
-    "src/lib/imageUpload.ts",
-    "src/features/images/hooks/useImages.ts",
-    "src/features/images/hooks/index.ts",
-    "src/features/images/components/index.ts",
     "claude_docs/17_images_view.md",
     "plan-v1-:-chat-threads:-nested-conversations.md",
     "claude_docs/16_thread_architecture.md",
@@ -227,9 +229,6 @@
     "node_modules/is-map/CHANGELOG.md",
     "node_modules/async-function/README.md",
     "node_modules/async-function/CHANGELOG.md",
-    "node_modules/which-collection/README.md",
-    "node_modules/which-collection/CHANGELOG.md",
-    "node_modules/is-finalizationregistry/README.md",
     "node_modules/psl/browserstack-logo.svg",
     "node_modules/stream-buffers/coverage/lcov-report/sort-arrow-sprite.png",
     "node_modules/istanbul-reports/lib/html-spa/assets/sort-arrow-sprite.png",

@@ -18,12 +18,9 @@ import { useTranslation } from '@/i18n';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { usePrayerCards } from '@/features/prayer/hooks/usePrayerCards';
 import { useCreatePrayerCard } from '@/features/prayer/hooks/useCreatePrayerCard';
-import {
-  CreatePrayerCardModal,
-  useCreatePrayerCardModal,
-} from '@/features/prayer/components/CreatePrayerCardModal';
+import { CreatePrayerCardModal } from '@/features/prayer/components/CreatePrayerCardModal';
 import { PrayerAnalyticsSheet } from '@/features/prayer/components/PrayerAnalyticsSheet';
-import type { PrayerCardWithAuthor } from '@/types/database';
+import type { PrayerCardWithAuthor, PrayerCardRecipientScope } from '@/types/database';
 
 // ============================================================================
 // STYLIZED COMPONENTS
@@ -113,6 +110,13 @@ export default function PrayerScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
+  // Shared state for modal - lifted to parent component
+  const [modalContent, setModalContent] = useState('');
+  const [modalRecipientScope, setModalRecipientScope] = useState<PrayerCardRecipientScope | null>(
+    null
+  );
+  const [modalRecipientIds, setModalRecipientIds] = useState<string[]>([]);
+
   const { prayerCards, loading, hasMore, loadMore, refetch } = usePrayerCards(
     tenantId,
     membershipId,
@@ -120,31 +124,33 @@ export default function PrayerScreen() {
   );
 
   const { createPrayerCard, creating } = useCreatePrayerCard(tenantId, membershipId);
-  const { content, recipientScope, recipientIds, reset, isValid } = useCreatePrayerCardModal();
+
+  // Compute isValid based on shared modal state
+  const isValid = modalContent.trim().length > 0 && modalRecipientScope !== null;
 
   // Reset form when modal closes
   useEffect(() => {
     if (!showCreateModal) {
-      reset();
+      setModalContent('');
+      setModalRecipientScope(null);
+      setModalRecipientIds([]);
     }
-  }, [showCreateModal, reset]);
+  }, [showCreateModal]);
 
-  const handleCreate = useCallback(() => {
+  const handleCreate = useCallback(async () => {
     if (!isValid) return;
 
-    void (async () => {
-      const prayerCardId = await createPrayerCard({
-        content,
-        recipientScope: recipientScope!,
-        recipientIds,
-      });
+    const prayerCardId = await createPrayerCard({
+      content: modalContent,
+      recipientScope: modalRecipientScope!,
+      recipientIds: modalRecipientIds,
+    });
 
-      if (prayerCardId) {
-        setShowCreateModal(false);
-        void refetch();
-      }
-    })();
-  }, [content, recipientScope, recipientIds, isValid, createPrayerCard, refetch]);
+    if (prayerCardId) {
+      setShowCreateModal(false);
+      void refetch();
+    }
+  }, [modalContent, modalRecipientScope, modalRecipientIds, isValid, createPrayerCard, refetch]);
 
   const handleCardPress = useCallback(
     (prayer: PrayerCardWithAuthor) => {
@@ -347,9 +353,13 @@ export default function PrayerScreen() {
           visible={showCreateModal}
           tenantId={tenantId}
           membershipId={membershipId}
-          onSuccess={() => {
-            void handleCreate();
-          }}
+          content={modalContent}
+          recipientScope={modalRecipientScope}
+          recipientIds={modalRecipientIds}
+          onContentChange={setModalContent}
+          onRecipientScopeChange={setModalRecipientScope}
+          onRecipientIdsChange={setModalRecipientIds}
+          onSuccess={() => void handleCreate()}
           onClose={() => setShowCreateModal(false)}
           creating={creating}
         />

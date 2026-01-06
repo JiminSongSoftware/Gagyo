@@ -121,36 +121,55 @@ export function usePrayerAnalytics(
     try {
       const { startDate, endDate } = getDateRange(period);
 
-      let query = supabase
-        .from('prayer_cards')
-        .select('id, answered, author_id, recipient_scope')
-        .eq('tenant_id', tenantId)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
+      let query;
+      let data;
 
-      // Apply scope-based filtering
+      // Apply scope-based filtering with proper joins for recipient scope
       switch (scope) {
-        case 'individual':
-          // For individual scope, fetch only authored prayers
-          if (scopeId) {
-            query = query.eq('author_id', scopeId);
-          }
+        case 'individual': {
+          // For individual scope, fetch only authored prayers by this user
+          query = supabase
+            .from('prayer_cards')
+            .select('id, answered, author_id, recipient_scope')
+            .eq('tenant_id', tenantId)
+            .eq('author_id', scopeId!)
+            .gte('created_at', startDate)
+            .lte('created_at', endDate);
+          const result = await query;
+          data = result.data;
           break;
-        case 'small_group':
-          // For small group scope, fetch prayers with small_group scope
-          // RLS will handle the actual small group membership check
-          query = query.eq('recipient_scope', 'small_group');
+        }
+        case 'small_group': {
+          // For small group scope, fetch prayers addressed to this small group
+          // by joining prayer_card_recipients and filtering by recipient_small_group_id
+          query = supabase
+            .from('prayer_card_recipients')
+            .select(
+              'prayer_card_id, prayer_cards!inner(id, answered, author_id, recipient_scope, tenant_id)'
+            )
+            .eq('prayer_cards.tenant_id', tenantId)
+            .eq('recipient_small_group_id', scopeId!)
+            .gte('prayer_cards.created_at', startDate)
+            .lte('prayer_cards.created_at', endDate);
+          const result = await query;
+          // Extract prayer card data from the joined result
+          data = result.data?.map((item) => item.prayer_cards) ?? [];
           break;
+        }
         case 'church_wide':
-        default:
-          // For church-wide, fetch all prayers
+        default: {
+          // For church-wide, fetch only prayers with recipient_scope='church_wide'
+          query = supabase
+            .from('prayer_cards')
+            .select('id, answered, author_id, recipient_scope')
+            .eq('tenant_id', tenantId)
+            .eq('recipient_scope', 'church_wide')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate);
+          const result = await query;
+          data = result.data;
           break;
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        throw fetchError;
+        }
       }
 
       const totalPrayers = data?.length ?? 0;

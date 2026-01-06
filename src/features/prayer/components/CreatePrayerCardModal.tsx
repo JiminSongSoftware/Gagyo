@@ -12,7 +12,7 @@
  * - i18n support
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Stack, Text as TamaguiText, XStack, YStack, Button, useTheme, styled } from 'tamagui';
 import { useTranslation } from '@/i18n';
@@ -33,6 +33,36 @@ export interface CreatePrayerCardModalProps {
    * The current user's membership ID.
    */
   membershipId: string;
+
+  /**
+   * Current prayer content from parent state.
+   */
+  content: string;
+
+  /**
+   * Current recipient scope from parent state.
+   */
+  recipientScope: PrayerCardRecipientScope | null;
+
+  /**
+   * Current recipient IDs from parent state.
+   */
+  recipientIds: string[];
+
+  /**
+   * Callback when content changes.
+   */
+  onContentChange: (content: string) => void;
+
+  /**
+   * Callback when recipient scope changes.
+   */
+  onRecipientScopeChange: (scope: PrayerCardRecipientScope | null) => void;
+
+  /**
+   * Callback when recipient IDs change.
+   */
+  onRecipientIdsChange: (ids: string[]) => void;
 
   /**
    * Callback when prayer card is created successfully.
@@ -95,6 +125,12 @@ const ModalContent = styled(Stack, {
 export function CreatePrayerCardModal({
   tenantId,
   membershipId,
+  content,
+  recipientScope,
+  recipientIds,
+  onContentChange,
+  onRecipientScopeChange,
+  onRecipientIdsChange,
   onSuccess,
   onClose,
   visible,
@@ -103,16 +139,16 @@ export function CreatePrayerCardModal({
   const { t } = useTranslation();
   const theme = useTheme();
 
-  const [content, setContent] = useState('');
-  const [recipientScope, setRecipientScope] = useState<PrayerCardRecipientScope | null>(null);
-  const [recipientIds, setRecipientIds] = useState<string[]>([]);
   const [showRecipientSelector, setShowRecipientSelector] = useState(false);
 
-  const handleRecipientConfirm = useCallback((scope: PrayerCardRecipientScope, ids: string[]) => {
-    setRecipientScope(scope);
-    setRecipientIds(ids);
-    setShowRecipientSelector(false);
-  }, []);
+  const handleRecipientConfirm = useCallback(
+    (scope: PrayerCardRecipientScope, ids: string[]) => {
+      onRecipientScopeChange(scope);
+      onRecipientIdsChange(ids);
+      setShowRecipientSelector(false);
+    },
+    [onRecipientScopeChange, onRecipientIdsChange]
+  );
 
   const handleRecipientCancel = useCallback(() => {
     setShowRecipientSelector(false);
@@ -120,9 +156,6 @@ export function CreatePrayerCardModal({
 
   const handleClose = useCallback(() => {
     if (!creating) {
-      setContent('');
-      setRecipientScope(null);
-      setRecipientIds([]);
       onClose();
     }
   }, [creating, onClose]);
@@ -188,7 +221,7 @@ export function CreatePrayerCardModal({
                   <TextInput
                     testID="prayer-content-input"
                     value={content}
-                    onChangeText={setContent}
+                    onChangeText={onContentChange}
                     placeholder={t('prayer.prayer_content_placeholder')}
                     placeholderTextColor={theme.color3?.val}
                     multiline
@@ -312,47 +345,4 @@ export function CreatePrayerCardModal({
       />
     </>
   );
-}
-
-// ============================================================================
-// EXPORT HOOK FOR EXTERNAL USE
-// ============================================================================
-
-export interface UseCreatePrayerCardModalResult {
-  content: string;
-  recipientScope: PrayerCardRecipientScope | null;
-  recipientIds: string[];
-  setContent: (content: string) => void;
-  setRecipients: (scope: PrayerCardRecipientScope, ids: string[]) => void;
-  reset: () => void;
-  isValid: boolean;
-}
-
-export function useCreatePrayerCardModal(): UseCreatePrayerCardModalResult {
-  const [content, setContent] = useState('');
-  const [recipientScope, setRecipientScope] = useState<PrayerCardRecipientScope | null>(null);
-  const [recipientIds, setRecipientIds] = useState<string[]>([]);
-
-  const setRecipients = useCallback((scope: PrayerCardRecipientScope, ids: string[]) => {
-    setRecipientScope(scope);
-    setRecipientIds(ids);
-  }, []);
-
-  const reset = useCallback(() => {
-    setContent('');
-    setRecipientScope(null);
-    setRecipientIds([]);
-  }, []);
-
-  const isValid = content.trim().length > 0 && recipientScope !== null;
-
-  return {
-    content,
-    recipientScope,
-    recipientIds,
-    setContent,
-    setRecipients,
-    reset,
-    isValid,
-  };
 }

@@ -55,5 +55,8 @@
   "small_group": "소그룹",
   "church_wide": "교회 전체",
   "mark_answered_success": "기도가 응답됨으로 표시되었습니다!",
-  "total": "전체"
+  "total": "전체",
+  "background_music": "배경 음악",
+  "background_music_enabled": "배경 음악 재생",
+  "background_music_disabled": "배경 음악 음소거"
 }

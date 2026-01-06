@@ -55,5 +55,8 @@
   "small_group": "Small Group",
   "church_wide": "Church Wide",
   "mark_answered_success": "Prayer marked as answered!",
-  "total": "Total"
+  "total": "Total",
+  "background_music": "Background Music",
+  "background_music_enabled": "Play background music",
+  "background_music_disabled": "Mute background music"
 }
