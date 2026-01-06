@@ -1,5 +1,8 @@
 {
   "generic_error": "Something went wrong. Please try again.",
+  "something_went_wrong": "Something went wrong",
+  "app_crashed": "The app encountered an unexpected error. Please try again.",
+  "try_again": "Try Again",
   "network_error": "Network error. Please check your connection.",
   "server_error": "Server error. Please try again later.",
   "timeout_error": "Request timed out. Please try again.",

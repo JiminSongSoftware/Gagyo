@@ -57,12 +57,10 @@ function ErrorFallback({
           ⚠️
         </Text>
         <Text fontSize="$6" fontWeight="bold" color={isDark ? '$color' : '$color'}>
-          {t('error.somethingWentWrong', { defaultValue: 'Something went wrong' })}
+          {t('errors.something_went_wrong')}
         </Text>
         <Text fontSize="$4" textAlign="center" color="$gray10">
-          {t('error.appCrashed', {
-            defaultValue: 'The app encountered an unexpected error. Please try again.',
-          })}
+          {t('errors.app_crashed')}
         </Text>
         <Text fontSize="$3" color="$gray11" textAlign="center" numberOfLines={3} maxWidth={300}>
           {error?.message}
@@ -77,7 +75,7 @@ function ErrorFallback({
             onPress={resetError}
           >
             <Text color="white" fontWeight="600" fontSize="$4">
-              {t('error.tryAgain', { defaultValue: 'Try Again' })}
+              {t('errors.try_again')}
             </Text>
           </YStack>
         </PostHogProvider>

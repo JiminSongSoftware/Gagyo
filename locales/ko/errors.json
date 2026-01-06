@@ -1,5 +1,8 @@
 {
   "generic_error": "문제가 발생했습니다. 다시 시도해 주세요.",
+  "something_went_wrong": "문제가 발생했습니다",
+  "app_crashed": "앱에서 예기치 않은 오류가 발생했습니다. 다시 시도해 주세요.",
+  "try_again": "다시 시도",
   "network_error": "네트워크 오류입니다. 연결 상태를 확인해 주세요.",
   "server_error": "서버 오류입니다. 나중에 다시 시도해 주세요.",
   "timeout_error": "요청 시간이 초과되었습니다. 다시 시도해 주세요.",
