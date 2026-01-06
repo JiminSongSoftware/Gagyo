@@ -4,6 +4,7 @@ import {
   useTheme,
   XStack,
   Spinner,
+  Text,
   styled,
 } from 'tamagui';
 import { useTranslation } from '@/i18n';
@@ -149,7 +150,7 @@ export function Button({
         ) : (
           leadingIcon
         )}
-        {!loading && labelText}
+        {!loading && <Text>{labelText}</Text>}
         {!loading && trailingIcon}
       </XStack>
     </TamaguiButton>
