@@ -49,12 +49,13 @@
     },
     "extra": {
       "eas": {
-        "projectId": "PLACEHOLDER_PROJECT_ID"
+        "projectId": "TODO_REPLACE_WITH_REAL_EAS_PROJECT_ID"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/PLACEHOLDER_PROJECT_ID"
-    },
+    // TODO: Add updates block with real EAS project ID when ready
+    // "updates": {
+    //   "url": "https://u.expo.dev/<REAL_PROJECT_ID>"
+    // },
     "runtimeVersion": {
       "policy": "appVersion"
     }

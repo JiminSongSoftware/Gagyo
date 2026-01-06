@@ -86,43 +86,75 @@ See full environment variable reference in `.env.example`.
 - Configure alerts for detected secrets
 - Enable push protection where available
 
-#### TruffleHog in CI
-We use TruffleHog for secret scanning in CI/CD pipelines:
+#### Gitleaks in CI
+We use Gitleaks for secret scanning in CI/CD pipelines:
 
 ```yaml
-- name: Check for secrets in code
-  uses: trufflesecurity/trufflehog@main
-  with:
-    path: ./
-    base: ${{ github.event.repository.default_branch }}
-    head: HEAD
-    extra_args: --only-verified --fail
+- name: Gitleaks Secret Scanning
+  uses: gitleaks/gitleaks-action@v2
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 ```
 
-**TruffleHog advantages:**
-- Native GitHub integration
-- Verified secrets only (reduces false positives)
-- Comprehensive secret detection database
-- Real-time verification of leaked credentials
+**Gitleaks advantages:**
+- Fast, accurate secret detection
+- Configurable allowlists for false positives
+- Support for 200+ secret types
+- Built-in GitHub SARIF reporting
+- Open-source with active community
 
-#### Pre-commit Hook (Optional)
-To add TruffleHog as a pre-commit hook:
+#### Local Verification
+To verify Gitleaks locally before pushing:
 
-1. Install TruffleHog:
+1. Install Gitleaks:
    ```bash
-   brew install trufflehog
+   brew install gitleaks
+   # Or on Linux:
+   # wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_<version>_linux_x64.tar.gz
+   # tar xvzf gitleaks_<version>_linux_x64.tar.gz
+   # sudo mv gitleaks /usr/bin/
    ```
 
-2. Add to `.husky/pre-commit`:
+2. Run Gitleaks:
    ```bash
-   #!/bin/sh
-   . "$(dirname "$0")/_/husky.sh"
+   # Basic scan
+   gitleaks detect --source . --verbose
 
-   # Run TruffleHog secret scanning
-   trufflehog filesystem --directory ./ --only-verified --fail
+   # With custom config (if needed)
+   gitleaks detect --source . --config .gitleaks.toml --verbose
+
+   # Generate SARIF report for GitHub
+   gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif
    ```
 
-**Note:** We use TruffleHog instead of Gitleaks for its superior GitHub integration and verified secret detection, which significantly reduces false positives compared to regex-only scanners.
+#### Allowlists
+To reduce false positives, create `.gitleaks.toml` in the project root:
+
+```toml
+title = "Gitleaks Custom Config"
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''gitleaks-report\.sarif''',
+    '''\.env\.example''',
+    '''locales/.*\.json''',
+    '''\.git/.*'''
+]
+
+# Allow specific regex patterns (use sparingly)
+[[allowlist.regexes]]
+description = "Allow example placeholder patterns"
+regex = '''YOUR_[A-Z_]+_HERE'''
+
+# Allow specific commits
+[[allowlist.commits]]
+description = "Commit with known false positive"
+hash = "abc123def456"
+```
+
+**Note:** We use Gitleaks for its fast, accurate secret detection and excellent GitHub SARIF integration. The `--fail` flag in CI ensures the build fails when secrets are detected.
 
 ### Incident Handling
 If a secret is exposed, follow the playbook in `agent_docs/05_incident_playbook.md`:

@@ -193,6 +193,10 @@
   },
   "active": "0e184059e80d3ecf",
   "lastOpenFiles": [
+    "eas.json.tmp.74635.1767685628344",
+    "app.json.tmp.74635.1767685618338",
+    "scripts/setup-eas-secrets.sh",
+    "assets/notification-icon.png",
     "plan-v1-:-testing-hardening:-detox-e2e-coverage-&-ci-integration.md",
     "plan-v1-:-production-readiness:-eas-build,-submit-&-release-configuration.md",
     "e2e/coverage-report.md.tmp.30368.1767684283827",
@@ -206,8 +210,6 @@
     "node_modules/expo-image-loader/android/src/main/java/expo/modules/imageloader/SimpleSettableFuture.java",
     "node_modules/expo-image-loader/android/src/main/java/expo/modules/imageloader/ImageLoaderModule.kt",
     "node_modules/expo-image-loader/android/src/main/java/expo/modules/imageloader/ImageLoaderPackage.kt",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom.sha512",
-    "node_modules/expo-image-loader/local-maven-repo/host/exp/exponent/expo.modules.imageloader/6.0.0/expo.modules.imageloader-6.0.0.pom.md5",
     "node_modules/expo-image-loader/CHANGELOG.md",
     "node_modules/expo-image-loader/README.md",
     "node_modules/expo-image-picker/CHANGELOG.md",
@@ -228,7 +230,6 @@
     "node_modules/pg-types/README.md",
     "node_modules/pg-protocol/README.md",
     "node_modules/pg/README.md",
-    "node_modules/@types/pg/README.md",
     "assets/favicon.png",
     "node_modules/psl/browserstack-logo.svg",
     "node_modules/stream-buffers/coverage/lcov-report/sort-arrow-sprite.png",
@@ -237,7 +238,6 @@
     "node_modules/istanbul-reports/lib/html/assets/favicon.png",
     "node_modules/metro/src/integration_tests/basic_bundle/test.png",
     "node_modules/expo-router/assets/unmatched.png",
-    "node_modules/expo-router/assets/pkg.png",
-    "node_modules/expo-router/assets/sitemap.png"
+    "node_modules/expo-router/assets/pkg.png"
   ]
 }

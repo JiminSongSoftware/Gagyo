@@ -110,7 +110,7 @@ Gagyo uses GitHub Actions for continuous integration and EAS (Expo Application S
 
 - [ ] No hardcoded secrets in code
 - [ ] All secrets in GitHub Secrets / EAS Secrets
-- [ ] Secret scanning passing (TruffleHog)
+- [ ] Secret scanning passing (Gitleaks)
 - [ ] Dependency audit passing
 - [ ] RLS policies tested
 
@@ -237,43 +237,57 @@ Follow [Semantic Versioning](https://semver.org/):
 ```json
 {
   "cli": {
-    "version": ">= 5.0.0"
+    "version": ">= 16.28.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "bundleIdentifier": "com.gagyo.app.dev"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "package": "com.gagyo.app.dev"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
+        "bundleIdentifier": "com.gagyo.app.preview",
         "resourceClass": "m-medium"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "package": "com.gagyo.app.preview"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
       }
     },
     "production": {
+      "autoIncrement": true,
       "ios": {
+        "bundleIdentifier": "com.gagyo.app",
         "resourceClass": "m-medium"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "package": "com.gagyo.app"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "production"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id"
-      },
+      "ios": {},
       "android": {
         "serviceAccountKeyPath": "./google-services-key.json",
         "track": "internal"
