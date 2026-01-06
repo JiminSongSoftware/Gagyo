@@ -445,6 +445,7 @@ function getDateRange(period: 'weekly' | 'monthly' | 'quarterly' | 'semi_annual'
 describe('Prayer Analytics RLS Policies', () => {
   let userAClient: SupabaseClient;
   let userBClient: SupabaseClient;
+  // Reserved for future cross-user testing scenarios
   let _userCClient: SupabaseClient;
   let _userDClient: SupabaseClient;
 
@@ -467,6 +468,7 @@ describe('Prayer Analytics RLS Policies', () => {
     // Get authenticated clients
     userAClient = await getAuthenticatedClient(TEST_DATA.userAEmail);
     userBClient = await getAuthenticatedClient(TEST_DATA.userBEmail);
+    // Reserved for future cross-user testing scenarios
     _userCClient = await getAuthenticatedClient(TEST_DATA.userCEmail);
     _userDClient = await getAuthenticatedClient(TEST_DATA.userDEmail);
   });

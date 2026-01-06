@@ -15,29 +15,37 @@ jest.mock('@/lib/supabase', () => ({
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 
-describe('usePrayerAnalytics', () => {
-  const mockTenantId = 'tenant-123';
-  const mockMembershipId = 'membership-456';
-  const mockSmallGroupId = 'small-group-789';
+// Test constants
+const mockTenantId = 'test-tenant-id';
+const mockMembershipId = 'test-membership-id';
+const mockSmallGroupId = 'test-small-group-id';
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+// Types for mock query builder
+interface MockQueryResult {
+  data: unknown[] | null;
+  error: Error | null;
+}
 
-  // Mock query builder chain
-  const createMockQuery = (data: unknown[], error: unknown = null) => {
-    const mockQuery = {
-      eq: jest.fn().mockReturnThis(),
-      gte: jest.fn().mockReturnThis(),
-      lte: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-    };
+interface MockQueryBuilder {
+  eq: jest.Mock<MockQueryBuilder, [string, unknown]>;
+  gte: jest.Mock<MockQueryBuilder, [string, string]>;
+  lte: jest.Mock<MockQueryBuilder, [string, string]>;
+  select: jest.Mock<Promise<MockQueryResult>, []>;
+}
 
-    // Final return
-    (mockQuery.select as jest.Mock).mockResolvedValue({ data, error });
-    return mockQuery;
+// Mock query builder chain
+const createMockQuery = (data: unknown[], error: Error | null = null): MockQueryBuilder => {
+  const mockQuery: Partial<MockQueryBuilder> = {
+    eq: jest.fn().mockReturnThis(),
+    gte: jest.fn().mockReturnThis(),
+    lte: jest.fn().mockReturnThis(),
+    select: jest.fn().mockResolvedValue({ data, error }),
   };
 
+  return mockQuery as MockQueryBuilder;
+};
+
+describe('usePrayerAnalytics', () => {
   describe('Individual Scope', () => {
     it('should return empty analytics when tenantId is null', async () => {
       const { result } = renderHook(() =>
@@ -198,7 +206,7 @@ describe('usePrayerAnalytics', () => {
     it('should handle errors gracefully', async () => {
       const mockError = new Error('Database error');
 
-      const mockQuery = {
+      const mockQuery: MockQueryBuilder = {
         eq: jest.fn().mockReturnThis(),
         gte: jest.fn().mockReturnThis(),
         lte: jest.fn().mockReturnThis(),
@@ -437,7 +445,7 @@ describe('usePrayerAnalytics', () => {
     it('should handle database errors gracefully', async () => {
       const mockError = new Error('Database connection failed');
 
-      const mockQuery = {
+      const mockQuery: MockQueryBuilder = {
         eq: jest.fn().mockReturnThis(),
         gte: jest.fn().mockReturnThis(),
         lte: jest.fn().mockReturnThis(),
@@ -464,7 +472,7 @@ describe('usePrayerAnalytics', () => {
     it('should handle network failures', async () => {
       const mockError = new Error('Network request failed');
 
-      const mockQuery = {
+      const mockQuery: MockQueryBuilder = {
         eq: jest.fn().mockReturnThis(),
         gte: jest.fn().mockReturnThis(),
         lte: jest.fn().mockReturnThis(),
@@ -490,9 +498,9 @@ describe('usePrayerAnalytics', () => {
       let mockCallCount = 0;
       const mockPrayers = [{ id: '1', answered: true, created_at: '2024-01-01' }];
 
-      const createMockQueryWithCount = () => {
+      const createMockQueryWithCount = (): MockQueryBuilder => {
         mockCallCount++;
-        const mockQuery = {
+        const mockQuery: MockQueryBuilder = {
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockReturnThis(),
           lte: jest.fn().mockReturnThis(),
