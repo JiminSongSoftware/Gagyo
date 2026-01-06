@@ -25,6 +25,7 @@ import {
   TextArea,
 } from 'tamagui';
 import { useTranslation } from '@/i18n';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 import { usePastoralJournalById } from '../hooks/usePastoralJournals';
 import {
   useUpdatePastoralJournalStatus,
@@ -97,6 +98,15 @@ const SectionCard = styled(Stack, {
   padding: '$4',
   marginBottom: '$4',
 });
+
+interface SectionCardProps {
+  children: React.ReactNode;
+  testID?: string;
+}
+
+function SectionCardWithTestID({ children, testID }: SectionCardProps) {
+  return <SectionCard testID={testID}>{children}</SectionCard>;
+}
 
 const CommentBubble = styled(Stack, {
   name: 'CommentBubble',
@@ -173,6 +183,7 @@ interface ActionButtonProps {
   disabled?: boolean;
   loading?: boolean;
   variant?: 'primary' | 'secondary';
+  testID?: string;
 }
 
 function ActionButton({
@@ -181,11 +192,13 @@ function ActionButton({
   disabled,
   loading,
   variant = 'primary',
+  testID,
 }: ActionButtonProps) {
   const theme = useTheme();
 
   return (
     <Button
+      testID={testID}
       flex={1}
       size="$4"
       backgroundColor={variant === 'primary' ? '$primary' : '$backgroundTertiary'}
@@ -362,6 +375,9 @@ export function PastoralJournalDetail({
   } = useUpdatePastoralJournalStatus(tenantId, membership);
 
   const [showCommentError, setShowCommentError] = useState<string | null>(null);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [showForwardDialog, setShowForwardDialog] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Call hooks unconditionally to satisfy React Hooks rules
   // Using default status when journal is null
@@ -371,36 +387,57 @@ export function PastoralJournalDetail({
   const canConfirmByPastor = useCanUpdateStatus(membership, journalStatus, 'pastor_confirmed');
 
   const handleSubmitForReview = () => {
+    setShowSubmitDialog(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     if (!journal) return;
-    void (async () => {
-      try {
-        await updateStatus({ journalId: journal.id, newStatus: 'submitted' });
-      } catch (err) {
-        setShowCommentError((err as Error).message);
-      }
-    })();
+    setShowSubmitDialog(false);
+    try {
+      await updateStatus({ journalId: journal.id, newStatus: 'submitted' });
+    } catch (err) {
+      setShowCommentError((err as Error).message);
+    }
+  };
+
+  const handleCancelSubmit = () => {
+    setShowSubmitDialog(false);
   };
 
   const handleForwardToPastor = () => {
+    setShowForwardDialog(true);
+  };
+
+  const handleConfirmForward = async () => {
     if (!journal) return;
-    void (async () => {
-      try {
-        await updateStatus({ journalId: journal.id, newStatus: 'zone_reviewed' });
-      } catch (err) {
-        setShowCommentError((err as Error).message);
-      }
-    })();
+    setShowForwardDialog(false);
+    try {
+      await updateStatus({ journalId: journal.id, newStatus: 'zone_reviewed' });
+    } catch (err) {
+      setShowCommentError((err as Error).message);
+    }
+  };
+
+  const handleCancelForward = () => {
+    setShowForwardDialog(false);
   };
 
   const handleConfirmJournal = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmConfirm = async () => {
     if (!journal) return;
-    void (async () => {
-      try {
-        await updateStatus({ journalId: journal.id, newStatus: 'pastor_confirmed' });
-      } catch (err) {
-        setShowCommentError((err as Error).message);
-      }
-    })();
+    setShowConfirmDialog(false);
+    try {
+      await updateStatus({ journalId: journal.id, newStatus: 'pastor_confirmed' });
+    } catch (err) {
+      setShowCommentError((err as Error).message);
+    }
+  };
+
+  const handleCancelConfirm = () => {
+    setShowConfirmDialog(false);
   };
 
   const handleCommentAdded = () => {
@@ -516,7 +553,7 @@ export function PastoralJournalDetail({
 
           {/* Attendance Section */}
           {content?.attendance && (
-            <SectionCard>
+            <SectionCardWithTestID testID="section-attendance">
               <TamaguiText fontSize="$md" fontWeight="bold" color="$color" marginBottom="$3">
                 {t('pastoral.attendance')}
               </TamaguiText>
@@ -548,12 +585,12 @@ export function PastoralJournalDetail({
                   </XStack>
                 )}
               </XStack>
-            </SectionCard>
+            </SectionCardWithTestID>
           )}
 
           {/* Prayer Requests */}
           {content?.prayerRequests && content.prayerRequests.length > 0 && (
-            <SectionCard>
+            <SectionCardWithTestID testID="section-prayer-requests">
               <TamaguiText fontSize="$md" fontWeight="bold" color="$color" marginBottom="$3">
                 {t('pastoral.prayer_requests')}
               </TamaguiText>
@@ -564,12 +601,12 @@ export function PastoralJournalDetail({
                   </TamaguiText>
                 ))}
               </YStack>
-            </SectionCard>
+            </SectionCardWithTestID>
           )}
 
           {/* Highlights */}
           {content?.highlights && content.highlights.length > 0 && (
-            <SectionCard>
+            <SectionCardWithTestID testID="section-highlights">
               <TamaguiText fontSize="$md" fontWeight="bold" color="$color" marginBottom="$3">
                 {t('pastoral.highlights')}
               </TamaguiText>
@@ -580,12 +617,12 @@ export function PastoralJournalDetail({
                   </TamaguiText>
                 ))}
               </YStack>
-            </SectionCard>
+            </SectionCardWithTestID>
           )}
 
           {/* Concerns */}
           {content?.concerns && content.concerns.length > 0 && (
-            <SectionCard>
+            <SectionCardWithTestID testID="section-concerns">
               <TamaguiText fontSize="$md" fontWeight="bold" color="$color" marginBottom="$3">
                 {t('pastoral.concerns')}
               </TamaguiText>
@@ -596,12 +633,12 @@ export function PastoralJournalDetail({
                   </TamaguiText>
                 ))}
               </YStack>
-            </SectionCard>
+            </SectionCardWithTestID>
           )}
 
           {/* Next Steps */}
           {content?.nextSteps && content.nextSteps.length > 0 && (
-            <SectionCard>
+            <SectionCardWithTestID testID="section-next-steps">
               <TamaguiText fontSize="$md" fontWeight="bold" color="$color" marginBottom="$3">
                 {t('pastoral.next_steps')}
               </TamaguiText>
@@ -612,7 +649,7 @@ export function PastoralJournalDetail({
                   </TamaguiText>
                 ))}
               </YStack>
-            </SectionCard>
+            </SectionCardWithTestID>
           )}
 
           {/* Comments Section */}
@@ -694,6 +731,43 @@ export function PastoralJournalDetail({
           )}
         </YStack>
       </ScrollView>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog
+        visible={showSubmitDialog}
+        titleKey="pastoral.confirm_submit_title"
+        messageKey="pastoral.confirm_submit_message"
+        confirmTextKey="common.confirm"
+        cancelTextKey="common.cancel"
+        testID="submit-confirmation-dialog"
+        onConfirm={handleConfirmSubmit}
+        onCancel={handleCancelSubmit}
+        loading={updating}
+      />
+
+      <AlertDialog
+        visible={showForwardDialog}
+        titleKey="pastoral.confirm_forward_title"
+        messageKey="pastoral.confirm_forward_message"
+        confirmTextKey="common.confirm"
+        cancelTextKey="common.cancel"
+        testID="forward-confirmation-dialog"
+        onConfirm={handleConfirmForward}
+        onCancel={handleCancelForward}
+        loading={updating}
+      />
+
+      <AlertDialog
+        visible={showConfirmDialog}
+        titleKey="pastoral.confirm_confirm_title"
+        messageKey="pastoral.confirm_confirm_message"
+        confirmTextKey="common.confirm"
+        cancelTextKey="common.cancel"
+        testID="confirm-confirmation-dialog"
+        onConfirm={handleConfirmConfirm}
+        onCancel={handleCancelConfirm}
+        loading={updating}
+      />
     </YStack>
   );
 }

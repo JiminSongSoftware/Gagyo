@@ -32,7 +32,7 @@ export interface CreatePastoralJournalOptions {
 export interface CreatePastoralJournalState {
   createJournal: (options: CreatePastoralJournalOptions) => Promise<string | null>;
   creating: boolean;
-  error: Error | null;
+  error: (Error & { isDuplicate?: boolean }) | null;
 }
 
 const MAX_PRAYER_REQUESTS = 10;
@@ -194,10 +194,12 @@ export function useCreatePastoralJournal(
 
         if (existingJournal) {
           // Journal already exists for this week
-          const statusText = existingJournal.status.replace('_', ' ');
-          throw new Error(
+          const statusText = (existingJournal.status as string).replace('_', ' ');
+          const duplicateError = new Error(
             `A journal for this week already exists (${statusText}). Please edit the existing journal instead.`
-          );
+          ) as Error & { isDuplicate?: boolean };
+          duplicateError.isDuplicate = true;
+          throw duplicateError;
         }
 
         // Insert the pastoral journal

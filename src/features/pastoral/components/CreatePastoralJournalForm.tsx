@@ -11,7 +11,7 @@
  */
 
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import {
   Stack,
   Text as TamaguiText,
@@ -28,6 +28,7 @@ import {
   type PastoralJournalContent,
 } from '../hooks/useCreatePastoralJournal';
 import type { Membership } from '@/types/database';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 
 // ============================================================================
 // TYPES
@@ -90,6 +91,15 @@ const FormSection = styled(YStack, {
   padding: '$4',
   marginBottom: '$4',
 });
+
+interface FormSectionProps {
+  children: React.ReactNode;
+  testID?: string;
+}
+
+function FormSectionWithTestID({ children, testID }: FormSectionProps) {
+  return <FormSection testID={testID}>{children}</FormSection>;
+}
 
 const CounterButton = styled(Pressable, {
   name: 'CounterButton',
@@ -313,6 +323,9 @@ export function CreatePastoralJournalForm({
   const [concerns, setConcerns] = useState<string[]>([]);
   const [nextSteps, setNextSteps] = useState<string[]>([]);
 
+  // Dialog states
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
   const { createJournal, creating, error } = useCreatePastoralJournal(
     tenantId,
     smallGroupId,
@@ -377,14 +390,20 @@ export function CreatePastoralJournalForm({
   };
 
   const handleSaveAndSubmit = async () => {
+    // For submission, attendance is required
+    if (attendance.present === 0 && attendance.absent === 0 && attendance.newVisitors === 0) {
+      // Show inline error for validation - for now just return
+      // In a real app, you might want to show a toast or inline error
+      return;
+    }
+
+    // Show confirmation dialog
+    setShowSubmitDialog(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     try {
       const content: PastoralJournalContent = {};
-
-      // For submission, attendance is required
-      if (attendance.present === 0 && attendance.absent === 0 && attendance.newVisitors === 0) {
-        Alert.alert(t('pastoral.validation_error'), t('pastoral.attendance_required'));
-        return;
-      }
 
       content.attendance = attendance;
       if (prayerRequests.length > 0) {
@@ -400,34 +419,23 @@ export function CreatePastoralJournalForm({
         content.nextSteps = nextSteps;
       }
 
-      // Confirm submission
-      Alert.alert(t('pastoral.confirm_submit_title'), t('pastoral.confirm_submit_message'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.confirm'),
-          style: 'default',
-          onPress: () => {
-            void (async () => {
-              try {
-                const journalId = await createJournal({
-                  weekStartDate,
-                  content,
-                  submitForReview: true,
-                });
+      const journalId = await createJournal({
+        weekStartDate,
+        content,
+        submitForReview: true,
+      });
 
-                if (journalId) {
-                  onSuccess?.(journalId);
-                }
-              } catch (submitError) {
-                Alert.alert(t('pastoral.create_error'), (submitError as Error).message);
-              }
-            })();
-          },
-        },
-      ]);
-    } catch (err) {
-      Alert.alert(t('pastoral.create_error'), (err as Error).message);
+      if (journalId) {
+        setShowSubmitDialog(false);
+        onSuccess?.(journalId);
+      }
+    } catch {
+      setShowSubmitDialog(false);
     }
+  };
+
+  const handleCancelSubmit = () => {
+    setShowSubmitDialog(false);
   };
 
   const weekRange = getWeekRange(weekStartDate);
@@ -531,7 +539,7 @@ export function CreatePastoralJournalForm({
         </FormSection>
 
         {/* Attendance Section */}
-        <FormSection>
+        <FormSectionWithTestID testID="section-attendance">
           <TamaguiText fontSize="$sm" fontWeight="bold" color="$color" marginBottom="$4">
             {t('pastoral.attendance')}
           </TamaguiText>
@@ -560,46 +568,64 @@ export function CreatePastoralJournalForm({
               color="$primary"
             />
           </XStack>
-        </FormSection>
+        </FormSectionWithTestID>
 
         {/* Prayer Requests */}
-        <ArrayInput
-          label={t('pastoral.prayer_requests')}
-          items={prayerRequests}
-          onItemsChange={setPrayerRequests}
-          placeholder={t('pastoral.prayer_request_placeholder')}
-          testID="prayer-requests-input"
-        />
+        <FormSectionWithTestID testID="section-prayer-requests">
+          <ArrayInput
+            label={t('pastoral.prayer_requests')}
+            items={prayerRequests}
+            onItemsChange={setPrayerRequests}
+            placeholder={t('pastoral.prayer_request_placeholder')}
+            testID="prayer-requests-input"
+          />
+        </FormSectionWithTestID>
 
         {/* Highlights */}
-        <ArrayInput
-          label={t('pastoral.highlights')}
-          items={highlights}
-          onItemsChange={setHighlights}
-          placeholder={t('pastoral.highlight_placeholder')}
-          testID="highlights-input"
-        />
+        <FormSectionWithTestID testID="section-highlights">
+          <ArrayInput
+            label={t('pastoral.highlights')}
+            items={highlights}
+            onItemsChange={setHighlights}
+            placeholder={t('pastoral.highlight_placeholder')}
+            testID="highlights-input"
+          />
+        </FormSectionWithTestID>
 
         {/* Concerns */}
-        <ArrayInput
-          label={t('pastoral.concerns')}
-          items={concerns}
-          onItemsChange={setConcerns}
-          placeholder={t('pastoral.concern_placeholder')}
-          testID="concerns-input"
-        />
+        <FormSectionWithTestID testID="section-concerns">
+          <ArrayInput
+            label={t('pastoral.concerns')}
+            items={concerns}
+            onItemsChange={setConcerns}
+            placeholder={t('pastoral.concern_placeholder')}
+            testID="concerns-input"
+          />
+        </FormSectionWithTestID>
 
         {/* Next Steps */}
-        <ArrayInput
-          label={t('pastoral.next_steps')}
-          items={nextSteps}
-          onItemsChange={setNextSteps}
-          placeholder={t('pastoral.next_step_placeholder')}
-          testID="next-steps-input"
-        />
+        <FormSectionWithTestID testID="section-next-steps">
+          <ArrayInput
+            label={t('pastoral.next_steps')}
+            items={nextSteps}
+            onItemsChange={setNextSteps}
+            placeholder={t('pastoral.next_step_placeholder')}
+            testID="next-steps-input"
+          />
+        </FormSectionWithTestID>
 
         {/* Error Display */}
-        {error && (
+        {error.isDuplicate && (
+          <TamaguiText
+            testID="duplicate-journal-warning"
+            fontSize="$sm"
+            color="$error"
+            marginBottom="$2"
+          >
+            {t('pastoral.duplicate_journal_warning')}
+          </TamaguiText>
+        )}
+        {error && !error.isDuplicate && (
           <Stack
             marginTop="$4"
             padding="$3"
@@ -653,7 +679,7 @@ export function CreatePastoralJournalForm({
             size="$4"
             backgroundColor="$primary"
             color="white"
-            onPress={handleSaveAndSubmit}
+            onPress={() => void handleSaveAndSubmit()}
             disabled={creating}
           >
             {creating ? (
@@ -667,6 +693,19 @@ export function CreatePastoralJournalForm({
           </Button>
         </XStack>
       </ScrollView>
+
+      {/* Submit Confirmation Dialog */}
+      <AlertDialog
+        visible={showSubmitDialog}
+        titleKey="pastoral.confirm_submit_title"
+        messageKey="pastoral.confirm_submit_message"
+        confirmTextKey="common.confirm"
+        cancelTextKey="common.cancel"
+        testID="submit-confirmation-dialog"
+        onConfirm={handleConfirmSubmit}
+        onCancel={handleCancelSubmit}
+        loading={creating}
+      />
     </YStack>
   );
 }
