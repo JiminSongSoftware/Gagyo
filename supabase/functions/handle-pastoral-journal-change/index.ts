@@ -20,6 +20,10 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { createLogger } from '../_shared/logger.ts';
+
+// Create logger instance
+const log = createLogger('handle-pastoral-journal-change');
 
 // ============================================================================
 // TYPES
@@ -181,7 +185,7 @@ async function getPastoralJournal(journalId: string): Promise<PastoralJournalRow
     .single();
 
   if (error) {
-    console.error(`Failed to fetch pastoral journal: ${error.message}`);
+    log.error('failed_to_fetch_pastoral_journal', { journal_id: journalId, error: error.message });
     return null;
   }
 
@@ -199,7 +203,10 @@ async function getSmallGroup(smallGroupId: string): Promise<SmallGroupRow | null
     .single();
 
   if (error) {
-    console.error(`Failed to fetch small group: ${error.message}`);
+    log.error('failed_to_fetch_small_group', {
+      small_group_id: smallGroupId,
+      error: error.message,
+    });
     return null;
   }
 
@@ -235,7 +242,7 @@ async function getPastors(tenantId: string): Promise<string[]> {
     .eq('status', 'active');
 
   if (error) {
-    console.error(`Failed to fetch pastors: ${error.message}`);
+    log.error('failed_to_fetch_pastors', { tenant_id: tenantId, error: error.message });
     return [];
   }
 
@@ -319,7 +326,10 @@ async function createPrayerCardsFromJournal(
       content = JSON.parse(journal.content) as PastoralJournalContent;
     }
   } catch (parseError) {
-    console.error('Failed to parse journal content:', parseError);
+    log.error('failed_to_parse_journal_content', {
+      journal_id: journal.id,
+      error: parseError instanceof Error ? parseError.message : String(parseError),
+    });
     return { created: 0, errors: ['Failed to parse journal content'] };
   }
 
@@ -352,7 +362,10 @@ async function createPrayerCardsFromJournal(
         .single();
 
       if (cardError) {
-        console.error('Failed to create prayer card:', cardError.message);
+        log.error('failed_to_create_prayer_card', {
+          journal_id: journal.id,
+          error: cardError.message,
+        });
         errors.push(`Failed to create prayer card: ${cardError.message}`);
         continue;
       }
@@ -365,7 +378,10 @@ async function createPrayerCardsFromJournal(
         });
 
         if (recipientError) {
-          console.error('Failed to create prayer card recipient:', recipientError.message);
+          log.error('failed_to_create_prayer_card_recipient', {
+            prayer_card_id: prayerCard?.id,
+            error: recipientError.message,
+          });
           errors.push(`Failed to assign recipient: ${recipientError.message}`);
         }
       }
@@ -373,12 +389,19 @@ async function createPrayerCardsFromJournal(
       created++;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('Error creating prayer card:', errorMessage);
+      log.error('error_creating_prayer_card', {
+        journal_id: journal.id,
+        error: errorMessage,
+      });
       errors.push(`Error creating prayer card: ${errorMessage}`);
     }
   }
 
-  console.log(`Created ${created} prayer cards from ${prayerRequests.length} prayer requests`);
+  log.info('prayer_cards_created', {
+    journal_id: journal.id,
+    created_count: created,
+    request_count: prayerRequests.length,
+  });
   return { created, errors };
 }
 
@@ -576,6 +599,10 @@ async function handlePastoralJournalChange(
 // ============================================================================
 
 serve(async (req) => {
+  // Generate request tracking
+  const requestId = crypto.randomUUID();
+  const startTime = performance.now();
+
   // CORS handling
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -592,6 +619,20 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body early for logging
+    const body = await req.json();
+    const { journal_id, old_status, new_status } = body;
+
+    // Log function start
+    log.info('function_started', {
+      request_id: requestId,
+      journal_id,
+      old_status,
+      new_status,
+      function_name: 'handle-pastoral-journal-change',
+      input_size: JSON.stringify(body).length,
+    });
+
     // Verify Authorization header (service role only)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -606,10 +647,6 @@ serve(async (req) => {
         return new Response('Invalid authorization token', { status: 401 });
       }
     }
-
-    // Parse request body
-    const body = await req.json();
-    const { journal_id, old_status, new_status } = body;
 
     if (!journal_id || !old_status || !new_status) {
       return new Response('Missing required fields: journal_id, old_status, new_status', {
@@ -626,14 +663,29 @@ serve(async (req) => {
     // Process the status change
     const result = await handlePastoralJournalChange(journal_id, old_status, new_status);
 
+    // Log function completion
+    log.info('function_completed', {
+      request_id: requestId,
+      duration_ms: Math.round(performance.now() - startTime),
+      result: 'success',
+      notified_count: result.notified,
+      prayer_cards_created: result.prayerCardsCreated,
+    });
+
     return new Response(JSON.stringify(result), {
       status: result.success ? 200 : 500,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in handle-pastoral-journal-change:', error);
-
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    log.error('error_occurred', {
+      request_id: requestId,
+      error: errorMessage,
+      stack: errorStack,
+      duration_ms: Math.round(performance.now() - startTime),
+    });
 
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,

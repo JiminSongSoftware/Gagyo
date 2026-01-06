@@ -22,12 +22,15 @@ jest.mock('@/i18n', () => ({
   changeLocale: jest.fn(),
 }));
 
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockChangeLocale = i18n.changeLocale as jest.MockedFunction<typeof i18n.changeLocale>;
-const mockGetUser = mockSupabase.auth.getUser as jest.MockedFunction<
-  typeof mockSupabase.auth.getUser
->;
-const mockFrom = mockSupabase.from as jest.MockedFunction<typeof mockSupabase.from>;
+const mockSupabase = supabase as {
+  auth: {
+    getUser: jest.Mock;
+  };
+  from: jest.Mock;
+};
+const mockChangeLocale = i18n.changeLocale as jest.Mock;
+const mockGetUser = mockSupabase.auth.getUser;
+const mockFrom = mockSupabase.from;
 
 describe('useUpdateProfile', () => {
   const mockUserId = 'user-123';
@@ -84,9 +87,7 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
-      typeof mockSupabase.from
-    >);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -106,9 +107,7 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
-      typeof mockSupabase.from
-    >);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -128,9 +127,7 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
-      typeof mockSupabase.from
-    >);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -158,9 +155,7 @@ describe('useUpdateProfile', () => {
         error: null,
       }),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
-      typeof mockSupabase.from
-    >);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -199,9 +194,7 @@ describe('useUpdateProfile', () => {
         error: mockError,
       }),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
-      typeof mockSupabase.from
-    >);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { result } = renderHook(() => useUpdateProfile());
 
@@ -242,9 +235,7 @@ describe('useUpdateProfile', () => {
           })
       ),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<
-      typeof mockSupabase.from
-    >);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { result } = renderHook(() => useUpdateProfile());
 

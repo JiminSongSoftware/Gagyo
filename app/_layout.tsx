@@ -1,15 +1,97 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 import { useEffect, useState } from 'react';
-import { TamaguiProvider, useTheme as useTamaguiTheme } from 'tamagui';
+import { TamaguiProvider, Text, View, YStack, useThemeName } from 'tamagui';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { initI18n, I18nextProvider } from '@/i18n';
-import config from '@/tamagui.config';
-import type { InitPromise } from 'i18next';
+import { initI18n, i18n, useTranslation } from '@/i18n';
+import { I18nextProvider } from 'react-i18next';
+import { initSentry } from '@/lib/monitoring/sentry';
+import { initPostHog } from '@/lib/monitoring/posthog';
+import config from '../tamagui.config';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenantStore } from '@/stores/tenantStore';
 import { useNotificationHandler } from '@/features/notifications';
+
+/**
+ * Initialize Sentry and PostHog monitoring services.
+ * Must be called before any providers are rendered.
+ */
+function initializeMonitoring(): void {
+  // Initialize Sentry error tracking
+  initSentry({
+    dsn: process.env.SENTRY_DSN!,
+  });
+
+  // Initialize PostHog analytics
+  initPostHog({
+    apiKey: process.env.EXPO_PUBLIC_POSTHOG_API_KEY!,
+  });
+}
+
+/**
+ * Error fallback component displayed when Sentry catches an error.
+ */
+function ErrorFallback({
+  error,
+  resetError,
+}: {
+  error: Error;
+  resetError: () => void;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  return (
+    <View
+      flex={1}
+      justifyContent="center"
+      alignItems="center"
+      padding="$4"
+      backgroundColor={isDark ? '$background' : '$bgColor'}
+    >
+      <YStack alignItems="center" gap="$4">
+        <Text fontSize="$8" color="$red10">
+          ⚠️
+        </Text>
+        <Text fontSize="$6" fontWeight="bold" color={isDark ? '$color' : '$color'}>
+          {t('error.somethingWentWrong', { defaultValue: 'Something went wrong' })}
+        </Text>
+        <Text fontSize="$4" textAlign="center" color="$gray10">
+          {t('error.appCrashed', {
+            defaultValue: 'The app encountered an unexpected error. Please try again.',
+          })}
+        </Text>
+        <Text fontSize="$3" color="$gray11" textAlign="center" numberOfLines={3} maxWidth={300}>
+          {error?.message}
+        </Text>
+        <PostHogProvider>
+          <YStack
+            backgroundColor="$blue10"
+            paddingHorizontal="$6"
+            paddingVertical="$3"
+            borderRadius="$4"
+            pressStyle={{ opacity: 0.8 }}
+            onPress={resetError}
+          >
+            <Text color="white" fontWeight="600" fontSize="$4">
+              {t('error.tryAgain', { defaultValue: 'Try Again' })}
+            </Text>
+          </YStack>
+        </PostHogProvider>
+      </YStack>
+    </View>
+  );
+}
+
+/**
+ * PostHog provider wrapper component.
+ */
+function PostHogProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <>{children}</>;
+}
 
 /**
  * Auth navigation guard component.
@@ -53,12 +135,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [i18nInstance, setI18nInstance] = useState<InitPromise | null>(null);
+  const [i18nInstance, setI18nInstance] = useState<typeof i18n | null>(null);
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
 
   // Set up push notification handler
   const { processInitialNotification } = useNotificationHandler();
+
+  // Initialize monitoring services before i18n
+  useEffect(() => {
+    initializeMonitoring();
+  }, []);
 
   useEffect(() => {
     void initI18n().then((instance) => {
@@ -80,16 +167,20 @@ export default function RootLayout() {
   return (
     <TamaguiProvider config={config} defaultTheme={theme}>
       <I18nextProvider i18n={i18nInstance}>
-        <AuthGuard>
-          <StatusBarWrapper />
-          <Stack>
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="chat" options={{ headerShown: false }} />
-            <Stack.Screen name="prayer" options={{ headerShown: false }} />
-            <Stack.Screen name="pastoral" options={{ headerShown: false }} />
-          </Stack>
-        </AuthGuard>
+        <Sentry.ErrorBoundary fallback={ErrorFallback}>
+          <PostHogProvider>
+            <AuthGuard>
+              <StatusBarWrapper />
+              <Stack>
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="chat" options={{ headerShown: false }} />
+                <Stack.Screen name="prayer" options={{ headerShown: false }} />
+                <Stack.Screen name="pastoral" options={{ headerShown: false }} />
+              </Stack>
+            </AuthGuard>
+          </PostHogProvider>
+        </Sentry.ErrorBoundary>
       </I18nextProvider>
     </TamaguiProvider>
   );
@@ -100,9 +191,9 @@ export default function RootLayout() {
  */
 function StatusBarWrapper() {
   const colorScheme = useColorScheme();
-  const tamaguiTheme = useTamaguiTheme();
+  const themeName = useThemeName();
 
-  const isDark = tamaguiTheme?.name === 'dark' || colorScheme === 'dark';
+  const isDark = themeName === 'dark' || colorScheme === 'dark';
 
   return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }

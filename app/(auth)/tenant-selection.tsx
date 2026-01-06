@@ -85,8 +85,8 @@ function TenantButton({ membership, onPress }: TenantButtonProps) {
       testID={`tenant-button-${tenantId}`}
       size="$5"
       onPress={() => onPress(tenantId, tenantName)}
-      backgroundColor="$backgroundStrong"
-      pressTheme={{ active: { background: '$backgroundPress' } }}
+      backgroundColor="$backgroundSecondary"
+      pressStyle={{ backgroundColor: '$backgroundTertiary' }}
       borderRadius="$4"
       padding="$4"
     >

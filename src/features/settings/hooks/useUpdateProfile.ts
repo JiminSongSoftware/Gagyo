@@ -17,6 +17,7 @@ import type { Json } from '@/lib/supabase';
  * Shape of notification preferences.
  */
 export interface NotificationPreferences {
+  [key: string]: boolean;
   messages: boolean;
   prayers: boolean;
   journals: boolean;
@@ -81,73 +82,66 @@ export function useUpdateProfile(): UseUpdateProfileReturn {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const updateProfile = useCallback(
-    async (params: UpdateProfileParams): Promise<boolean> => {
-      setUpdating(true);
-      setError(null);
+  const updateProfile = useCallback(async (params: UpdateProfileParams): Promise<boolean> => {
+    setUpdating(true);
+    setError(null);
 
-      try {
-        // Get current user
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
+    try {
+      // Get current user
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-        if (authError) {
-          throw authError;
-        }
-
-        if (!user) {
-          throw new Error('User not authenticated');
-        }
-
-        // Build update payload
-        const updates: Record<string, string | Json> = {};
-
-        if (params.displayName !== undefined) {
-          updates.display_name = params.displayName;
-        }
-
-        if (params.locale !== undefined) {
-          updates.locale = params.locale;
-        }
-
-        if (params.notificationPreferences !== undefined) {
-          updates.notification_preferences = params.notificationPreferences;
-        }
-
-        // Only update if there are changes
-        if (Object.keys(updates).length === 0) {
-          return true;
-        }
-
-        // Update users table
-        const { error: updateError } = await supabase
-          .from('users')
-          .update(updates)
-          .eq('id', user.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        // Sync locale change with i18n system for immediate UI refresh
-        if (params.locale !== undefined) {
-          await changeLocale(params.locale);
-        }
-
-        return true;
-      } catch (err) {
-        const errorObj =
-          err instanceof Error ? err : new Error('Failed to update profile');
-        setError(errorObj);
-        return false;
-      } finally {
-        setUpdating(false);
+      if (authError) {
+        throw authError;
       }
-    },
-    []
-  );
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Build update payload
+      const updates: Record<string, string | Json> = {};
+
+      if (params.displayName !== undefined) {
+        updates.display_name = params.displayName;
+      }
+
+      if (params.locale !== undefined) {
+        updates.locale = params.locale;
+      }
+
+      if (params.notificationPreferences !== undefined) {
+        updates.notification_preferences = params.notificationPreferences;
+      }
+
+      // Only update if there are changes
+      if (Object.keys(updates).length === 0) {
+        return true;
+      }
+
+      // Update users table
+      const { error: updateError } = await supabase.from('users').update(updates).eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Sync locale change with i18n system for immediate UI refresh
+      if (params.locale !== undefined) {
+        await changeLocale(params.locale);
+      }
+
+      return true;
+    } catch (err) {
+      const errorObj = err instanceof Error ? err : new Error('Failed to update profile');
+      setError(errorObj);
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  }, []);
 
   return {
     updating,

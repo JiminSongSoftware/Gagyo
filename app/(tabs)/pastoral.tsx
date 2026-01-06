@@ -19,13 +19,14 @@
 import { useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { YStack, styled } from 'tamagui';
+import { YStack, styled, Text as TamaguiText } from 'tamagui';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
-import {
-  PastoralJournalList,
-  type PastoralJournalsFilter,
-} from '@/features/pastoral/components/PastoralJournalList';
-import type { PastoralJournalWithRelations } from '@/types/database';
+import { useTranslation } from '@/i18n';
+import { PastoralJournalList } from '@/features/pastoral/components/PastoralJournalList';
+import type {
+  PastoralJournalsFilter,
+  PastoralJournalWithRelations,
+} from '@/features/pastoral/hooks/usePastoralJournals';
 
 // ============================================================================
 // STYLIZED COMPONENTS
@@ -46,7 +47,6 @@ const FAB = styled(Pressable, {
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.3,
   shadowRadius: 8,
-  elevation: 8,
 });
 
 // ============================================================================
@@ -54,6 +54,7 @@ const FAB = styled(Pressable, {
 // ============================================================================
 
 export default function PastoralScreen() {
+  const { t } = useTranslation();
   const { tenantId, membershipId, membership } = useRequireAuth();
   const router = useRouter();
 
@@ -85,7 +86,6 @@ export default function PastoralScreen() {
         membershipId={membershipId}
         membership={membership}
         onJournalPress={handleJournalPress}
-        onCreatePress={handleCreatePress}
         filter={filter}
         onFilterChange={handleFilterChange}
       />
@@ -96,16 +96,13 @@ export default function PastoralScreen() {
           testID="create-journal-fab"
           onPress={handleCreatePress}
           accessibilityRole="button"
-          accessibilityLabel="Create Journal"
+          accessibilityLabel={t('pastoral.create_journal')}
         >
-          <Text fontSize="$8" color="white" fontWeight="bold">
+          <TamaguiText fontSize="$8" color="white" fontWeight="bold">
             +
-          </Text>
+          </TamaguiText>
         </FAB>
       )}
     </YStack>
   );
 }
-
-// Import Text locally to avoid circular dependencies
-const { Text } = require('tamagui');

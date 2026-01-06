@@ -9,6 +9,7 @@
   "prayer_title": "Title",
   "prayer_content": "Prayer Content",
   "prayer_content_placeholder": "Enter your prayer request...",
+  "unknown_author": "Unknown",
   "prayer_recipient": "Recipient",
   "send_to_small_group": "Send to Small Group",
   "send_to_individual": "Send to Individual",

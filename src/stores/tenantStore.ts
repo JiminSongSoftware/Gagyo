@@ -9,6 +9,8 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
+import { setTags, setGroup } from '@/lib/monitoring/sentry';
+import { setGroup as setPostHogGroup } from '@/lib/monitoring/posthog';
 
 const TENANT_STORAGE_KEY = '@gagyo:active_tenant_id';
 
@@ -92,6 +94,11 @@ export const useTenantStore = create<TenantState>((set, get) => ({
       activeTenantId: tenantId,
       activeTenantName: tenantName,
     });
+
+    // Set monitoring tags and groups for tenant context
+    setTags({ tenant_id: tenantId });
+    setGroup('tenant', tenantId, { name: tenantName });
+    setPostHogGroup('tenant', tenantId, { name: tenantName, member_count: 0 }); // TODO: fetch actual member count
   },
 
   clearTenantContext: async () => {
@@ -119,11 +126,7 @@ export const useTenantStore = create<TenantState>((set, get) => ({
 
       if (isValid) {
         // Fetch tenant name
-        const { data } = await supabase
-          .from('tenants')
-          .select('name')
-          .eq('id', tenantId)
-          .single();
+        const { data } = await supabase.from('tenants').select('name').eq('id', tenantId).single();
 
         set({
           activeTenantId: tenantId,
@@ -152,7 +155,9 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   validateMembership: async (tenantId: string) => {
     try {
       // Check if user has an active membership in this tenant
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         return false;

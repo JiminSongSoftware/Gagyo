@@ -3,7 +3,7 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { useDeleteAccount } from '../useDeleteAccount';
+import { useDeleteAccount, type DeleteAccountResponse } from '../useDeleteAccount';
 import { supabase } from '@/lib/supabase';
 
 // Mock Supabase client
@@ -19,14 +19,15 @@ jest.mock('@/lib/supabase', () => ({
 // Mock global fetch
 global.fetch = jest.fn() as unknown as typeof fetch;
 
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
-const mockGetUser = mockSupabase.auth.getUser as jest.MockedFunction<
-  typeof mockSupabase.auth.getUser
->;
-const mockGetSession = mockSupabase.auth.getSession as jest.MockedFunction<
-  typeof mockSupabase.auth.getSession
->;
+const mockSupabase = supabase as {
+  auth: {
+    getUser: jest.Mock;
+    getSession: jest.Mock;
+  };
+};
+const mockFetch = global.fetch as jest.Mock;
+const mockGetUser = mockSupabase.auth.getUser;
+const mockGetSession = mockSupabase.auth.getSession;
 
 describe('useDeleteAccount', () => {
   const mockUserId = 'user-123';
@@ -62,7 +63,7 @@ describe('useDeleteAccount', () => {
           device_tokens: 3,
           notifications: 10,
           profile_photo_deleted: true,
-        },
+        } as const,
       }),
     } as unknown as Response);
   });
@@ -84,7 +85,7 @@ describe('useDeleteAccount', () => {
 
     const { result } = renderHook(() => useDeleteAccount());
 
-    let response;
+    let response: DeleteAccountResponse | null;
     await act(async () => {
       response = await result.current.deleteAccount();
     });

@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { YStack, XStack, Spinner, Separator } from 'tamagui';
 import { Container, Heading, Text } from '@/components/ui';
+import { useTranslation } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -51,6 +52,7 @@ interface UserProfile {
 }
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -131,7 +133,7 @@ export default function SettingsScreen() {
       <Container testID="settings-screen" padded flex={1}>
         <YStack flex={1} alignItems="center" justifyContent="center">
           <Spinner size="large" color="$primary" />
-          <Text i18nKey="common.loading" marginTop="$4" color="$color3" />
+          <Text i18nKey="common.loading" marginTop="$4" color="muted" />
         </YStack>
       </Container>
     );
@@ -141,7 +143,7 @@ export default function SettingsScreen() {
     return (
       <Container testID="settings-screen" padded flex={1}>
         <YStack flex={1} alignItems="center" justifyContent="center">
-          <Text i18nKey="common.error" color="$danger" />
+          <Text i18nKey="common.error" color="danger" />
         </YStack>
       </Container>
     );
@@ -178,7 +180,7 @@ export default function SettingsScreen() {
 
           {/* Account Actions */}
           <YStack gap="$3" marginTop="$2">
-            <Text i18nKey="settings.account" fontSize="$lg" fontWeight="700" color="$color" />
+            <Text i18nKey="settings.account" fontSize="$lg" fontWeight="700" />
 
             <YStack gap="$2">
               <XStack
@@ -195,9 +197,9 @@ export default function SettingsScreen() {
                 borderColor="$borderLight"
                 pressStyle={{ backgroundColor: '$backgroundTertiary' }}
                 accessibilityRole="button"
-                accessibilityLabel="Logout"
+                accessibilityLabel={t('common.logout')}
               >
-                <Text i18nKey="common.logout" color="$color" />
+                <Text i18nKey="common.logout" />
               </XStack>
             </YStack>
           </YStack>

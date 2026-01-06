@@ -13,6 +13,10 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { createLogger } from '../_shared/logger.ts';
+
+// Create logger instance
+const log = createLogger('send-push-notification');
 
 // ============================================================================
 // TYPES
@@ -248,7 +252,7 @@ async function deleteInvalidToken(token: string): Promise<void> {
     .eq('token', token);
 
   if (error) {
-    console.error(`Failed to revoke token ${token}: ${error.message}`);
+    log.error('failed_to_revoke_token', { token, error: error.message });
   }
 }
 
@@ -273,7 +277,7 @@ async function logPushNotification(
   });
 
   if (error) {
-    console.error(`Failed to log push notification: ${error.message}`);
+    log.error('failed_to_log_push_notification', { error: error.message });
   }
 }
 
@@ -441,6 +445,10 @@ async function handleSendPush(request: SendPushRequest): Promise<{
 // ============================================================================
 
 serve(async (req) => {
+  // Generate request tracking
+  const requestId = crypto.randomUUID();
+  const startTime = performance.now();
+
   // CORS handling
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -457,6 +465,18 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body early for logging
+    const body: SendPushRequest = await req.json();
+
+    // Log function start
+    log.info('function_started', {
+      request_id: requestId,
+      tenant_id: body.tenant_id,
+      notification_type: body.notification_type,
+      function_name: 'send-push-notification',
+      input_size: JSON.stringify(body).length,
+    });
+
     // Verify Authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -473,8 +493,7 @@ serve(async (req) => {
       return new Response('Invalid authorization token', { status: 401 });
     }
 
-    // Parse request body
-    const body: SendPushRequest = await req.json();
+    // Body was already parsed above
 
     // Validate required fields
     if (!body.tenant_id || !body.notification_type || !body.recipients || !body.payload) {
@@ -491,14 +510,29 @@ serve(async (req) => {
     // Process the push notification
     const result = await handleSendPush(body);
 
+    // Log function completion
+    log.info('function_completed', {
+      request_id: requestId,
+      duration_ms: Math.round(performance.now() - startTime),
+      result: 'success',
+      sent_count: result.sent,
+      failed_count: result.failed,
+    });
+
     return new Response(JSON.stringify(result), {
       status: result.success ? 200 : 207, // 207 for partial success
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in send-push-notification:', error);
-
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    log.error('error_occurred', {
+      request_id: requestId,
+      error: errorMessage,
+      stack: errorStack,
+      duration_ms: Math.round(performance.now() - startTime),
+    });
     const status = errorMessage.includes('Rate limit exceeded') ? 429 : 500;
 
     return new Response(JSON.stringify({ error: errorMessage }), {

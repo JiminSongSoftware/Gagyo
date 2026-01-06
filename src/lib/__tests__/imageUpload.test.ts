@@ -35,12 +35,18 @@ jest.mock('../supabase', () => ({
   },
 }));
 
-const mockFileSystem = FileSystem as jest.Mocked<typeof FileSystem>;
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockStorageFrom = mockSupabase.storage.from as jest.MockedFunction<
-  typeof mockSupabase.storage.from
->;
-const mockDbFrom = mockSupabase.from as jest.MockedFunction<typeof mockSupabase.from>;
+const mockFileSystem = FileSystem as {
+  getInfoAsync: jest.Mock;
+  readAsStringAsync: jest.Mock;
+};
+const mockSupabase = supabase as {
+  storage: {
+    from: jest.Mock;
+  };
+  from: jest.Mock;
+};
+const mockStorageFrom = mockSupabase.storage.from;
+const mockDbFrom = mockSupabase.from;
 
 describe('imageUpload', () => {
   const mockTenantId = 'tenant-123';
@@ -73,9 +79,7 @@ describe('imageUpload', () => {
       }),
       remove: jest.fn().mockResolvedValue({ error: null }),
     };
-    mockStorageFrom.mockReturnValue(
-      mockStorage as unknown as ReturnType<typeof mockSupabase.storage.from>
-    );
+    mockStorageFrom.mockReturnValue(mockStorage);
 
     // Default Supabase database mock
     const mockDatabase = {
@@ -88,7 +92,7 @@ describe('imageUpload', () => {
       delete: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }),
       update: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }),
     };
-    mockDbFrom.mockReturnValue(mockDatabase as unknown as ReturnType<typeof mockSupabase.from>);
+    mockDbFrom.mockReturnValue(mockDatabase);
   });
 
   // ============================================================================
@@ -116,7 +120,6 @@ describe('imageUpload', () => {
     it('should reject non-existent file', async () => {
       mockFileSystem.getInfoAsync.mockResolvedValue({
         exists: false,
-        size: 0,
         uri: mockImageUri,
         isDirectory: false,
         modificationTime: 0,
@@ -186,7 +189,6 @@ describe('imageUpload', () => {
     it('should reject invalid image before upload', async () => {
       mockFileSystem.getInfoAsync.mockResolvedValue({
         exists: false,
-        size: 0,
         uri: mockImageUri,
         isDirectory: false,
         modificationTime: 0,

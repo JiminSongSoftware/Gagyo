@@ -107,7 +107,7 @@ export default function ImagesScreen() {
   });
 
   // Handle image press to open viewer
-  const handleImagePress = useCallback((image: ImageAttachment, index: number) => {
+  const handleImagePress = useCallback((_image: ImageAttachment, index: number) => {
     setSelectedImageIndex(index);
     setViewerVisible(true);
   }, []);

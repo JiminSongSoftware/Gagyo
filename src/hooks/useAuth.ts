@@ -8,6 +8,13 @@
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import {
+  setUserContext as setSentryUserContext,
+  clearUserContext as clearSentryUserContext,
+  setTags,
+} from '@/lib/monitoring/sentry';
+import { identifyUser, resetUser } from '@/lib/monitoring/posthog';
+import { getCurrentLocale } from '@/i18n';
 
 export interface AuthState {
   session: Session | null;
@@ -59,7 +66,7 @@ export function useAuth(): AuthState {
       }
     }
 
-    getInitialSession();
+    void getInitialSession();
 
     // Listen for auth state changes
     const {
@@ -71,10 +78,46 @@ export function useAuth(): AuthState {
         setLoading(false);
       }
 
-      // Clear tenant context on sign out
-      if (event === 'SIGNED_OUT') {
-        const { useTenantStore } = await import('@/stores/tenantStore');
-        await useTenantStore.getState().clearTenantContext();
+      // Handle monitoring integration on auth state changes
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        // Get active tenant ID and primary role for user context
+        const { useTenantStore: tenantStore } = await import('@/stores/tenantStore');
+        const activeTenantId = tenantStore.getState().activeTenantId;
+        const primary_role = tenantStore.getState().activeMembership?.role;
+        const locale = getCurrentLocale();
+
+        // Set Sentry user context with tenant and role
+        setSentryUserContext(newSession.user.id, {
+          tenant_id: activeTenantId ?? undefined,
+          role: primary_role,
+          locale,
+        });
+
+        // Set Sentry tags for filtering
+        setTags({
+          tenant_id: activeTenantId ?? undefined,
+          user_role: primary_role,
+          locale,
+        });
+
+        // Identify user in PostHog with properties
+        const userProps = {
+          tenant_count: 0, // TODO: fetch actual tenant count
+          primary_role: primary_role ?? 'member',
+          locale,
+          created_at: newSession.user.created_at,
+          email: newSession.user.email,
+          display_name: newSession.user.user_metadata?.display_name,
+        };
+        identifyUser(newSession.user.id, userProps);
+      } else if (event === 'SIGNED_OUT') {
+        // Clear user context from monitoring services
+        clearSentryUserContext();
+        resetUser();
+
+        // Clear tenant context
+        const { useTenantStore: tenantStore } = await import('@/stores/tenantStore');
+        await tenantStore.getState().clearTenantContext();
       }
     });
 

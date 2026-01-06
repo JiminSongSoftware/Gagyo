@@ -38,6 +38,7 @@
     "@types/pg": "^8.16.0",
     "date-fns": "^4.1.0",
     "expo": "~54.0.30",
+    "expo-image-picker": "^17.0.10",
     "expo-localization": "^17.0.8",
     "expo-notifications": "^0.32.15",
     "expo-status-bar": "~3.0.9",

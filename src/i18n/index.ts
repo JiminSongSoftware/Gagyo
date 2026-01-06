@@ -3,7 +3,7 @@
  */
 
 import i18n, { type Resource, type TOptions } from 'i18next';
-import { initReactI18next, useTranslation, Trans } from 'react-i18next';
+import { initReactI18next, useTranslation as useI18nextTranslation, Trans } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import enCommon from '../../locales/en/common.json';
 import enAuth from '../../locales/en/auth.json';
@@ -133,13 +133,25 @@ export { i18n };
  * Export translation function for use outside React components.
  */
 export function translate(key: TranslationKey | string, options?: TOptions): string {
-  return i18n.t(key as string, options);
+  const t = i18n.t.bind(i18n) as (translationKey: string, tOptions?: TOptions) => string;
+  return t(key as string, options);
 }
 
 /**
- * Re-export react-i18next hooks and components for convenience.
+ * Typed translation hook wrapper to support namespace.key usage.
  */
-export { useTranslation, Trans };
+export function useTranslation() {
+  const response = useI18nextTranslation();
+  const t = (key: TranslationKey | string, options?: TOptions): string =>
+    response.t(key as string, options) as string;
+
+  return { ...response, t };
+}
+
+/**
+ * Re-export react-i18next components for convenience.
+ */
+export { Trans };
 
 /**
  * Re-export initialization utilities.

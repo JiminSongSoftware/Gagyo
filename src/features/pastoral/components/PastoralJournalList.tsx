@@ -15,8 +15,12 @@
 import { ActivityIndicator, FlatList as RNFlatList, Pressable, RefreshControl } from 'react-native';
 import { Stack, Text as TamaguiText, XStack, YStack, styled, useTheme } from 'tamagui';
 import { useTranslation } from '@/i18n';
-import { usePastoralJournals, type PastoralJournalsFilter } from '../hooks/usePastoralJournals';
-import type { Database, PastoralJournalWithRelations, Membership } from '@/types/database';
+import {
+  usePastoralJournals,
+  type PastoralJournalsFilter,
+  type PastoralJournalWithRelations,
+} from '../hooks/usePastoralJournals';
+import type { Database, Membership } from '@/types/database';
 
 // ============================================================================
 // TYPES

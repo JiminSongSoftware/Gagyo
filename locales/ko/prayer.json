@@ -9,6 +9,7 @@
   "prayer_title": "제목",
   "prayer_content": "기도 내용",
   "prayer_content_placeholder": "기도 요청 내용을 입력하세요...",
+  "unknown_author": "작성자 미상",
   "prayer_recipient": "수신자",
   "send_to_small_group": "소그룹에 보내기",
   "send_to_individual": "개인에게 보내기",

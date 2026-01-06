@@ -29,18 +29,20 @@ jest.mock('expo-image-picker', () => ({
 // Mock fetch for file reading
 global.fetch = jest.fn() as unknown as typeof fetch;
 
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockGetUser = mockSupabase.auth.getUser as jest.MockedFunction<
-  typeof mockSupabase.auth.getUser
->;
-const mockFrom = mockSupabase.from as jest.MockedFunction<typeof mockSupabase.from>;
-const mockStorageFrom = mockSupabase.storage.from as jest.MockedFunction<
-  typeof mockSupabase.storage.from
->;
-const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.MockedFunction<
-  typeof ImagePicker.launchImageLibraryAsync
->;
-const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+const mockSupabase = supabase as {
+  auth: {
+    getUser: jest.Mock;
+  };
+  from: jest.Mock;
+  storage: {
+    from: jest.Mock;
+  };
+};
+const mockGetUser = mockSupabase.auth.getUser;
+const mockFrom = mockSupabase.from;
+const mockStorageFrom = mockSupabase.storage.from;
+const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.Mock;
+const mockFetch = global.fetch as jest.Mock;
 
 describe('useUploadProfilePhoto', () => {
   const mockUserId = 'user-123';
@@ -61,7 +63,7 @@ describe('useUploadProfilePhoto', () => {
         error: null,
       }),
       getPublicUrl: jest.fn().mockReturnValue({
-        publicUrl: mockPhotoUrl,
+        data: { publicUrl: mockPhotoUrl },
       }),
       list: jest.fn().mockResolvedValue({
         data: [],
@@ -78,7 +80,7 @@ describe('useUploadProfilePhoto', () => {
         error: null,
       }),
     });
-    mockFrom.mockReturnValue({ update: updateMock } as unknown as ReturnType<typeof mockFrom>);
+    mockFrom.mockReturnValue({ update: updateMock });
 
     // Mock fetch for file reading
     mockFetch.mockImplementation(() =>
@@ -346,7 +348,7 @@ describe('useUploadProfilePhoto', () => {
         return uploadPromise;
       }),
       getPublicUrl: jest.fn().mockReturnValue({
-        publicUrl: mockPhotoUrl,
+        data: { publicUrl: mockPhotoUrl },
       }),
     });
 

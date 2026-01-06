@@ -7,6 +7,10 @@ jest.mock('@/hooks/useAuthGuard', () => ({
   useRequireAuth: jest.fn(() => ({
     user: { id: 'user-1' },
     tenantId: 'tenant-1',
+    membership: null,
+    membershipId: null,
+    membershipLoading: false,
+    membershipError: null,
   })),
 }));
 

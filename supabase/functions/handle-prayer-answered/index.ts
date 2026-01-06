@@ -13,6 +13,10 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { createLogger } from '../_shared/logger.ts';
+
+// Create logger instance
+const log = createLogger('handle-prayer-answered');
 
 // ============================================================================
 // TYPES
@@ -131,7 +135,10 @@ async function getPrayerCard(prayerCardId: string): Promise<PrayerCardRow | null
     .single();
 
   if (error) {
-    console.error(`Failed to fetch prayer card: ${error.message}`);
+    log.error('failed_to_fetch_prayer_card', {
+      prayer_card_id: prayerCardId,
+      error: error.message,
+    });
     return null;
   }
 
@@ -306,6 +313,10 @@ async function handlePrayerAnswered(prayerCardId: string): Promise<{
 // ============================================================================
 
 serve(async (req) => {
+  // Generate request tracking
+  const requestId = crypto.randomUUID();
+  const startTime = performance.now();
+
   // CORS handling
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -322,6 +333,18 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body early for logging
+    const body = await req.json();
+    const { prayer_card_id } = body;
+
+    // Log function start
+    log.info('function_started', {
+      request_id: requestId,
+      prayer_card_id,
+      function_name: 'handle-prayer-answered',
+      input_size: JSON.stringify(body).length,
+    });
+
     // Verify Authorization header (service role only)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -337,10 +360,6 @@ serve(async (req) => {
       }
     }
 
-    // Parse request body
-    const body = await req.json();
-    const { prayer_card_id } = body;
-
     if (!prayer_card_id) {
       return new Response('Missing required field: prayer_card_id', { status: 400 });
     }
@@ -348,14 +367,28 @@ serve(async (req) => {
     // Process the prayer answered event
     const result = await handlePrayerAnswered(prayer_card_id);
 
+    // Log function completion
+    log.info('function_completed', {
+      request_id: requestId,
+      duration_ms: Math.round(performance.now() - startTime),
+      result: 'success',
+      notified_count: result.notified,
+    });
+
     return new Response(JSON.stringify(result), {
       status: result.success ? 200 : 500,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in handle-prayer-answered:', error);
-
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    log.error('error_occurred', {
+      request_id: requestId,
+      error: errorMessage,
+      stack: errorStack,
+      duration_ms: Math.round(performance.now() - startTime),
+    });
 
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,

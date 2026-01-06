@@ -19,13 +19,13 @@ import { Image, Pressable, ActivityIndicator } from 'react-native';
 import {
   XStack,
   YStack,
+  Input as TamaguiInput,
   Text as TamaguiText,
   styled,
   useTheme,
 } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { useUploadProfilePhoto } from '../hooks/useUploadProfilePhoto';
-import type { NotificationPreferences } from '../hooks/useUpdateProfile';
 
 // ============================================================================
 // TYPES
@@ -89,7 +89,7 @@ const PhotoContainer = styled(Pressable, {
   position: 'relative',
 });
 
-const PhotoOverlay = styled(Pressable, {
+const _PhotoOverlay = styled(Pressable, {
   name: 'ProfilePhotoOverlay',
   position: 'absolute',
   top: 0,
@@ -102,14 +102,15 @@ const PhotoOverlay = styled(Pressable, {
   opacity: 0,
 });
 
-const DisplayNameInput = styled(TamaguiText, {
+const DisplayNameInput = styled(TamaguiInput, {
   name: 'DisplayNameInput',
   fontSize: '$xl',
   fontWeight: '700',
   color: '$color',
   padding: '$2',
-  borderBottomWidth: 1,
-  borderBottomColor: '$borderLight',
+  borderWidth: 1,
+  borderColor: '$borderLight',
+  borderRadius: '$2',
   minWidth: 150,
 });
 
@@ -133,8 +134,12 @@ export function ProfileSection({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(displayName || '');
 
-  const { uploading, progress, error: uploadError, uploadProfilePhoto, deleteProfilePhoto } =
-    useUploadProfilePhoto();
+  const {
+    uploading,
+    error: uploadError,
+    uploadProfilePhoto,
+    deleteProfilePhoto,
+  } = useUploadProfilePhoto();
 
   const handlePhotoUpload = async () => {
     const url = await uploadProfilePhoto();
@@ -166,12 +171,19 @@ export function ProfileSection({
   };
 
   return (
-    <YStack testID={testID} gap="$4" alignItems="center" padding="$4" backgroundColor="$backgroundSecondary" borderRadius="$4">
+    <YStack
+      testID={testID}
+      gap="$4"
+      alignItems="center"
+      padding="$4"
+      backgroundColor="$backgroundSecondary"
+      borderRadius="$4"
+    >
       {/* Profile Photo */}
       <XStack position="relative">
         <PhotoContainer
           testID={`${testID}-photo`}
-          onPress={handlePhotoUpload}
+          onPress={() => void handlePhotoUpload()}
           accessibilityLabel={t('settings.change_avatar')}
           accessibilityRole="button"
         >
@@ -213,7 +225,7 @@ export function ProfileSection({
         {photoUrl ? (
           <Pressable
             testID={`${testID}-remove-photo`}
-            onPress={handlePhotoRemove}
+            onPress={() => void handlePhotoRemove()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={{ position: 'absolute', right: -5, bottom: 0 }}
             accessibilityLabel={t('settings.remove_photo')}
@@ -236,7 +248,7 @@ export function ProfileSection({
         ) : (
           <Pressable
             testID={`${testID}-upload-photo`}
-            onPress={handlePhotoUpload}
+            onPress={() => void handlePhotoUpload()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={{ position: 'absolute', right: -5, bottom: 0 }}
             accessibilityLabel={t('settings.upload_photo')}
@@ -262,23 +274,14 @@ export function ProfileSection({
       {/* Display Name */}
       {isEditing ? (
         <XStack alignItems="center" gap="$2">
-          <TamaguiText
+          <DisplayNameInput
             testID={`${testID}-display-name-input`}
-            fontSize="$xl"
-            fontWeight="700"
-            color="$color"
-            padding="$2"
-            borderWidth={1}
-            borderColor="$borderLight"
-            borderRadius="$2"
-            minWidth={150}
             value={editValue}
             onChangeText={setEditValue}
             autoFocus
             onSubmitEditing={handleEditSave}
-          >
-            {editValue}
-          </TamaguiText>
+            placeholder={t('settings.display_name')}
+          />
           <TamaguiText
             testID={`${testID}-save-name`}
             color="$primary"
@@ -303,11 +306,7 @@ export function ProfileSection({
           accessibilityLabel={`${t('settings.display_name')}: ${displayName || t('settings.edit_profile')}`}
           accessibilityRole="button"
         >
-          <TamaguiText
-            fontSize="$xl"
-            fontWeight="700"
-            color="$color"
-          >
+          <TamaguiText fontSize="$xl" fontWeight="700" color="$color">
             {displayName || t('settings.edit_profile')}
           </TamaguiText>
         </Pressable>
@@ -315,11 +314,7 @@ export function ProfileSection({
 
       {/* Email */}
       <XStack alignItems="center" gap="$2">
-        <TamaguiText
-          testID={`${testID}-email`}
-          fontSize="$sm"
-          color="$color3"
-        >
+        <TamaguiText testID={`${testID}-email`} fontSize="$sm" color="$color3">
           {email}
         </TamaguiText>
         <TamaguiText
@@ -329,8 +324,7 @@ export function ProfileSection({
           paddingHorizontal="$2"
           paddingVertical="$1"
           borderRadius="$2"
-          backgroundColor={emailVerified ? '$success' : '$warning'}
-          backgroundColorOpacity={0.1}
+          backgroundColor={emailVerified ? '$successLight' : '$warningLight'}
         >
           {emailVerified ? t('settings.email_verified') : t('settings.email_unverified')}
         </TamaguiText>

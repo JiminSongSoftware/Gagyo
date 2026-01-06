@@ -30,6 +30,7 @@ imports/exports for UI and hooks across auth, tabs, and settings.
 - Introduce an `images` namespace (move `common.images` keys into `images.json`).
 - Keep dot-separated namespace keys (`auth.sign_in`, `prayer.answered`) with `nsSeparator='.'`.
 - Update i18n type augmentation to use actual resource shapes for strict key typing.
+- Wrap `useTranslation` to accept `namespace.key` strings and return `string` without typing regressions.
 
 ### Auth UI (Login / Signup / Tenant Selection)
 - Continue using design-system components (`Text`, `Heading`, `Input`, `Button`).
@@ -45,12 +46,19 @@ imports/exports for UI and hooks across auth, tabs, and settings.
 - Extend `fonts` size/lineHeight maps with semantic size keys.
 - Keep `allowedStyleValues` within supported options.
 - Ensure shorthands only include real abbreviations.
+- Replace unsupported `pressTheme`/`elevation` usage with valid press styles.
 
 ### Tests & Helpers
 - Update Supabase SQL helpers to return typed row records instead of `unknown`.
 - Fix test mocks (expo-file-system, Supabase storage/database) to match current SDK types.
 - Use `.select()` or safe optional chaining where Supabase responses may be empty.
 - Normalize jest mock typings to avoid `global.jest.*` and `never` inference.
+
+### Dependencies
+- Add `expo-image-picker` dependency to match runtime usage and TS imports.
+
+### Auth Guard
+- Extend `useRequireAuth` to surface membership context for membership-scoped screens.
 
 ### Supabase Edge Functions
 - Exclude `supabase/functions/**` from the app TypeScript config.

@@ -8,7 +8,13 @@
  */
 
 import * as Sentry from '@sentry/react-native';
-import type { Breadcrumb, BreadcrumbHint, Scope } from '@sentry/react-native';
+import {
+  configureScope as sentryConfigureScope,
+  setContext as sentrySetContext,
+  type Breadcrumb,
+  type BreadcrumbHint,
+  type Scope,
+} from '@sentry/react-native';
 import Constants from 'expo-constants';
 import Platform from 'react-native/Platform';
 
@@ -123,7 +129,7 @@ export function initSentry(config: {
 export function captureError(
   error: unknown,
   context: SentryErrorContext = {},
-  level: SentrySeverity = SentrySeverity.ERROR,
+  level: SentrySeverity = SentrySeverity.ERROR
 ): string | undefined {
   if (!error) {
     console.warn('[Sentry] Attempted to capture null/undefined error');
@@ -157,7 +163,7 @@ export function captureError(
 export function captureMessage(
   message: string,
   context: SentryErrorContext = {},
-  level: SentrySeverity = SentrySeverity.INFO,
+  level: SentrySeverity = SentrySeverity.INFO
 ): string | undefined {
   const eventId = Sentry.captureMessage(message, {
     level,
@@ -242,7 +248,7 @@ export function addBreadcrumb(breadcrumb: BreadcrumbData): void {
  * @param context - Context data
  */
 export function setContext(key: string, context: Record<string, unknown>): void {
-  Sentry.setContext(key, context);
+  sentrySetContext(key, context);
 }
 
 /**
@@ -251,5 +257,18 @@ export function setContext(key: string, context: Record<string, unknown>): void 
  * @param callback - Scope configuration callback
  */
 export function configureScope(callback: (scope: Scope) => void): void {
-  Sentry.configureScope(callback);
+  sentryConfigureScope(callback);
+}
+
+/**
+ * Set a group in Sentry (e.g., for tenant-level grouping).
+ *
+ * @param type - Group type (e.g., 'tenant')
+ * @param id - Group identifier (e.g., tenant ID)
+ * @param properties - Group properties
+ */
+export function setGroup(type: string, id: string, _properties: Record<string, unknown>): void {
+  sentryConfigureScope((scope: Scope) => {
+    scope.setTag(type, id);
+  });
 }

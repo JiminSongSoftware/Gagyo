@@ -131,7 +131,7 @@ export default function ChatDetailScreen() {
       setRealTimeMessages((prev) => updateMessage(prev, message));
     }, []),
     onDelete: useCallback(
-      (messageId: string, oldMessage?: MessageWithSender) => {
+      (messageId: string, oldMessage?: Partial<MessageWithSender>) => {
         // If deleted message had a parent_id (thread reply), decrement parent's reply count
         // Note: oldMessage may not be available in all cases
         if (oldMessage?.parent_id) {

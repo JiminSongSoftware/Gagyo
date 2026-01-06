@@ -2,7 +2,6 @@
  * Hook for managing locale in components.
  */
 
-import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 import type { Locale } from '@/i18n';
 import { changeLocale, getCurrentLocale, isKorean, isEnglish } from '@/i18n';
@@ -26,7 +25,6 @@ import { usePreferencesStore } from '@/stores/preferences';
  * ```
  */
 export function useLocale() {
-  const { i18n } = useTranslation();
   const setLocale = usePreferencesStore((state) => state.setLocale);
 
   const locale = getCurrentLocale();

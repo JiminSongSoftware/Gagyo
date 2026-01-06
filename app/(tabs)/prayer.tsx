@@ -47,7 +47,6 @@ const PrayerCardItem = styled(Pressable, {
   shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 0.1,
   shadowRadius: 2,
-  elevation: 2,
 });
 
 const Avatar = styled(Stack, {
@@ -76,7 +75,6 @@ const FAB = styled(Pressable, {
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.3,
   shadowRadius: 8,
-  elevation: 8,
 });
 
 const FilterButton = styled(Pressable, {
@@ -104,7 +102,7 @@ export default function PrayerScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
-  const { user, tenantId, membershipId } = useRequireAuth();
+  const { tenantId, membershipId, membership } = useRequireAuth();
 
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all_prayers');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -207,7 +205,7 @@ export default function PrayerScreen() {
                   numberOfLines={1}
                   flex={1}
                 >
-                  {item.author.user.display_name || 'Unknown'}
+                  {item.author.user.display_name || t('prayer.unknown_author')}
                 </TamaguiText>
                 <TamaguiText fontSize="$xs" color="$color3">
                   {formattedDate}
@@ -371,7 +369,7 @@ export default function PrayerScreen() {
           visible={showAnalytics}
           tenantId={tenantId}
           membershipId={membershipId}
-          smallGroupId={user?.small_group_id ?? null}
+          smallGroupId={membership?.small_group_id ?? null}
           onClose={() => setShowAnalytics(false)}
         />
       )}

@@ -12,6 +12,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from './useAuth';
 import { useTenantContext } from './useTenantContext';
+import { useCurrentMembership } from './useCurrentMembership';
+import type { Membership } from '@/types/database';
 
 export interface AuthGuardState {
   user: ReturnType<typeof useAuth>['user'];
@@ -79,9 +81,14 @@ export function useIsProtectedRoute(): boolean {
 export function useRequireAuth(): {
   user: NonNullable<ReturnType<typeof useAuth>['user']>;
   tenantId: NonNullable<ReturnType<typeof useTenantContext>['activeTenantId']>;
+  membership: Membership | null;
+  membershipId: string | null;
+  membershipLoading: boolean;
+  membershipError: Error | null;
 } {
   const { user } = useAuth();
   const { activeTenantId } = useTenantContext();
+  const { membership, membershipId, loading, error } = useCurrentMembership();
 
   if (!user) {
     throw new Error('useRequireAuth: User is not authenticated');
@@ -91,5 +98,12 @@ export function useRequireAuth(): {
     throw new Error('useRequireAuth: No active tenant');
   }
 
-  return { user, tenantId: activeTenantId };
+  return {
+    user,
+    tenantId: activeTenantId,
+    membership,
+    membershipId,
+    membershipLoading: loading,
+    membershipError: error,
+  };
 }
