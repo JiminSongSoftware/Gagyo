@@ -1818,3 +1818,425 @@ const { analytics: churchStats } = usePrayerAnalytics(
 - `claude_docs/19_prayer_analytics.md` - SDD specification
 - `locales/en/prayer.json` - English translations
 - `locales/ko/prayer.json` - Korean translations
+
+---
+
+## Lessons Learned: Pastoral Journal Feature
+
+### Overview
+
+**What is Pastoral Journal?**
+Pastoral Journal is a weekly ministry documentation system for small group leaders. It implements a hierarchical review workflow where leaders submit journals, zone leaders review and forward them, and pastors provide final confirmation. Each status transition triggers push notifications to relevant parties.
+
+**Key Capabilities**:
+- Weekly journals created by small group leaders and co-leaders
+- Hierarchical review: draft → submitted → zone_reviewed → pastor_confirmed
+- Role-based access control via RLS (leaders see their group's, zone leaders see zone, pastors see all)
+- Attendance tracking (present, absent, new visitors)
+- Prayer requests, highlights, concerns, and next steps
+- Comment system for zone leaders and pastors
+- Push notifications at each status transition
+- One journal per week per small group (duplicate prevention)
+
+### Database Schema
+
+**pastoral_journals table**:
+```sql
+id                  UUID PRIMARY KEY
+tenant_id           UUID  -- Tenant ownership (RLS enforced)
+small_group_id      UUID  -- FK to small_groups
+author_id           UUID  -- FK to memberships (creator)
+status              enum  -- 'draft' | 'submitted' | 'zone_reviewed' | 'pastor_confirmed'
+week_start_date     DATE  -- Monday of the reported week
+content             JSONB -- { attendance, prayerRequests, highlights, concerns, nextSteps }
+submitted_at        TIMESTAMP
+zone_reviewed_at    TIMESTAMP
+pastor_confirmed_at TIMESTAMP
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+
+UNIQUE(tenant_id, small_group_id, week_start_date)  -- One journal per week per group
+```
+
+**pastoral_journal_comments table**:
+```sql
+id                    UUID PRIMARY KEY
+tenant_id             UUID  -- Tenant ownership (RLS enforced)
+pastoral_journal_id   UUID  -- FK to pastoral_journals
+author_membership_id  UUID  -- FK to memberships (commenter)
+content              TEXT   -- Comment text
+created_at           TIMESTAMP
+```
+
+**RLS Policies**:
+- Leaders can read/create journals for their own small_group_id
+- Zone leaders can read journals from their zone
+- Pastors/admins can read all journals in their tenant
+- Only zone leaders, pastors, and admins can add comments
+- Tenant isolation enforced via tenant_id check
+
+### Status Transition Workflow
+
+```
+draft → submitted → zone_reviewed → pastor_confirmed
+  ↑          ↓              ↓              ↓
+leader    zone leader    zone leader    pastor/admin
+```
+
+**Transition Rules**:
+| From | To | Who Can Change | Notification Recipients |
+|------|----|----------------|-------------------------|
+| draft | submitted | Leader, co-leader | Zone leader |
+| submitted | zone_reviewed | Zone leader | All pastors |
+| zone_reviewed | pastor_confirmed | Pastor, admin | Original author |
+
+### Hook Interfaces
+
+**usePastoralJournals** (`src/features/pastoral/hooks/usePastoralJournals.ts`):
+```typescript
+interface PastoralJournalsState {
+  journals: PastoralJournalWithRelations[];
+  loading: boolean;
+  error: Error | null;
+  hasMore: boolean;
+  loadMore: () => Promise<void>;
+  refetch: () => Promise<void>;
+}
+
+interface PastoralJournalsFilter {
+  scope: 'my_journals' | 'submitted_journals' | 'all_journals';
+  status?: PastoralJournalStatus;
+}
+
+const { journals, loading, hasMore, loadMore, refetch } = usePastoralJournals(
+  tenantId,
+  membershipId,
+  membership,
+  { scope: 'my_journals' }  // filter
+);
+```
+
+**useCreatePastoralJournal** (`src/features/pastoral/hooks/useCreatePastoralJournal.ts`):
+```typescript
+interface CreatePastoralJournalState {
+  createJournal: (options: CreatePastoralJournalOptions) => Promise<string | null>;
+  creating: boolean;
+  error: Error | null;
+}
+
+interface CreatePastoralJournalOptions {
+  weekStartDate: string;  // ISO date string for Monday of the week
+  content: PastoralJournalContent;
+  submitForReview?: boolean;  // If true, status='submitted', else 'draft'
+}
+
+const { createJournal, creating, error } = useCreatePastoralJournal(
+  tenantId,
+  smallGroupId,
+  authorMembershipId
+);
+```
+
+**useUpdatePastoralJournalStatus** (`src/features/pastoral/hooks/useUpdatePastoralJournalStatus.ts`):
+```typescript
+interface UpdatePastoralJournalStatusState {
+  updateStatus: (options: UpdatePastoralJournalStatusOptions) => Promise<boolean>;
+  updating: boolean;
+  error: Error | null;
+}
+
+const { updateStatus, updating, error } = useUpdatePastoralJournalStatus(
+  tenantId,
+  membership
+);
+```
+
+**usePastoralJournalComments** (`src/features/pastoral/hooks/usePastoralJournalComments.ts`):
+```typescript
+interface PastoralJournalCommentsState {
+  comments: PastoralJournalCommentWithAuthor[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+const { comments, loading, refetch } = usePastoralJournalComments(
+  journalId,
+  tenantId,
+  enableRealtime  // enables Supabase realtime subscription
+);
+```
+
+**useAddPastoralJournalComment** (`src/features/pastoral/hooks/useAddPastoralJournalComment.ts`):
+```typescript
+interface AddPastoralJournalCommentState {
+  addComment: (content: string) => Promise<string | null>;
+  adding: boolean;
+  error: Error | null;
+}
+
+const { addComment, adding, error } = useAddPastoralJournalComment(
+  journalId,
+  tenantId,
+  membershipId,
+  membership  // Must be zone_leader, pastor, or admin
+);
+```
+
+### Validation Rules
+
+| Rule | Description | Enforcement |
+|------|-------------|--------------|
+| **One journal per week per group** | UNIQUE constraint on (tenant_id, small_group_id, week_start_date) | Database + Client |
+| **Leaders can only create for their group** | small_group_id must match membership.small_group_id | RLS + Client |
+| **Status transitions follow workflow** | Cannot skip states or go backward | Client validation + RLS |
+| **Array size limits** | Max 10 items per array field | Client validation |
+| **String length limits** | Max 500 chars per string item | Client validation |
+| **Attendance values** | Non-negative, max 9999 | Client validation |
+| **Comments by authorized roles only** | Only zone_leader, pastor, admin | RLS + Client |
+
+### Content Schema
+
+**Pastoral Journal Content** (`content` field):
+```typescript
+interface PastoralJournalContent {
+  attendance?: {
+    present: number;
+    absent: number;
+    newVisitors: number;
+  };
+  prayerRequests?: string[];  // Max 10, max 500 chars each
+  highlights?: string[];      // Max 10, max 500 chars each
+  concerns?: string[];        // Max 10, max 500 chars each
+  nextSteps?: string[];       // Max 10, max 500 chars each
+}
+```
+
+### Translation Keys
+
+**Pastoral Keys** (`pastoral.json`):
+```json
+{
+  "filter_my_journals": "My Journals" / "내 일지",
+  "filter_submitted": "Submitted" / "제출됨",
+  "filter_all_journals": "All Journals" / "모든 일지",
+  "status_draft": "Draft" / "임시저장",
+  "status_submitted": "Submitted" / "제출됨",
+  "status_zone_reviewed": "Zone Reviewed" / "지부 검토됨",
+  "status_pastor_confirmed": "Pastor Confirmed" / "목사 확인됨",
+  "week_of": "Week of {{date}}" / "{{date}} 주간",
+  "present": "Present" / "출석",
+  "absent": "Absent" / "결석",
+  "new": "New" / "새신자",
+  "submit_for_review": "Submit for Review" / "제출하기",
+  "forward_to_pastor": "Forward to Pastor" / "목사에게 전달",
+  "confirm_journal": "Confirm Journal" / "일지 확인",
+  "add_comment": "Add Comment" / "댓글 추가",
+  "empty_no_journals": "No journals yet" / "아직 일지가 없습니다",
+  "empty_no_submitted": "No submitted journals" / "제출된 일지가 없습니다",
+  "empty_create_first": "Create your first journal" / "첫 번째 일지를 작성해보세요",
+  "error_loading": "Failed to load journals" / "일지를 불러오지 못했습니다",
+  "unknown_author": "Unknown" / "알 수 없음"
+}
+```
+
+### UI Components
+
+**Pastoral Journal List** (`src/features/pastoral/components/PastoralJournalList.tsx`):
+- Filter tabs based on user role
+- Pull-to-refresh support
+- Pagination with load more
+- Journal cards with status badge, attendance summary, author info
+- Empty states with contextual messages
+
+**Pastoral Journal Detail** (`src/features/pastoral/components/PastoralJournalDetail.tsx`):
+- Full content display (attendance, prayer requests, highlights, concerns, next steps)
+- Status badge with color coding
+- Comments section with real-time updates
+- Action buttons based on role and current status
+- Comment form for authorized users
+
+**Create Pastoral Journal Form** (`src/features/pastoral/components/CreatePastoralJournalForm.tsx`):
+- Week selector with previous/next navigation
+- Attendance counters with increment/decrement buttons
+- Array inputs for prayer requests, highlights, concerns, next steps
+- Draft and submit actions with validation
+- Only accessible to leaders and co-leaders
+
+### Key Implementation Gotchas
+
+**Duplicate Prevention**:
+```typescript
+// Check for existing journal BEFORE inserting
+const { data: existingJournal } = await supabase
+  .from('pastoral_journals')
+  .select('id, status')
+  .eq('tenant_id', tenantId)
+  .eq('small_group_id', smallGroupId)
+  .eq('week_start_date', weekStartDate)
+  .maybeSingle();
+
+if (existingJournal) {
+  throw new Error(`A journal for this week already exists (${existingJournal.status}).`);
+}
+```
+
+**Status Transition Validation**:
+```typescript
+const VALID_TRANSITIONS: Record<PastoralJournalStatus, PastoralJournalStatus[]> = {
+  draft: ['submitted'],
+  submitted: ['zone_reviewed'],
+  zone_reviewed: ['pastor_confirmed'],
+  pastor_confirmed: [],  // Terminal state
+};
+
+const allowedTransitions = VALID_TRANSITIONS[oldStatus] || [];
+if (!allowedTransitions.includes(newStatus)) {
+  throw new Error(`Invalid status transition from ${oldStatus} to ${newStatus}`);
+}
+```
+
+**Week Start Date Calculation**:
+```typescript
+function getWeekMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);  // Adjust for Monday start
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+```
+
+### Testing
+
+**Unit Tests** (`src/features/pastoral/hooks/__tests__/`):
+- `usePastoralJournals.test.ts` - Fetching, filtering, pagination
+- `useCreatePastoralJournal.test.ts` - Creation, validation, duplicate prevention
+- `useUpdatePastoralJournalStatus.test.ts` - Status transitions, validation
+- `usePastoralJournalComments.test.ts` - Fetching, real-time updates
+- `useAddPastoralJournalComment.test.ts` - Comment creation, authorization
+
+**Integration Tests** (`__tests__/integration/pastoral-journal-rls.test.ts`):
+- Leaders can only read their own group's journals
+- Zone leaders can read journals from their zone
+- Pastors can read all journals in their tenant
+- Only leaders can create journals
+- Only zone leaders, pastors, admins can add comments
+- Cross-tenant isolation enforced
+- Duplicate prevention works
+
+**E2E Tests** (`e2e/pastoral-journal.test.ts`):
+- Create journal as leader
+- Submit journal for review
+- Forward to pastor as zone leader
+- Confirm journal as pastor
+- Verify notifications at each step
+- Filter tabs work correctly
+- Empty states display
+- Pull-to-refresh works
+
+**Test IDs**:
+- `pastoral-journal-list` - Main list container
+- `filter-{my_journals|submitted_journals|all_journals}` - Filter tabs
+- `journal-card-{id}` - Journal card item
+- `create-journal-fab` - Floating action button
+- `journal-detail` - Detail screen container
+- `submit-for-review-button` - Submit action
+- `forward-to-pastor-button` - Forward action
+- `confirm-journal-button` - Confirm action
+- `comment-form` - Comment input form
+
+### Common Patterns
+
+**Creating a Journal**:
+```typescript
+const { createJournal, creating, error } = useCreatePastoralJournal(
+  tenantId,
+  membership?.small_group_id,
+  membershipId
+);
+
+const handleSubmit = async () => {
+  const journalId = await createJournal({
+    weekStartDate: getWeekMonday(new Date()).toISOString().split('T')[0],
+    content: {
+      attendance: { present: 15, absent: 1, newVisitors: 2 },
+      prayerRequests: ['Pray for health'],
+      highlights: ['Great discussion'],
+    },
+    submitForReview: false,  // Save as draft
+  });
+
+  if (journalId) {
+    router.push(`/pastoral/${journalId}`);
+  }
+};
+```
+
+**Updating Status**:
+```typescript
+const { updateStatus, updating } = useUpdatePastoralJournalStatus(tenantId, membership);
+
+const handleForward = async () => {
+  await updateStatus({
+    journalId: journal.id,
+    oldStatus: 'submitted',
+    newStatus: 'zone_reviewed',
+  });
+  // Edge function automatically sends notifications
+};
+```
+
+**Real-Time Comments**:
+```typescript
+const { comments, loading } = usePastoralJournalComments(
+  journalId,
+  tenantId,
+  true  // Enable real-time updates
+);
+// Comments update automatically when others add them
+```
+
+### Deep Linking
+
+**URL Pattern**: `/pastoral/{journalId}`
+
+**Notification Triggers**:
+- `pastoral_journal_submitted` → Opens journal, notifies zone leader
+- `pastoral_journal_forwarded` → Opens journal, notifies pastors
+- `pastoral_journal_confirmed` → Opens journal, notifies original author
+
+**Edge Function** (`supabase/functions/handle-pastoral-journal-change/`):
+```typescript
+// Expects: { journal_id, old_status, new_status }
+// Sends appropriate notifications based on transition
+```
+
+### Figma References
+- Pastoral Journal UI: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=...
+
+### Related Files
+
+**Source Files**:
+- `src/features/pastoral/hooks/usePastoralJournals.ts` - List fetching
+- `src/features/pastoral/hooks/useCreatePastoralJournal.ts` - Creation
+- `src/features/pastoral/hooks/useUpdatePastoralJournalStatus.ts` - Status updates
+- `src/features/pastoral/hooks/usePastoralJournalComments.ts` - Comments fetching
+- `src/features/pastoral/hooks/useAddPastoralJournalComment.ts` - Comment creation
+- `src/features/pastoral/components/PastoralJournalList.tsx` - List component
+- `src/features/pastoral/components/PastoralJournalDetail.tsx` - Detail component
+- `src/features/pastoral/components/CreatePastoralJournalForm.tsx` - Creation form
+- `app/(tabs)/pastoral.tsx` - Main tab screen
+- `app/pastoral/[id].tsx` - Detail screen (deep link target)
+- `app/pastoral/create.tsx` - Creation screen
+
+**Test Files**:
+- `src/features/pastoral/hooks/__tests__/*.test.ts` - Unit tests
+- `__tests__/integration/pastoral-journal-rls.test.ts` - Integration tests
+- `e2e/pastoral-journal.test.ts` - E2E tests
+
+**Documentation**:
+- `claude_docs/20_pastoral_journal.md` - SDD specification
+- `locales/en/pastoral.json` - English translations
+- `locales/ko/pastoral.json` - Korean translations

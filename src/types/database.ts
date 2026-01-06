@@ -535,6 +535,111 @@ export interface Database {
           },
         ];
       };
+      pastoral_journals: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          small_group_id: string;
+          author_id: string;
+          status: 'draft' | 'submitted' | 'zone_reviewed' | 'pastor_confirmed';
+          week_start_date: string;
+          content: Json | null;
+          submitted_at: string | null;
+          zone_reviewed_at: string | null;
+          pastor_confirmed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          small_group_id: string;
+          author_id: string;
+          status?: 'draft' | 'submitted' | 'zone_reviewed' | 'pastor_confirmed';
+          week_start_date: string;
+          content?: Json | null;
+          submitted_at?: string | null;
+          zone_reviewed_at?: string | null;
+          pastor_confirmed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: 'draft' | 'submitted' | 'zone_reviewed' | 'pastor_confirmed';
+          content?: Json | null;
+          submitted_at?: string | null;
+          zone_reviewed_at?: string | null;
+          pastor_confirmed_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'pastoral_journals_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'pastoral_journals_small_group_id_fkey';
+            columns: ['small_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'small_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'pastoral_journals_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      pastoral_journal_comments: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          pastoral_journal_id: string;
+          author_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          pastoral_journal_id: string;
+          author_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          content?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'pastoral_journal_comments_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'pastoral_journal_comments_pastoral_journal_id_fkey';
+            columns: ['pastoral_journal_id'];
+            isOneToOne: false;
+            referencedRelation: 'pastoral_journals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'pastoral_journal_comments_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

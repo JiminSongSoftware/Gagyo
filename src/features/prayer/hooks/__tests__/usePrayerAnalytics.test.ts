@@ -145,6 +145,32 @@ describe('usePrayerAnalytics', () => {
 
       expect(result.current.analytics?.answerRate).toBe(0);
     });
+
+    it('should surface Supabase errors for individual scope', async () => {
+      const mockError = new Error('Individual query failed');
+
+      const mockQuery: MockQueryBuilder = {
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        select: jest.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        }),
+      };
+      mockSupabase.from = jest.fn().mockReturnValue(mockQuery);
+
+      const { result } = renderHook(() =>
+        usePrayerAnalytics(mockTenantId, 'individual', mockMembershipId, 'monthly')
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.error).toEqual(mockError);
+      expect(result.current.analytics).toBeNull();
+    });
   });
 
   describe('Small Group Scope', () => {
@@ -167,6 +193,57 @@ describe('usePrayerAnalytics', () => {
 
       expect(mockSupabase.from).toHaveBeenCalledWith('prayer_cards');
       expect(result.current.analytics?.scope).toBe('small_group');
+    });
+
+    it('should query prayer_cards with recipient_scope=small_group for small group analytics', async () => {
+      const mockPrayers = [
+        { id: '1', answered: true, created_at: '2024-01-01', recipient_scope: 'small_group' },
+        { id: '2', answered: false, created_at: '2024-01-02', recipient_scope: 'small_group' },
+      ];
+
+      const mockQuery = createMockQuery(mockPrayers);
+      mockSupabase.from = jest.fn().mockReturnValue(mockQuery);
+
+      const { result } = renderHook(() =>
+        usePrayerAnalytics(mockTenantId, 'small_group', mockSmallGroupId, 'monthly')
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Verify that recipient_scope filter was applied with 'small_group'
+      expect(mockSupabase.from).toHaveBeenCalledWith('prayer_cards');
+      const eqCalls = (mockQuery.eq as jest.Mock).mock.calls;
+      const recipientScopeCall = eqCalls.find((call) => call[0] === 'recipient_scope');
+      expect(recipientScopeCall).toBeDefined();
+      expect(recipientScopeCall?.[1]).toBe('small_group');
+    });
+
+    it('should surface Supabase errors for small group scope', async () => {
+      const mockError = new Error('Small group query failed');
+
+      const mockQuery: MockQueryBuilder = {
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        select: jest.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        }),
+      };
+      mockSupabase.from = jest.fn().mockReturnValue(mockQuery);
+
+      const { result } = renderHook(() =>
+        usePrayerAnalytics(mockTenantId, 'small_group', mockSmallGroupId, 'monthly')
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.error).toEqual(mockError);
+      expect(result.current.analytics).toBeNull();
     });
   });
 
@@ -205,6 +282,32 @@ describe('usePrayerAnalytics', () => {
 
     it('should handle errors gracefully', async () => {
       const mockError = new Error('Database error');
+
+      const mockQuery: MockQueryBuilder = {
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        select: jest.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        }),
+      };
+      mockSupabase.from = jest.fn().mockReturnValue(mockQuery);
+
+      const { result } = renderHook(() =>
+        usePrayerAnalytics(mockTenantId, 'church_wide', null, 'monthly')
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.error).toEqual(mockError);
+      expect(result.current.analytics).toBeNull();
+    });
+
+    it('should surface Supabase errors for church_wide scope', async () => {
+      const mockError = new Error('Church-wide query failed');
 
       const mockQuery: MockQueryBuilder = {
         eq: jest.fn().mockReturnThis(),
@@ -284,7 +387,7 @@ describe('usePrayerAnalytics', () => {
       expect(daysDiff).toBeLessThanOrEqual(8); // Account for slight timing differences
     });
 
-    it('should use monthly date range when period is monthly', async () => {
+    it('should use monthly date range when period is monthly (30-day window)', async () => {
       const mockQuery = createMockQuery([]);
       mockSupabase.from = jest.fn().mockReturnValue(mockQuery);
 
@@ -300,13 +403,13 @@ describe('usePrayerAnalytics', () => {
 
       const startDate = new Date(startDateArg);
       const now = new Date();
-      const monthsDiff =
-        (now.getFullYear() - startDate.getFullYear()) * 12 +
-        (now.getMonth() - startDate.getMonth());
-      expect(monthsDiff).toBe(1);
+      const daysDiff = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      // Verify it's approximately 30 days ago (not calendar month)
+      expect(daysDiff).toBeGreaterThanOrEqual(30);
+      expect(daysDiff).toBeLessThanOrEqual(31); // Account for slight timing differences
     });
 
-    it('should use quarterly date range when period is quarterly', async () => {
+    it('should use quarterly date range when period is quarterly (90-day window)', async () => {
       const mockQuery = createMockQuery([]);
       mockSupabase.from = jest.fn().mockReturnValue(mockQuery);
 
@@ -324,10 +427,10 @@ describe('usePrayerAnalytics', () => {
 
       const startDate = new Date(startDateArg);
       const now = new Date();
-      const monthsDiff =
-        (now.getFullYear() - startDate.getFullYear()) * 12 +
-        (now.getMonth() - startDate.getMonth());
-      expect(monthsDiff).toBe(3);
+      const daysDiff = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      // Verify it's approximately 90 days ago (not calendar quarter)
+      expect(daysDiff).toBeGreaterThanOrEqual(90);
+      expect(daysDiff).toBeLessThanOrEqual(91); // Account for slight timing differences
     });
 
     it('should use semi_annual date range when period is semi_annual', async () => {

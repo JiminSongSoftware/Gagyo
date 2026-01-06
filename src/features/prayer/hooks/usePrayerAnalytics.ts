@@ -40,12 +40,13 @@ function getDateRange(period: AnalyticsPeriod): { startDate: string; endDate: st
       startDate.setDate(now.getDate() - 7);
       break;
     case 'monthly':
+      // Use 30-day window as specified in SDD (not calendar month offset)
       startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 1);
+      startDate.setDate(now.getDate() - 30);
       break;
     case 'quarterly':
       startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 3);
+      startDate.setDate(now.getDate() - 90);
       break;
     case 'semi_annual':
       startDate = new Date(now);
@@ -57,7 +58,7 @@ function getDateRange(period: AnalyticsPeriod): { startDate: string; endDate: st
       break;
     default:
       startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 1);
+      startDate.setDate(now.getDate() - 30);
   }
 
   return {
@@ -124,7 +125,7 @@ export function usePrayerAnalytics(
       let query;
       let data;
 
-      // Apply scope-based filtering with proper joins for recipient scope
+      // Apply scope-based filtering with proper error handling
       switch (scope) {
         case 'individual': {
           // For individual scope, fetch only authored prayers by this user
@@ -136,24 +137,33 @@ export function usePrayerAnalytics(
             .gte('created_at', startDate)
             .lte('created_at', endDate);
           const result = await query;
+          if (result.error) {
+            setError(result.error);
+            setAnalytics(null);
+            setLoading(false);
+            return;
+          }
           data = result.data;
           break;
         }
         case 'small_group': {
-          // For small group scope, fetch prayers addressed to this small group
-          // by joining prayer_card_recipients and filtering by recipient_small_group_id
+          // For small group scope, fetch prayers with recipient_scope='small_group'
+          // RLS handles small group membership filtering
           query = supabase
-            .from('prayer_card_recipients')
-            .select(
-              'prayer_card_id, prayer_cards!inner(id, answered, author_id, recipient_scope, tenant_id)'
-            )
-            .eq('prayer_cards.tenant_id', tenantId)
-            .eq('recipient_small_group_id', scopeId!)
-            .gte('prayer_cards.created_at', startDate)
-            .lte('prayer_cards.created_at', endDate);
+            .from('prayer_cards')
+            .select('id, answered, author_id, recipient_scope')
+            .eq('tenant_id', tenantId)
+            .eq('recipient_scope', 'small_group')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate);
           const result = await query;
-          // Extract prayer card data from the joined result
-          data = result.data?.map((item) => item.prayer_cards) ?? [];
+          if (result.error) {
+            setError(result.error);
+            setAnalytics(null);
+            setLoading(false);
+            return;
+          }
+          data = result.data;
           break;
         }
         case 'church_wide':
@@ -167,6 +177,12 @@ export function usePrayerAnalytics(
             .gte('created_at', startDate)
             .lte('created_at', endDate);
           const result = await query;
+          if (result.error) {
+            setError(result.error);
+            setAnalytics(null);
+            setLoading(false);
+            return;
+          }
           data = result.data;
           break;
         }
