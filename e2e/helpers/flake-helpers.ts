@@ -366,18 +366,19 @@ export const eventually = async (
   const { timeout = DEFAULT_TIMEOUT, interval = 200 } = options;
 
   const startTime = Date.now();
+  let lastError: unknown;
 
   while (Date.now() - startTime < timeout) {
     try {
       await assertion();
       return;
-    } catch (error) {
-      if (Date.now() - startTime >= timeout) {
-        throw error;
-      }
+    } catch (err) {
+      lastError = err;
       await sleep(interval);
     }
   }
+
+  throw lastError;
 };
 
 /**
