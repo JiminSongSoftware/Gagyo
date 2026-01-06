@@ -1,7 +1,7 @@
-import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { I18nextProvider } from 'react-i18next';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ExpoRoot } from 'expo-router';
+import { I18nextProvider } from 'react-i18next';
 import { initSentry } from '@/lib/monitoring/sentry';
 import { initPostHog } from '@/lib/monitoring/posthog';
 import i18nInstance, { initI18n } from '@/i18n';
@@ -39,10 +39,9 @@ function initializeMonitoring(): void {
 }
 
 /**
- * Main app component with i18n initialization.
+ * Root app component with i18n initialization.
  *
- * With expo-router app directory, App.tsx renders the root Stack.
- * The app/_layout.tsx file wraps individual screens with their own providers.
+ * Uses ExpoRoot to connect to expo-router's file-based routing in app/ directory.
  */
 export default function App() {
   const [isI18nReady, setIsI18nReady] = useState(false);
@@ -73,7 +72,7 @@ export default function App() {
 
   return (
     <I18nextProvider i18n={i18nInstance}>
-      <Stack />
+      <ExpoRoot />
     </I18nextProvider>
   );
 }
