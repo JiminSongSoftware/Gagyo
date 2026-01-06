@@ -42,7 +42,23 @@ Always use clear placeholders in templates and documentation:
 SUPABASE_URL=YOUR_SUPABASE_URL_HERE
 SUPABASE_ANON_KEY=YOUR_ANON_KEY_HERE
 EXPO_PROJECT_ID=YOUR_PROJECT_ID_HERE
+EXPO_PUBLIC_SENTRY_DSN=YOUR_SENTRY_DSN
+EXPO_PUBLIC_POSTHOG_KEY=YOUR_POSTHOG_KEY
 ```
+
+### Monitoring & Observability Secrets
+
+#### Sentry
+- **Public DSN**: Can be committed (used by client)
+- **Auth Token**: Secret (for sourcemap uploads, CLI)
+  - Store in GitHub Secrets as `SENTRY_AUTH_TOKEN`
+- **Required for**: Error tracking, performance monitoring
+
+#### PostHog
+- **API Key**: Can be committed (used by client)
+- **Required for**: Product analytics, event tracking
+
+See full environment variable reference in `.env.example`.
 
 ### What Constitutes a Secret
 - API keys (Supabase, third-party services)
@@ -51,6 +67,8 @@ EXPO_PROJECT_ID=YOUR_PROJECT_ID_HERE
 - Push notification credentials
 - OAuth client secrets
 - Encryption keys
+- Sentry DSN and auth tokens
+- PostHog API keys
 
 ### Forbidden Locations for Secrets
 - Source code files
