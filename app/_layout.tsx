@@ -19,15 +19,23 @@ import { useNotificationHandler } from '@/features/notifications';
  * Must be called before any providers are rendered.
  */
 function initializeMonitoring(): void {
-  // Initialize Sentry error tracking
-  initSentry({
-    dsn: process.env.SENTRY_DSN!,
-  });
+  try {
+    // Initialize Sentry error tracking
+    initSentry({
+      dsn: process.env.SENTRY_DSN!,
+    });
+  } catch (e) {
+    console.error('[Layout] Sentry init failed:', e);
+  }
 
-  // Initialize PostHog analytics
-  initPostHog({
-    apiKey: process.env.EXPO_PUBLIC_POSTHOG_API_KEY!,
-  });
+  try {
+    // Initialize PostHog analytics
+    initPostHog({
+      apiKey: process.env.EXPO_PUBLIC_POSTHOG_API_KEY!,
+    });
+  } catch (e) {
+    console.error('[Layout] PostHog init failed:', e);
+  }
 }
 
 /**
@@ -146,9 +154,16 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    void initI18n().then((instance) => {
-      setI18nInstance(instance);
-    });
+    initI18n()
+      .then((instance) => {
+        console.log('[Layout] i18n initialized:', instance.language);
+        setI18nInstance(instance);
+      })
+      .catch((error) => {
+        console.error('[Layout] i18n init failed:', error);
+        // Set a minimal i18n instance to prevent blank screen
+        setI18nInstance(i18n);
+      });
   }, []);
 
   // Process cold start notification (app launched from notification)
@@ -159,7 +174,13 @@ export default function RootLayout() {
   }, [i18nInstance, processInitialNotification]);
 
   if (!i18nInstance) {
-    return null;
+    return (
+      <TamaguiProvider config={config} defaultTheme={theme}>
+        <View flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+          <Text>Loading...</Text>
+        </View>
+      </TamaguiProvider>
+    );
   }
 
   return (

@@ -1,9 +1,8 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import i18n, { initI18nForApp } from '@/i18n';
-import { usePreferencesStore } from '@/stores/preferences';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import i18nInstance, { initI18n } from '@/i18n';
 
 /**
  * Loading screen shown while i18n initializes.
@@ -11,7 +10,7 @@ import { usePreferencesStore } from '@/stores/preferences';
 function LoadingScreen() {
   return (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#0000ff" />
+      <ActivityIndicator size="large" color="#007AFF" />
     </View>
   );
 }
@@ -19,28 +18,16 @@ function LoadingScreen() {
 /**
  * Main app component with i18n initialization.
  *
- * The app initializes i18n before rendering to ensure:
- * - Translations are available immediately
- * - Saved locale preference is restored
- * - Device locale is detected on first launch
+ * Uses expo-router for navigation with the file-based routing in the app/ directory.
  */
 export default function App() {
   const [isI18nReady, setIsI18nReady] = useState(false);
-  const _hasHydrated = usePreferencesStore((state) => state._hasHydrated);
-  const savedLocale = usePreferencesStore((state) => state.locale);
 
   useEffect(() => {
-    // Initialize i18n when the app starts
-    // We wait for hydration to get the saved locale preference
     const initializeI18n = async () => {
       try {
-        const locale = await initI18nForApp(savedLocale);
-
-        // Update the store if locale was changed during init
-        // (e.g., device locale detected on first launch)
-        if (locale !== savedLocale) {
-          usePreferencesStore.getState().setLocale(locale);
-        }
+        await initI18n();
+        console.log('[App] i18n initialized');
       } catch (error) {
         console.error('[App] Failed to initialize i18n:', error);
       } finally {
@@ -48,43 +35,25 @@ export default function App() {
       }
     };
 
-    // Only initialize after hydration or with a timeout
-    if (_hasHydrated) {
-      void initializeI18n();
-      return undefined;
-    }
+    void initializeI18n();
+  }, []);
 
-    // Add a timeout in case hydration takes too long
-    const timeoutId = setTimeout(() => {
-      void initializeI18n();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [_hasHydrated, savedLocale]);
-
-  // Show loading screen while i18n initializes
   if (!isI18nReady) {
     return <LoadingScreen />;
   }
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-      </View>
+    <I18nextProvider i18n={i18nInstance}>
+      <Stack />
     </I18nextProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
 });
