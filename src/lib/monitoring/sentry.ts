@@ -16,7 +16,7 @@ import {
   type Scope,
 } from '@sentry/react-native';
 import Constants from 'expo-constants';
-import Platform from 'react-native/Platform';
+import { Platform } from 'react-native';
 
 import type {
   BreadcrumbData,
