@@ -11,6 +11,7 @@
  */
 
 import { useCallback } from 'react';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PastoralJournalDetail } from '@/features/pastoral/components/PastoralJournalDetail';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
@@ -31,11 +32,13 @@ export default function PastoralJournalDetailScreen() {
   }
 
   return (
-    <PastoralJournalDetail
-      journalId={id}
-      tenantId={tenantId}
-      membership={membership}
-      onBack={handleBack}
-    />
+    <View testID="journal-detail-screen" style={{ flex: 1 }}>
+      <PastoralJournalDetail
+        journalId={id}
+        tenantId={tenantId}
+        membership={membership}
+        onBack={handleBack}
+      />
+    </View>
   );
 }

@@ -78,7 +78,7 @@ export default function PastoralScreen() {
   }, []);
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack testID="pastoral-screen" flex={1} backgroundColor="$background">
       {/* Journal List */}
       <PastoralJournalList
         tenantId={tenantId}

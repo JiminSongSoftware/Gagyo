@@ -12,7 +12,16 @@
 
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
-import { Stack, Text as TamaguiText, XStack, YStack, Button, Input, styled } from 'tamagui';
+import {
+  Stack,
+  Text as TamaguiText,
+  XStack,
+  YStack,
+  Button,
+  Input,
+  styled,
+  useTheme,
+} from 'tamagui';
 import { useTranslation } from '@/i18n';
 import {
   useCreatePastoralJournal,
@@ -127,6 +136,7 @@ interface AttendanceCounterProps {
   onIncrement: () => void;
   onDecrement: () => void;
   color?: string;
+  testID?: string;
 }
 
 function AttendanceCounter({
@@ -135,22 +145,21 @@ function AttendanceCounter({
   onIncrement,
   onDecrement,
   color,
+  testID,
 }: AttendanceCounterProps) {
   return (
-    <YStack alignItems="center" gap="$2">
+    <YStack testID={testID} alignItems="center" gap="$2">
       <TamaguiText fontSize="$sm" color="$color3">
         {label}
       </TamaguiText>
       <XStack alignItems="center" gap="$3">
-        <CounterButton
-          testID={`attendance-${label.toLowerCase().replace(' ', '-')}-decrement`}
-          onPress={onDecrement}
-        >
+        <CounterButton testID={testID ? `${testID}-decrement` : undefined} onPress={onDecrement}>
           <TamaguiText fontSize="$lg" color="$color">
             −
           </TamaguiText>
         </CounterButton>
         <TamaguiText
+          testID={testID ? `${testID}-value` : undefined}
           fontSize="$2xl"
           fontWeight="bold"
           color={color || '$color'}
@@ -159,10 +168,7 @@ function AttendanceCounter({
         >
           {value}
         </TamaguiText>
-        <CounterButton
-          testID={`attendance-${label.toLowerCase().replace(' ', '-')}-increment`}
-          onPress={onIncrement}
-        >
+        <CounterButton testID={testID ? `${testID}-increment` : undefined} onPress={onIncrement}>
           <TamaguiText fontSize="$lg" color="$color">
             +
           </TamaguiText>
@@ -483,7 +489,7 @@ export function CreatePastoralJournalForm({
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Week Selector */}
-        <FormSection>
+        <FormSection testID="week-selector">
           <TamaguiText fontSize="$sm" fontWeight="bold" color="$color" marginBottom="$3">
             {t('pastoral.week')}
           </TamaguiText>
@@ -495,6 +501,7 @@ export function CreatePastoralJournalForm({
             padding="$3"
           >
             <Pressable
+              testID="week-selector-prev"
               onPress={() => {
                 const newDate = new Date(weekStartDate);
                 newDate.setDate(newDate.getDate() - 7);
@@ -505,10 +512,11 @@ export function CreatePastoralJournalForm({
                 ←
               </TamaguiText>
             </Pressable>
-            <TamaguiText fontSize="$md" fontWeight="600" color="$color">
+            <TamaguiText testID="week-selector-date" fontSize="$md" fontWeight="600" color="$color">
               {formatDate(weekRange.start)} - {formatDate(weekRange.end)}
             </TamaguiText>
             <Pressable
+              testID="week-selector-next"
               onPress={() => {
                 const newDate = new Date(weekStartDate);
                 newDate.setDate(newDate.getDate() + 7);
@@ -529,12 +537,14 @@ export function CreatePastoralJournalForm({
           </TamaguiText>
           <XStack justifyContent="space-around" flexWrap="wrap" gap="$4">
             <AttendanceCounter
+              testID="attendance-present-input"
               label={t('pastoral.present')}
               value={attendance.present}
               onIncrement={() => handleAttendanceChange('present', 1)}
               onDecrement={() => handleAttendanceChange('present', -1)}
             />
             <AttendanceCounter
+              testID="attendance-absent-input"
               label={t('pastoral.absent')}
               value={attendance.absent}
               onIncrement={() => handleAttendanceChange('absent', 1)}
@@ -542,6 +552,7 @@ export function CreatePastoralJournalForm({
               color="$error"
             />
             <AttendanceCounter
+              testID="attendance-new-visitors-input"
               label={t('pastoral.new_visitors')}
               value={attendance.newVisitors}
               onIncrement={() => handleAttendanceChange('newVisitors', 1)}

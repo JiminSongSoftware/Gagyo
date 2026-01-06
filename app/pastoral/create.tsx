@@ -10,6 +10,7 @@
  */
 
 import { useCallback } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CreatePastoralJournalForm } from '@/features/pastoral/components/CreatePastoralJournalForm';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
@@ -31,13 +32,15 @@ export default function CreatePastoralJournalScreen() {
   }, [router]);
 
   return (
-    <CreatePastoralJournalForm
-      tenantId={tenantId}
-      smallGroupId={membership?.small_group_id || null}
-      membershipId={membershipId}
-      membership={membership}
-      onSuccess={handleSuccess}
-      onCancel={handleCancel}
-    />
+    <View testID="create-journal-screen" style={{ flex: 1 }}>
+      <CreatePastoralJournalForm
+        tenantId={tenantId}
+        smallGroupId={membership?.small_group_id || null}
+        membershipId={membershipId}
+        membership={membership}
+        onSuccess={handleSuccess}
+        onCancel={handleCancel}
+      />
+    </View>
   );
 }

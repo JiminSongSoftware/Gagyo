@@ -2,16 +2,20 @@
  * Handle Pastoral Journal Change Edge Function
  *
  * Triggered when pastoral journal status changes.
- * Sends notifications for:
- * - Submitted (draft → submitted): to zone leader
- * - Forwarded (submitted → zone_reviewed): to all pastors
- * - Confirmed (zone_reviewed → pastor_confirmed): to original author
+ *
+ * Actions:
+ * - Submitted (draft → submitted):
+ *   1. Creates prayer cards from journal prayer requests (scoped to small group)
+ *   2. Sends notification to zone leader
+ * - Forwarded (submitted → zone_reviewed): notifies all pastors
+ * - Confirmed (zone_reviewed → pastor_confirmed): notifies original author
  *
  * Environment Variables:
  * - SEND_PUSH_NOTIFICATION_URL: URL of the send-push-notification function
  * - SUPABASE_SERVICE_ROLE_KEY: Service role key for authorization
  *
  * @see claude_docs/06_push_notifications.md
+ * @see claude_docs/18_prayer_cards.md
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -21,11 +25,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 // TYPES
 // ============================================================================
 
+interface PastoralJournalContent {
+  attendance?: {
+    present: number;
+    absent: number;
+    newVisitors: number;
+  };
+  prayerRequests?: string[];
+  highlights?: string[];
+  concerns?: string[];
+  nextSteps?: string[];
+}
+
 interface PastoralJournalRow {
   id: string;
   tenant_id: string;
   small_group_id: string;
   author_id: string;
+  content: string | null; // JSON string
   status: 'draft' | 'submitted' | 'zone_reviewed' | 'pastor_confirmed' | 'archived';
   submitted_at: string | null;
   zone_reviewed_at: string | null;
@@ -286,14 +303,102 @@ async function sendPushNotification(request: SendPushRequest): Promise<Response>
 }
 
 /**
+ * Create prayer cards from pastoral journal prayer requests.
+ * Called when journal status changes from draft to submitted.
+ * Each prayer request becomes a prayer card shared with the small group.
+ */
+async function createPrayerCardsFromJournal(
+  journal: PastoralJournalRow
+): Promise<{ created: number; errors: string[] }> {
+  const errors: string[] = [];
+
+  // Parse content JSON
+  let content: PastoralJournalContent | null = null;
+  try {
+    if (journal.content) {
+      content = JSON.parse(journal.content) as PastoralJournalContent;
+    }
+  } catch (parseError) {
+    console.error('Failed to parse journal content:', parseError);
+    return { created: 0, errors: ['Failed to parse journal content'] };
+  }
+
+  // Check if there are prayer requests
+  const prayerRequests = content?.prayerRequests;
+  if (!prayerRequests || prayerRequests.length === 0) {
+    return { created: 0, errors: [] }; // No prayer requests to convert
+  }
+
+  let created = 0;
+
+  for (const prayerRequest of prayerRequests) {
+    // Skip empty prayer requests
+    if (!prayerRequest.trim()) {
+      continue;
+    }
+
+    try {
+      // Create prayer card with small_group scope
+      const { data: prayerCard, error: cardError } = await supabase
+        .from('prayer_cards')
+        .insert({
+          tenant_id: journal.tenant_id,
+          author_id: journal.author_id,
+          content: prayerRequest.trim(),
+          recipient_scope: 'small_group',
+          answered: false,
+        })
+        .select('id')
+        .single();
+
+      if (cardError) {
+        console.error('Failed to create prayer card:', cardError.message);
+        errors.push(`Failed to create prayer card: ${cardError.message}`);
+        continue;
+      }
+
+      // Create prayer_card_recipients entry for the small group
+      if (prayerCard && journal.small_group_id) {
+        const { error: recipientError } = await supabase.from('prayer_card_recipients').insert({
+          prayer_card_id: prayerCard.id,
+          recipient_small_group_id: journal.small_group_id,
+        });
+
+        if (recipientError) {
+          console.error('Failed to create prayer card recipient:', recipientError.message);
+          errors.push(`Failed to assign recipient: ${recipientError.message}`);
+        }
+      }
+
+      created++;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error creating prayer card:', errorMessage);
+      errors.push(`Error creating prayer card: ${errorMessage}`);
+    }
+  }
+
+  console.log(`Created ${created} prayer cards from ${prayerRequests.length} prayer requests`);
+  return { created, errors };
+}
+
+/**
  * Handle journal submitted notification
  * Recipients: Zone leader for the small group's zone
+ * Also creates prayer cards from prayer requests in the journal.
  */
 async function handleJournalSubmitted(
   journal: PastoralJournalRow,
   smallGroup: SmallGroupRow
-): Promise<{ notified: number; errors: string[] }> {
+): Promise<{ notified: number; prayerCardsCreated: number; errors: string[] }> {
+  const errors: string[] = [];
   const recipientUserIds: string[] = [];
+
+  // Create prayer cards from prayer requests
+  const prayerCardResult = await createPrayerCardsFromJournal(journal);
+  if (prayerCardResult.errors.length > 0) {
+    errors.push(...prayerCardResult.errors);
+  }
 
   if (smallGroup.zone_id) {
     const zoneLeaderId = await getZoneLeader(journal.tenant_id, smallGroup.zone_id);
@@ -303,7 +408,8 @@ async function handleJournalSubmitted(
   }
 
   if (recipientUserIds.length === 0) {
-    return { notified: 0, errors: ['No zone leader found'] };
+    errors.push('No zone leader found');
+    return { notified: 0, prayerCardsCreated: prayerCardResult.created, errors };
   }
 
   const leaderName = await getLeaderName(journal.author_id);
@@ -330,7 +436,11 @@ async function handleJournalSubmitted(
     },
   });
 
-  return { notified: recipientUserIds.length, errors: [] };
+  return {
+    notified: recipientUserIds.length,
+    prayerCardsCreated: prayerCardResult.created,
+    errors,
+  };
 }
 
 /**
@@ -413,6 +523,7 @@ async function handlePastoralJournalChange(
 ): Promise<{
   success: boolean;
   notified: number;
+  prayerCardsCreated?: number;
   errors: string[];
 }> {
   // Fetch pastoral journal
@@ -424,15 +535,18 @@ async function handlePastoralJournalChange(
   // Fetch small group info
   const smallGroup = journal.small_group_id ? await getSmallGroup(journal.small_group_id) : null;
 
-  let result: { notified: number; errors: string[] } = { notified: 0, errors: [] };
+  let result: { notified: number; prayerCardsCreated?: number; errors: string[] } = {
+    notified: 0,
+    errors: [],
+  };
 
   // Handle status transitions
   if (oldStatus === 'draft' && newStatus === 'submitted') {
-    // Journal submitted → notify zone leader
+    // Journal submitted → notify zone leader + create prayer cards
     if (smallGroup) {
       result = await handleJournalSubmitted(journal, smallGroup);
     } else {
-      result = { notified: 0, errors: ['Small group not found'] };
+      result = { notified: 0, prayerCardsCreated: 0, errors: ['Small group not found'] };
     }
   } else if (oldStatus === 'submitted' && newStatus === 'zone_reviewed') {
     // Journal forwarded → notify pastors
@@ -452,6 +566,7 @@ async function handlePastoralJournalChange(
   return {
     success: result.errors.length === 0,
     notified: result.notified,
+    prayerCardsCreated: result.prayerCardsCreated,
     errors: result.errors,
   };
 }

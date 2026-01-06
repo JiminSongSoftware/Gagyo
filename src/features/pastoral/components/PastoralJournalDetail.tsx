@@ -34,8 +34,9 @@ import {
   usePastoralJournalComments,
   useAddPastoralJournalComment,
   useCanAddComment,
+  type PastoralJournalCommentWithAuthor,
 } from '../hooks/usePastoralJournalComments';
-import type { PastoralJournalCommentWithAttributes, Database, Membership } from '@/types/database';
+import type { Database, Membership } from '@/types/database';
 
 // ============================================================================
 // TYPES
@@ -208,7 +209,7 @@ function ActionButton({
 }
 
 interface CommentItemProps {
-  comment: PastoralJournalCommentWithAttributes;
+  comment: PastoralJournalCommentWithAuthor;
 }
 
 function CommentItem({ comment }: CommentItemProps) {

@@ -13,7 +13,7 @@
  */
 
 import { ActivityIndicator, FlatList as RNFlatList, Pressable, RefreshControl } from 'react-native';
-import { Stack, Text as TamaguiText, XStack, YStack, styled } from 'tamagui';
+import { Stack, Text as TamaguiText, XStack, YStack, styled, useTheme } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { usePastoralJournals, type PastoralJournalsFilter } from '../hooks/usePastoralJournals';
 import type { Database, PastoralJournalWithRelations, Membership } from '@/types/database';
@@ -167,17 +167,30 @@ function JournalCardItem({ journal, onPress }: JournalCardProps) {
         {/* Header: Week and Status */}
         <XStack justifyContent="space-between" alignItems="flex-start" marginBottom="$3">
           <YStack flex={1}>
-            <TamaguiText fontSize="$lg" fontWeight="bold" color="$color">
+            <TamaguiText testID="journal-week-date" fontSize="$lg" fontWeight="bold" color="$color">
               {t('pastoral.week_of', { date: formatWeekDate(journal.week_start_date) })}
             </TamaguiText>
             {journal.small_group && (
-              <TamaguiText fontSize="$sm" color="$color3" marginTop="$1">
+              <TamaguiText
+                testID="journal-group-name"
+                fontSize="$sm"
+                color="$color3"
+                marginTop="$1"
+              >
                 {journal.small_group.name}
               </TamaguiText>
             )}
           </YStack>
-          <StatusBadge backgroundColor={getStatusColor(journal.status) + '20'}>
-            <TamaguiText fontSize="$xs" fontWeight="600" color={getStatusColor(journal.status)}>
+          <StatusBadge
+            testID={`journal-status-badge`}
+            backgroundColor={getStatusColor(journal.status) + '20'}
+          >
+            <TamaguiText
+              testID={`status-${journal.status}`}
+              fontSize="$xs"
+              fontWeight="600"
+              color={getStatusColor(journal.status)}
+            >
               {getStatusLabel(journal.status, t)}
             </TamaguiText>
           </StatusBadge>
@@ -218,7 +231,7 @@ function JournalCardItem({ journal, onPress }: JournalCardProps) {
         {/* Footer: Author and Date */}
         <XStack justifyContent="space-between" alignItems="center">
           <XStack alignItems="center" gap="$2">
-            <TamaguiText fontSize="$xs" color="$color3">
+            <TamaguiText testID="journal-author-name" fontSize="$xs" color="$color3">
               {journal.author?.user?.display_name || t('pastoral.unknown_author')}
             </TamaguiText>
           </XStack>
@@ -239,6 +252,7 @@ interface FilterTabsProps {
 
 function FilterTabs({ currentFilter, membership, onFilterChange }: FilterTabsProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   const filters: { key: PastoralJournalsFilter['scope']; label: string }[] = [];
 
@@ -340,6 +354,7 @@ export function PastoralJournalList({
   onFilterChange,
 }: PastoralJournalListProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   const { journals, loading, error, hasMore, loadMore, refetch } = usePastoralJournals(
     tenantId,
