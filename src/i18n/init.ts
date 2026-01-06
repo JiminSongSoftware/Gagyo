@@ -31,7 +31,7 @@
  */
 
 import { getLocales } from 'expo-localization';
-import { initI18n as baseInitI18n, changeLocale, getCurrentLocale } from './index';
+import { initI18n as baseInitI18n, changeLocale, getCurrentLocale } from './core';
 import type { Locale } from './types';
 
 /**
