@@ -8,12 +8,10 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": true,
-        "bundleIdentifier": "com.gagyo.app.dev"
+        "simulator": true
       },
       "android": {
-        "buildType": "apk",
-        "package": "com.gagyo.app.dev"
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_ENV": "development"
@@ -22,12 +20,10 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "bundleIdentifier": "com.gagyo.app.preview",
         "resourceClass": "m-medium"
       },
       "android": {
-        "buildType": "apk",
-        "package": "com.gagyo.app.preview"
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_ENV": "preview"
@@ -36,12 +32,10 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "bundleIdentifier": "com.gagyo.app",
         "resourceClass": "m-medium"
       },
       "android": {
-        "buildType": "app-bundle",
-        "package": "com.gagyo.app"
+        "buildType": "app-bundle"
       },
       "env": {
         "EXPO_PUBLIC_ENV": "production"

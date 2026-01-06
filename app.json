@@ -49,13 +49,12 @@
     },
     "extra": {
       "eas": {
-        "projectId": "TODO_REPLACE_WITH_REAL_EAS_PROJECT_ID"
+        "projectId": "13226b82-fc4f-42cc-b1c1-4be0d7cf90de"
       }
     },
-    // TODO: Add updates block with real EAS project ID when ready
-    // "updates": {
-    //   "url": "https://u.expo.dev/<REAL_PROJECT_ID>"
-    // },
+    "updates": {
+      "url": "https://u.expo.dev/13226b82-fc4f-42cc-b1c1-4be0d7cf90de"
+    },
     "runtimeVersion": {
       "policy": "appVersion"
     }
