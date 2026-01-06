@@ -2240,3 +2240,450 @@ const { comments, loading } = usePastoralJournalComments(
 - `claude_docs/20_pastoral_journal.md` - SDD specification
 - `locales/en/pastoral.json` - English translations
 - `locales/ko/pastoral.json` - Korean translations
+
+---
+
+## Lessons Learned: Settings Feature
+
+### Overview
+
+**What is Settings?**
+Settings is a comprehensive profile and preferences management screen allowing users to manage their display name, profile photo, language/locale, notification preferences, and account deletion. The feature includes immediate UI refresh on locale change and secure account deletion with cascading data removal.
+
+**Key Capabilities**:
+- Profile management (display name, photo with effects, email display)
+- Locale switching between English and Korean with immediate UI refresh
+- Notification preferences toggle (messages, prayers, journals, system)
+- Account deletion with cascading data removal across all tables
+- Profile photo upload with 5 MB limit and image type restrictions
+- Full i18n support for all user-facing strings
+
+### Database Schema
+
+**users table** (profile-related columns):
+```sql
+id                  UUID PRIMARY KEY
+tenant_id           UUID  -- Tenant ownership
+display_name        TEXT  -- User's preferred display name
+photo_url           TEXT  -- URL to profile photo in storage
+locale              TEXT  -- 'en' | 'ko' (default 'en')
+notification_preferences JSONB  -- { messages, prayers, journals, system }
+email               TEXT  -- From auth.users
+email_confirmed_at   TIMESTAMP  -- Email verification status
+```
+
+**notification_preferences** JSONB schema:
+```json
+{
+  "messages": true,   // Message notifications
+  "prayers": true,    // Prayer notifications
+  "journals": true,   // Pastoral journal notifications
+  "system": true      // System notifications
+}
+```
+
+**Storage Bucket**:
+```sql
+-- Bucket: profile-photos
+-- File Size Limit: 5 MB (5242880 bytes)
+-- Allowed MIME Types: image/jpeg, image/png, image/webp
+-- File Path Pattern: {user_id}/{filename}
+-- Public Access: Yes (photos are publicly readable)
+```
+
+**RLS Policies**:
+- Users can only update their own profile (`user_id() = id`)
+- Profile photo uploads restricted to user's own folder
+- Public read access for all profile photos
+- Account deletion requires valid JWT authentication
+
+### Locale Switching Flow
+
+**Implementation Pattern**:
+1. User selects language in Settings via LocaleSelector component
+2. `handleLocaleChange` calls `changeLocale()` from `useLocale` hook first
+3. This updates Zustand preferences store and i18next instance immediately
+4. UI refreshes with new language without app restart
+5. Then `updateProfile()` saves preference to database for persistence
+
+**useLocale Hook** (`src/hooks/useLocale.ts`):
+```typescript
+interface LocaleState {
+  locale: 'en' | 'ko';
+  changeLocale: (newLocale: 'en' | 'ko') => Promise<void>;
+}
+
+const { locale, changeLocale } = useLocale();
+
+// Change locale and immediately refresh UI
+await changeLocale('ko');
+```
+
+**Immediate UI Refresh**:
+```typescript
+const handleLocaleChange = async (newLocale: 'en' | 'ko') => {
+  // First change the i18n locale for immediate UI refresh
+  await changeLocale(newLocale);
+
+  // Then update the database for persistence
+  const success = await updateProfile({ locale: newLocale });
+  if (success && profile) {
+    setProfile({ ...profile, locale: newLocale });
+  }
+};
+```
+
+### Hook Interfaces
+
+**useUpdateProfile** (`src/features/settings/hooks/useUpdateProfile.ts`):
+```typescript
+interface UpdateProfileState {
+  updateProfile: (params: UpdateProfileParams) => Promise<boolean>;
+  updating: boolean;
+  error: Error | null;
+}
+
+interface UpdateProfileParams {
+  displayName?: string;
+  locale?: Locale;
+  notificationPreferences?: NotificationPreferences;
+}
+
+const { updateProfile, updating, error } = useUpdateProfile();
+```
+
+**useUploadProfilePhoto** (`src/features/settings/hooks/useUploadProfilePhoto.ts`):
+```typescript
+interface UploadProfilePhotoState {
+  uploadPhoto: (file: File, onProgress?: (progress: number) => void) => Promise<string | null>;
+  uploading: boolean;
+  progress: number;
+  error: Error | null;
+}
+
+// Usage: Selects photo via ImagePicker, uploads to Supabase storage, returns URL
+const { uploadPhoto, uploading, progress, error } = useUploadProfilePhoto();
+```
+
+**useDeleteAccount** (`src/features/settings/hooks/useDeleteAccount.ts`):
+```typescript
+interface DeleteAccountState {
+  deleteAccount: () => Promise<DeletionResult | null>;
+  deleting: boolean;
+  error: Error | null;
+}
+
+interface DeletionResult {
+  success: boolean;
+  deletion_counts: {
+    storage_photos?: number;
+    device_tokens?: number;
+    notifications?: number;
+    memberships?: number;
+    users?: number;
+  };
+}
+
+const { deleteAccount, deleting, error } = useDeleteAccount();
+```
+
+### UI Components
+
+**Settings Components** (`src/features/settings/components/`):
+
+**ProfileSection** (`ProfileSection.tsx`):
+```typescript
+interface ProfileSectionProps {
+  displayName: string | null;
+  photoUrl: string | null;
+  email: string;
+  emailVerified: boolean;
+  onDisplayNameChange: (name: string) => Promise<void>;
+  onPhotoUploaded: (url: string) => void;
+  onPhotoRemoved: () => void;
+}
+
+// Displays profile photo with edit button, display name (inline edit), email (read-only with verification badge)
+```
+
+**LocaleSelector** (`LocaleSelector.tsx`):
+```typescript
+interface LocaleSelectorProps {
+  value: 'en' | 'ko';
+  onChange: (locale: 'en' | 'ko') => Promise<void>;
+}
+
+// Switch component toggling between English and Korean
+// Calls onChange immediately on toggle
+```
+
+**NotificationPreferences** (`NotificationPreferences.tsx`):
+```typescript
+interface NotificationPreferencesProps {
+  value: NotificationPreferences;
+  onChange: (preferences: NotificationPreferences) => Promise<void>;
+}
+
+// Four toggle switches for messages, prayers, journals, system
+// Auto-saves on each toggle change
+```
+
+**AccountDeletionButton** (`AccountDeletionButton.tsx`):
+```typescript
+interface AccountDeletionButtonProps {
+  // No props - uses hooks internally
+}
+
+// Danger-styled button with AlertDialog confirmation
+// Shows loading state during deletion
+// Redirects to login after successful deletion
+```
+
+### Translation Keys
+
+**Settings Keys** (`settings.json`):
+```json
+{
+  "settings": "Settings" / "설정",
+  "account": "Account" / "계정",
+  "profile": "Profile" / "프로필",
+  "display_name": "Display Name" / "표시 이름",
+  "avatar": "Avatar" / "프로필 사진",
+  "change_avatar": "Change Avatar" / "프로필 사진 변경",
+  "upload_photo": "Upload Photo" / "사진 업로드",
+  "remove_photo": "Remove Photo" / "사진 제거",
+  "photo_intensity": "Character Effect" / "캐릭터 효과",
+  "notifications": "Notifications" / "알림",
+  "message_notifications": "Messages" / "메시지",
+  "prayer_notifications": "Prayers" / "기도",
+  "journal_notifications": "Journals" / "목회 일지",
+  "system_notifications": "System" / "시스템",
+  "language": "Language" / "언어",
+  "select_language": "Select Language" / "언어 선택",
+  "english": "English",
+  "korean": "한국어",
+  "delete_account": "Delete Account" / "계정 삭제",
+  "delete_account_warning": "This action cannot be undone. All your data will be permanently deleted.",
+  "delete_account_confirm_title": "Delete Account?",
+  "delete_account_confirm_message": "Are you sure you want to delete your account? This will permanently delete all your data including messages, prayers, journals, and memberships. This action cannot be undone.",
+  "deleting_account": "Deleting account..." / "계정 삭제 중...",
+  "email": "Email" / "이메일",
+  "email_verified": "Verified" / "인증됨",
+  "email_unverified": "Unverified" / "미인증",
+  "locale_changed": "Language changed" / "언어가 변경되었습니다",
+  "notification_preferences_updated": "Notification preferences updated" / "알림 설정이 업데이트되었습니다"
+}
+```
+
+### Account Deletion Flow
+
+**Edge Function** (`supabase/functions/delete-user-account/`):
+```typescript
+// Request: POST with Bearer token (JWT)
+// Response: { success: boolean, deletion_counts: {...} }
+
+// Cascade order (important for referential integrity):
+// 1. Delete profile photos from storage (profile-photos bucket)
+// 2. Delete device_tokens rows
+// 3. Delete notifications rows
+// 4. Delete memberships rows (cascades to dependent tables)
+// 5. Delete auth.user record
+// 6. Clear session and redirect to login
+```
+
+**Tables Affected by Cascade**:
+- `storage.objects` (profile-photos bucket)
+- `device_tokens`
+- `notifications`
+- `memberships` (cascades to: event_chat_exclusions, message_recipients, pastoral_journals, pastoral_journal_comments, prayer_card_recipients, prayer_cards)
+- `auth.users`
+- `users`
+
+**Security**:
+- Requires valid JWT authentication
+- Verifies `user_id()` matches requested user ID
+- Cross-user deletion blocked
+- Cascade order ensures referential integrity
+
+### Key Implementation Gotchas
+
+**Locale Change Order Matters**:
+```typescript
+// WRONG - Update DB first, then UI (delayed refresh)
+const success = await updateProfile({ locale: newLocale });
+await changeLocale(newLocale);
+
+// CORRECT - Change UI first, then persist to DB
+await changeLocale(newLocale);  // Immediate UI refresh
+const success = await updateProfile({ locale: newLocale });  // Persist
+```
+
+**Profile Photo Upload Path**:
+```typescript
+// Store photos in user-specific folder for RLS
+const filePath = `${userId}/${fileName}`;
+// Results in: profile-photos/{user_id}/photo.jpg
+// RLS policy: auth.uid()::text = (storage.foldername(name))[1]
+```
+
+**File Size Validation**:
+```typescript
+// Validate BEFORE upload (client-side)
+const MAX_FILE_SIZE = 5 * 1024 * 1024;  // 5 MB
+if (file.size > MAX_FILE_SIZE) {
+  throw new Error('File size exceeds 5 MB limit');
+}
+// Edge Function also validates, but client check is faster UX
+```
+
+**Notification Preferences Update**:
+```typescript
+// Always merge with existing preferences when updating
+const updatedPreferences = {
+  ...currentPreferences,
+  ...newPreferences  // Only update specified keys
+};
+```
+
+### Testing
+
+**Unit Tests** (`src/features/settings/hooks/__tests__/`):
+- `useUpdateProfile.test.ts` - Display name, locale, notification preferences updates
+- `useUploadProfilePhoto.test.ts` - File selection, upload progress, size validation
+- `useDeleteAccount.test.ts` - Deletion flow, error handling
+
+**Integration Tests** (`__tests__/integration/settings-profile.test.ts`):
+- Profile update RLS enforcement (users can only update own profile)
+- Notification preferences persistence
+- Storage bucket access control (upload to own folder, public read)
+- Account deletion cascade verification
+- Cross-tenant isolation enforcement
+
+**E2E Tests** (`e2e/settings.test.ts`):
+- Navigate to Settings from Home
+- Edit display name and verify save
+- Upload profile photo with mocked picker
+- Apply photo effects at each intensity level (0%, 30%, 60%, 100%)
+- Switch locale and verify UI language change
+- Toggle each notification preference
+- Logout and verify redirect
+- Delete account with confirmation and verify removal
+
+**Test IDs**:
+- `settings-screen` - Main settings container
+- `profile-section` - Profile section container
+- `display-name-input` - Inline edit input for display name
+- `photo-upload-button` - Photo upload button
+- `photo-remove-button` - Photo remove button
+- `locale-selector` - Language toggle switch
+- `notification-messages` - Messages notification toggle
+- `notification-prayers` - Prayers notification toggle
+- `notification-journals` - Journals notification toggle
+- `notification-system` - System notification toggle
+- `logout-button` - Logout button
+- `delete-account-button` - Delete account button
+- `delete-account-confirm-dialog` - Confirmation alert dialog
+- `delete-account-confirm-button` - Confirm deletion button
+
+### Common Patterns
+
+**Updating Display Name**:
+```typescript
+const { updateProfile } = useUpdateProfile();
+
+const handleDisplayNameChange = async (name: string) => {
+  const success = await updateProfile({ displayName: name });
+  if (success && profile) {
+    setProfile({ ...profile, display_name: name });
+  }
+};
+```
+
+**Uploading Profile Photo**:
+```typescript
+const { uploadPhoto, uploading } = useUploadProfilePhoto();
+
+const handlePhotoSelect = async () => {
+  const result = await launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.8,
+  });
+
+  if (!result.canceled) {
+    const url = await uploadPhoto(result.assets[0]);
+    if (url) {
+      setProfile({ ...profile, photo_url: url });
+    }
+  }
+};
+```
+
+**Deleting Account**:
+```typescript
+const { deleteAccount, deleting } = useDeleteAccount();
+const router = useRouter();
+
+const handleDeleteAccount = async () => {
+  const result = await deleteAccount();
+  if (result?.success) {
+    router.replace('/(auth)/login');
+  }
+};
+```
+
+### Photo Effects Feature
+
+**Character Overlay** (future enhancement):
+- Intensity levels: 0%, 30%, 60%, 100%
+- Slider control in ProfileSection
+- Effect applied client-side using ImageManipulator
+- Processed image uploaded to storage
+
+**Implementation Pattern**:
+```typescript
+import * as ImageManipulator from 'expo-image-manipulator';
+
+const applyPhotoEffect = async (uri: string, intensity: number) => {
+  // intensity: 0 | 30 | 60 | 100
+  const result = await ImageManipulator.manipulateAsync(
+    uri,
+    [],  // No crop/resize
+    {
+      compress: 0.8,
+      format: SaveFormat.JPEG,
+    }
+  );
+  // Apply character overlay based on intensity
+  // Upload processed image
+};
+```
+
+### Figma References
+- Settings Screen Design: https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=221-30543
+
+### Related Files
+
+**Source Files**:
+- `app/(tabs)/settings.tsx` - Main settings screen
+- `src/features/settings/components/ProfileSection.tsx` - Profile section
+- `src/features/settings/components/LocaleSelector.tsx` - Language selector
+- `src/features/settings/components/NotificationPreferences.tsx` - Notification toggles
+- `src/features/settings/components/AccountDeletionButton.tsx` - Account deletion
+- `src/features/settings/hooks/useUpdateProfile.ts` - Profile updates
+- `src/features/settings/hooks/useUploadProfilePhoto.ts` - Photo upload
+- `src/features/settings/hooks/useDeleteAccount.ts` - Account deletion
+
+**Test Files**:
+- `src/features/settings/hooks/__tests__/*.test.ts` - Unit tests
+- `__tests__/integration/settings-profile.test.ts` - Integration tests
+- `e2e/settings.test.ts` - E2E tests
+
+**Documentation**:
+- `claude_docs/21_settings.md` - SDD specification
+- `locales/en/settings.json` - English translations
+- `locales/ko/settings.json` - Korean translations
+
+**Edge Functions**:
+- `supabase/functions/delete-user-account/index.ts` - Account deletion
