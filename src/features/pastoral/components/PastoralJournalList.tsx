@@ -330,7 +330,7 @@ function EmptyState({ filter, membership }: EmptyStateProps) {
 
   return (
     <YStack flex={1} justifyContent="center" alignItems="center" padding="$6" gap="$4">
-      <TamaguiText fontSize="$6" color="$color4">
+      <TamaguiText fontSize={24} color="$color4">
         📝
       </TamaguiText>
       <TamaguiText fontSize="$lg" fontWeight="600" color="$color3" textAlign="center">
@@ -391,7 +391,7 @@ export function PastoralJournalList({
   if (error) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$6" gap="$4">
-        <TamaguiText fontSize="$6" color="$color4">
+        <TamaguiText fontSize={24} color="$color4">
           ⚠️
         </TamaguiText>
         <TamaguiText fontSize="$lg" fontWeight="600" color="$color">

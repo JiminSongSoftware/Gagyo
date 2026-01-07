@@ -446,7 +446,7 @@ export function CreatePastoralJournalForm({
   if (!canCreate) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$6">
-        <TamaguiText fontSize="$6" color="$color4">
+        <TamaguiText fontSize={24} color="$color4">
           🔒
         </TamaguiText>
         <TamaguiText
@@ -660,7 +660,7 @@ export function CreatePastoralJournalForm({
             size="$4"
             backgroundColor="$backgroundTertiary"
             color="$color"
-            onPress={handleSaveAsDraft}
+            onPress={() => void handleSaveAsDraft()}
             disabled={creating}
           >
             {creating ? (

@@ -4,19 +4,35 @@
  * Subscribes to Supabase real-time channels for message updates
  * in a specific conversation. Provides callbacks for insert, update,
  * and delete events.
+ *
+ * Note: Real-time payloads only include message table data, not related sender/user.
+ * For INSERT events, we fetch the full message with sender data.
  */
 
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { MessageWithSender } from '@/types/database';
+import type { MessageWithSender, MessageContentType } from '@/types/database';
 
 /**
  * Payload types for real-time events.
+ * Note: Real-time payloads don't include related data (sender, user).
  */
 interface MessageInsertPayload {
   eventType: 'INSERT';
-  new: MessageWithSender;
+  new: {
+    id: string;
+    tenant_id: string;
+    conversation_id: string;
+    sender_id: string;
+    parent_id: string | null;
+    content: string;
+    content_type: string;
+    is_event_chat: boolean;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+  };
   old: Record<string, never>;
 }
 
@@ -79,6 +95,79 @@ export interface MessageSubscriptionState {
    * Manually unsubscribe from the channel.
    */
   unsubscribe: () => void;
+}
+
+/**
+ * Fetch full message with sender data by ID.
+ * Used when real-time INSERT payload doesn't include related data.
+ */
+async function fetchFullMessage(
+  messageId: string,
+  tenantId: string
+): Promise<MessageWithSender | null> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(`
+      id,
+      tenant_id,
+      conversation_id,
+      sender_id,
+      parent_id,
+      content,
+      content_type,
+      is_event_chat,
+      created_at,
+      updated_at,
+      deleted_at,
+      sender:memberships!messages_sender_id_fkey (
+        id,
+        user:users!memberships_user_id_fkey (
+          id,
+          display_name,
+          photo_url
+        )
+      ),
+      replies:messages!parent_id(count)
+    `)
+    .eq('id', messageId)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const sender = data.sender as {
+    id: string;
+    user: { id: string; display_name: string | null; photo_url: string | null };
+  };
+
+  const replies = data.replies as { count: number }[] | undefined;
+  const reply_count = replies?.[0]?.count ?? 0;
+
+  return {
+    id: data.id,
+    tenant_id: data.tenant_id,
+    conversation_id: data.conversation_id,
+    sender_id: data.sender_id,
+    parent_id: data.parent_id,
+    content: data.content,
+    content_type: data.content_type as MessageContentType,
+    is_event_chat: data.is_event_chat,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    deleted_at: data.deleted_at,
+    sender: {
+      id: sender?.id ?? '',
+      user: {
+        id: sender?.user?.id ?? '',
+        display_name: sender?.user?.display_name ?? null,
+        photo_url: sender?.user?.photo_url ?? null,
+      },
+    },
+    reply_count,
+  } as MessageWithSender;
 }
 
 /**
@@ -147,9 +236,17 @@ export function useMessageSubscription(
             const typedPayload = payload as unknown as MessagePayload;
 
             switch (typedPayload.eventType) {
-              case 'INSERT':
-                callbacksRef.current.onInsert?.(typedPayload.new);
+              case 'INSERT': {
+                // Fetch full message with sender data since real-time payload doesn't include it
+                if (tenantId) {
+                  fetchFullMessage(typedPayload.new.id, tenantId).then((fullMessage) => {
+                    if (fullMessage) {
+                      callbacksRef.current.onInsert?.(fullMessage);
+                    }
+                  });
+                }
                 break;
+              }
               case 'UPDATE':
                 callbacksRef.current.onUpdate?.(typedPayload.new);
                 break;

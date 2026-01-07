@@ -2,9 +2,9 @@
  * Message list component.
  *
  * Displays a paginated list of messages with:
- * - FlatList with inverted prop (newest at bottom)
+ * - FlatList with newest at bottom (traditional chat view)
  * - Date separators between days
- * - Loading indicator at top for pagination
+ * - Loading indicator at bottom for pagination
  * - Empty state
  * - Error state
  * - Auto-scroll to bottom on new messages
@@ -86,7 +86,7 @@ export interface MessageListProps {
 }
 
 /**
- * Loading indicator for pagination (at the top).
+ * Loading indicator for pagination (at the bottom).
  */
 function LoadingMore() {
   return (
@@ -219,7 +219,7 @@ export function MessageList({
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 100;
 
-    // Check if near bottom
+    // Check if near bottom (for non-inverted list)
     isNearBottomRef.current =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
   }, []);
@@ -258,14 +258,14 @@ export function MessageList({
 
   const keyExtractor = useCallback((item: MessageWithSender) => item.id, []);
 
-  const ListHeaderComponent = useCallback(() => {
+  const ListFooterComponent = useCallback(() => {
     if (loadingMore) {
       return <LoadingMore />;
     }
     return null;
   }, [loadingMore]);
 
-  // Handle reaching start of list (for loading older messages)
+  // Handle reaching end of list (for loading older messages)
   const handleEndReached = useCallback(() => {
     if (hasMore && !loadingMore && onLoadMore) {
       onLoadMore();
@@ -308,14 +308,13 @@ export function MessageList({
       data={messages}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      ListHeaderComponent={ListHeaderComponent}
-      inverted // Messages flow from bottom to top (newest at bottom)
+      ListFooterComponent={ListFooterComponent}
       onEndReached={handleEndReached}
       onEndReachedThreshold={0.5}
       onScroll={handleScroll}
       scrollEventThrottle={400}
+      style={{ flex: 1 }}
       contentContainerStyle={{
-        flexGrow: 1,
         paddingVertical: 16,
       }}
       showsVerticalScrollIndicator={false}

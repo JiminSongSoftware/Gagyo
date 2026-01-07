@@ -1,4 +1,5 @@
 {
+  "chats": "Chats",
   "conversations": "Conversations",
   "messages": "Messages",
   "new_message": "New Message",
@@ -52,5 +53,12 @@
   "thread_reply_placeholder": "Reply to thread...",
   "thread_no_replies": "No replies yet",
   "thread_start_conversation": "Be the first to reply",
-  "thread_cannot_nest": "Cannot reply to a reply"
+  "thread_cannot_nest": "Cannot reply to a reply",
+  "upload_image": "Upload Image",
+  "cancel": "Cancel",
+  "search_conversations": "Search conversations...",
+  "new_chat": "New Chat",
+  "regular_chat": "Regular Chat",
+  "team_chat": "Team Chat",
+  "open_chat": "Open Chat"
 }

@@ -32,6 +32,9 @@
       "@/*": [
         "src/*"
       ],
+      "@/assets/*": [
+        "assets/*"
+      ],
       "@atoms/*": [
         "src/atoms/*"
       ],

@@ -10,6 +10,16 @@
   "delete": "Delete",
   "edit": "Edit",
   "network_error": "A network error occurred. Please check your connection and try again.",
+  "common": {
+    "nav": {
+      "home": "Home",
+      "chat": "Chat",
+      "prayer": "Prayer",
+      "pastoral": "Pastoral Diary",
+      "images": "Images",
+      "settings": "Settings"
+    }
+  },
   "chat": {
     "title": "Chat",
     "chat": "Chat",
@@ -31,6 +41,34 @@
     "thread_reply_placeholder": "Write a reply...",
     "thread_no_replies": "No replies yet",
     "thread_start_conversation": "Be the first to reply",
-    "thread_cannot_nest": "Cannot reply to a reply"
+    "thread_cannot_nest": "Cannot reply to a reply",
+    "menu": {
+      "photos": "Photos",
+      "videos": "Videos",
+      "files": "Files",
+      "participants": "Participants",
+      "chat_settings": "Chat Settings"
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "search_placeholder": "Search",
+    "empty_state": "No contacts found",
+    "no_results": "No contacts match your search",
+    "categories": {
+      "small_group": "Small Groups",
+      "zone": "Prairies",
+      "group_team": "Groups / Teams",
+      "member": "Members",
+      "all": "All"
+    },
+    "filters": {
+      "all": "All",
+      "small_group": "Small Groups",
+      "zone": "Prairies",
+      "group_team": "Groups / Teams",
+      "member": "Members",
+      "external": "External"
+    }
   }
 }

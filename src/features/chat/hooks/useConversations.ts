@@ -8,6 +8,89 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { ConversationWithLastMessage, MessageContentType } from '@/types/database';
 
+// Mock conversations for testing - remove when real data exists
+// Using valid UUIDs to avoid database errors when clicked
+const MOCK_CONVERSATIONS: (ConversationWithLastMessage & { isMock?: boolean })[] = [
+  {
+    id: '00000000-0000-0000-0000-000000000001',
+    tenant_id: '00000000-0000-0000-0000-000000000009',
+    type: 'direct',
+    name: null,
+    small_group_id: null,
+    ministry_id: null,
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 3600000).toISOString(),
+    last_message: {
+      id: '00000000-0000-0000-0000-000000000011',
+      content: '안녕하세요! 이번 주 목장 모임 언제인가요?',
+      content_type: 'text' as MessageContentType,
+      created_at: new Date(Date.now() - 3600000).toISOString(),
+      sender: {
+        id: '00000000-0000-0000-0000-000000000021',
+        user: {
+          id: '00000000-0000-0000-0000-000000000031',
+          display_name: '김철수',
+        },
+      },
+    },
+    unread_count: 2,
+    participant_names: ['김철수'],
+    isMock: true,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000002',
+    tenant_id: '00000000-0000-0000-0000-000000000009',
+    type: 'small_group',
+    name: '모로카 목장',
+    small_group_id: 'sg-1',
+    ministry_id: null,
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+    updated_at: new Date(Date.now() - 7200000).toISOString(),
+    last_message: {
+      id: '00000000-0000-0000-0000-000000000012',
+      content: '다음 모임은 일요일 오후 2시에 하겠습니다.',
+      content_type: 'text' as MessageContentType,
+      created_at: new Date(Date.now() - 7200000).toISOString(),
+      sender: {
+        id: '00000000-0000-0000-0000-000000000022',
+        user: {
+          id: '00000000-0000-0000-0000-000000000032',
+          display_name: '목자님',
+        },
+      },
+    },
+    unread_count: 0,
+    participant_names: undefined,
+    isMock: true,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000003',
+    tenant_id: '00000000-0000-0000-0000-000000000009',
+    type: 'ministry',
+    name: '찬양팀',
+    small_group_id: null,
+    ministry_id: 'ministry-1',
+    created_at: new Date(Date.now() - 259200000).toISOString(),
+    updated_at: new Date(Date.now() - 86400000).toISOString(),
+    last_message: {
+      id: '00000000-0000-0000-0000-000000000013',
+      content: '이번 주 연습은 수요일 저녁 7시입니다.',
+      content_type: 'text' as MessageContentType,
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      sender: {
+        id: '00000000-0000-0000-0000-000000000023',
+        user: {
+          id: '00000000-0000-0000-0000-000000000033',
+          display_name: '박지성',
+        },
+      },
+    },
+    unread_count: 5,
+    participant_names: undefined,
+    isMock: true,
+  },
+];
+
 export interface ConversationsState {
   conversations: ConversationWithLastMessage[];
   loading: boolean;
@@ -73,7 +156,8 @@ export function useConversations(
       }
 
       if (!participantData || participantData.length === 0) {
-        setConversations([]);
+        // Use mock data for testing when no conversations exist
+        setConversations(MOCK_CONVERSATIONS);
         setLoading(false);
         return;
       }

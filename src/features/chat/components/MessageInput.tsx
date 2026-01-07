@@ -9,16 +9,49 @@
  * - Error display
  * - Event Chat mode for selective message visibility
  * - Image upload button
- * - Typing indicator support (future)
+ * - Emoji picker with predefined emoji sets
+ * - Plus icon menu for additional options
+ * - Safe area padding for iPhone home indicator
+ *
+ * Layout (left to right):
+ * - Plus icon (opens action sheet with options)
+ * - Text input
+ * - Smile icon (opens emoji picker)
+ * - Send button
  */
 
-import { useCallback, useState, useRef, useEffect } from 'react';
-import { TextInput, Pressable, Platform, ActivityIndicator } from 'react-native';
-import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
-import type { SendMessageOptions } from '../hooks/useSendMessage';
-import { EventChatSelector } from './EventChatSelector';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActionSheetIOS,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  Pressable,
+  TextInput,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
+import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
 import { useImageUpload } from '../hooks/useImageUpload';
+import type { SendMessageOptions } from '../hooks/useSendMessage';
+import { EmojiPicker } from './EmojiPicker';
+import { EventChatSelector } from './EventChatSelector';
+
+// Import icon assets from assets folder (PNG files)
+const PLUS_ICON = require('../../../../assets/plus-circle.png');
+const SMILE_ICON = require('../../../../assets/smile.png');
+const SEND_ICON = require('../../../../assets/send.png');
+
+// Close icon SVG (inline since no PNG provided)
+function CloseIcon({ size = 24, color = '#8e8e93' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
+      <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
 
 export interface MessageInputProps {
   /**
@@ -105,17 +138,36 @@ export function MessageInput({
 }: MessageInputProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [inputText, setInputText] = useState('');
-  const [inputHeight, setInputHeight] = useState(40);
+  const [_inputHeight, setInputHeight] = useState(40);
   const textInputRef = useRef<TextInput>(null);
+
+  // Track if we just sent a message to clear input after send completes
+  const justSentRef = useRef(false);
+
+  // Reset input on successful send
+  useEffect(() => {
+    if (!sending && justSentRef.current) {
+      setInputText('');
+      setInputHeight(40);
+      justSentRef.current = false;
+    }
+    if (sending) {
+      justSentRef.current = true;
+    }
+  }, [sending]);
 
   // Event Chat state
   const [isEventChatMode, setIsEventChatMode] = useState(false);
   const [excludedMembershipIds, setExcludedMembershipIds] = useState<string[]>([]);
   const [selectorVisible, setSelectorVisible] = useState(false);
 
-  // Image upload hook - pass context params so pickAndUploadImage requires no arguments
+  // Emoji picker state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // Image upload hook
   const {
     pickAndUploadImage,
     uploading,
@@ -123,19 +175,23 @@ export function MessageInput({
     clearError: clearImageError,
   } = useImageUpload(conversationId ?? null, tenantId ?? null, currentMembershipId ?? null);
 
-  const actualPlaceholder = placeholder || t('chat.message_placeholder');
-
-  // Determine if image upload is available - ensure all props are non-null before enabling
+  const actualPlaceholder = placeholder ?? t('chat.message_placeholder');
   const canUploadImages = showImageUpload && conversationId && tenantId && currentMembershipId;
+
+  // Track if we just sent a message to clear input after send completes
+  const justSentRef = useRef(false);
 
   // Reset input on successful send
   useEffect(() => {
-    if (!sending && inputText.trim()) {
-      // Send was successful, clear input
+    if (!sending && justSentRef.current) {
       setInputText('');
       setInputHeight(40);
+      justSentRef.current = false;
     }
-  }, [sending, inputText]);
+    if (sending) {
+      justSentRef.current = true;
+    }
+  }, [sending]);
 
   const handleSend = useCallback(async () => {
     const trimmed = inputText.trim();
@@ -145,6 +201,7 @@ export function MessageInput({
 
     setInputText('');
     setInputHeight(40);
+    setShowEmojiPicker(false);
 
     try {
       if (isEventChatMode && onSendEventChat && excludedMembershipIds.length > 0) {
@@ -156,11 +213,9 @@ export function MessageInput({
         await onSend(trimmed);
       }
 
-      // Reset Event Chat mode after successful send
       setIsEventChatMode(false);
       setExcludedMembershipIds([]);
     } catch {
-      // Restore input on error
       setInputText(trimmed);
     }
   }, [inputText, sending, onSend, isEventChatMode, onSendEventChat, excludedMembershipIds]);
@@ -188,14 +243,17 @@ export function MessageInput({
     []
   );
 
-  // Handle image upload
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    setInputText((prev) => prev + emoji);
+    textInputRef.current?.focus();
+  }, []);
+
   const handleImageUpload = useCallback(async () => {
     if (!canUploadImages || uploading) {
       return;
     }
 
     clearImageError();
-
     const result = await pickAndUploadImage();
 
     if (result) {
@@ -203,29 +261,68 @@ export function MessageInput({
     }
   }, [canUploadImages, uploading, clearImageError, pickAndUploadImage, onImageUploaded]);
 
+  // Show action sheet for plus icon
+  const handlePlusPress = useCallback(() => {
+    const options = [
+      t('chat.upload_image'),
+      t('chat.cancel'),
+    ];
+
+    const cancelButtonIndex = 1;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            void handleImageUpload();
+          }
+        }
+      );
+    } else {
+      // For Android, show a simple alert
+      Alert.alert(
+        t('chat.attachment'),
+        undefined,
+        [
+          {
+            text: t('chat.upload_image'),
+            onPress: () => void handleImageUpload(),
+          },
+          {
+            text: t('chat.cancel'),
+            style: 'cancel',
+          },
+        ]
+      );
+    }
+  }, [t, handleImageUpload, canUploadImages, uploading]);
+
+  const handleToggleEmojiPicker = useCallback(() => {
+    setShowEmojiPicker((prev) => !prev);
+  }, []);
+
   const canSend = inputText.trim().length > 0 && !sending;
   const charCount = inputText.length;
   const nearLimit = charCount > maxLength * 0.9;
-
   const hasEventChatSupport = onSendEventChat && conversationId && tenantId && currentMembershipId;
 
   return (
     <>
       <Stack
-        testID={testID || 'message-input'}
-        borderWidth={1}
-        borderColor="$borderLight"
-        borderRadius="$3"
+        testID={testID ?? 'message-input'}
         backgroundColor="$background"
-        padding="$2"
-        gap="$2"
+        borderTopWidth={1}
+        borderTopColor="$borderLight"
       >
         {/* Error display */}
         {error && (
           <Stack
             testID="message-input-error"
             backgroundColor="$dangerLight"
-            borderRadius="$2"
             paddingHorizontal="$3"
             paddingVertical="$2"
           >
@@ -240,7 +337,6 @@ export function MessageInput({
           <XStack
             testID="image-upload-error"
             backgroundColor="$dangerLight"
-            borderRadius="$2"
             paddingHorizontal="$3"
             paddingVertical="$2"
             alignItems="center"
@@ -262,7 +358,6 @@ export function MessageInput({
           <XStack
             testID="event-chat-mode-indicator"
             backgroundColor="$warningLight"
-            borderRadius="$2"
             paddingHorizontal="$3"
             paddingVertical="$2"
             alignItems="center"
@@ -281,9 +376,54 @@ export function MessageInput({
           </XStack>
         )}
 
-        <Stack flexDirection="row" alignItems="flex-end" gap="$2">
+        {/* Emoji Picker - rendered above the input bar */}
+        {showEmojiPicker && (
+          <EmojiPicker
+            onEmojiSelect={handleEmojiSelect}
+            testID="emoji-picker-panel"
+          />
+        )}
+
+        {/* Input bar */}
+        <XStack
+          alignItems="flex-end"
+          gap="$2"
+          paddingHorizontal="$3"
+          paddingVertical="$2"
+          paddingBottom={Platform.OS === 'ios' ? insets.bottom : 1}
+        >
+          {/* Plus icon button */}
+          <Pressable
+            testID="plus-menu-button"
+            onPress={handlePlusPress}
+            disabled={sending}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Stack
+              width={40}
+              height={40}
+              borderRadius={20}
+              backgroundColor="$backgroundTertiary"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Image
+                source={PLUS_ICON}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+                tintColor="#8e8e93"
+              />
+            </Stack>
+          </Pressable>
+
           {/* Text input */}
-          <Stack flex={1} backgroundColor="$backgroundTertiary" borderRadius="$2" minHeight={40}>
+          <Stack
+            flex={1}
+            backgroundColor="$backgroundTertiary"
+            borderRadius="$2"
+            minHeight={40}
+            justifyContent="center"
+          >
             <TextInput
               ref={textInputRef}
               testID="message-text-input"
@@ -291,8 +431,7 @@ export function MessageInput({
               onChangeText={handleChangeText}
               onContentSizeChange={handleContentSizeChange}
               placeholder={actualPlaceholder}
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-              placeholderTextColor={theme.color3?.val}
+              placeholderTextColor={theme.color3?.val as string}
               multiline
               maxLength={maxLength}
               style={{
@@ -302,104 +441,84 @@ export function MessageInput({
                   android: 8,
                 }),
                 fontSize: 16,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                color: theme.color1?.val,
-                minHeight: inputHeight,
+                color: theme.color1?.val as string,
+                minHeight: 40,
                 maxHeight: 100,
-                textAlignVertical: 'top',
               }}
               returnKeyType="send"
               onSubmitEditing={canSend ? () => void handleSend() : undefined}
               blurOnSubmit={false}
               editable={!sending}
+              enablesReturnKeyAutomatically={false}
             />
           </Stack>
 
-          {/* Image upload button */}
-          {canUploadImages && (
-            <Pressable
-              testID="image-upload-button"
-              onPress={() => void handleImageUpload()}
-              disabled={sending || uploading}
-              style={({ pressed }) => ({
-                opacity: pressed || uploading ? 0.5 : 1,
-              })}
-            >
-              <Stack
-                width={40}
-                height={40}
-                borderRadius={20}
-                backgroundColor="$backgroundTertiary"
-                alignItems="center"
-                justifyContent="center"
-              >
-                {uploading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={(theme.primary as { val?: string })?.val ?? '#007AFF'}
-                  />
-                ) : (
-                  <TamaguiText fontSize="$lg">📷</TamaguiText>
-                )}
-              </Stack>
-            </Pressable>
-          )}
-
-          {/* Event Chat button */}
-          {hasEventChatSupport && !isEventChatMode && (
-            <Pressable
-              testID="event-chat-button"
-              onPress={() => setSelectorVisible(true)}
-              disabled={sending}
-            >
-              <Stack
-                width={40}
-                height={40}
-                borderRadius={20}
-                backgroundColor="$backgroundTertiary"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <TamaguiText fontSize="$lg">👁️</TamaguiText>
-              </Stack>
-            </Pressable>
-          )}
-
-          {/* Send button */}
+          {/* Smile/Emoji picker toggle button */}
           <Pressable
-            testID={isEventChatMode ? 'event-chat-send-button' : 'send-message-button'}
-            onPress={() => void handleSend()}
-            disabled={!canSend}
-            style={({ pressed }) => ({
-              opacity: pressed || !canSend ? 0.5 : 1,
-            })}
+            testID="emoji-picker-button"
+            onPress={handleToggleEmojiPicker}
+            disabled={sending}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Stack
               width={40}
               height={40}
               borderRadius={20}
-              backgroundColor={
-                isEventChatMode ? '$warning' : canSend ? '$primary' : '$backgroundTertiary'
-              }
+              backgroundColor={showEmojiPicker ? '$primary' : '$backgroundTertiary'}
               alignItems="center"
               justifyContent="center"
             >
-              {sending ? (
-                <TamaguiText fontSize="$xs" color="white">
-                  ...
-                </TamaguiText>
+              {showEmojiPicker ? (
+                <CloseIcon size={20} color="white" />
               ) : (
-                <TamaguiText fontSize="$md" color={isEventChatMode ? 'white' : 'white'}>
-                  {isEventChatMode ? 'EC' : t('chat.send')}
-                </TamaguiText>
+                <Image
+                  source={SMILE_ICON}
+                  style={{ width: 24, height: 24 }}
+                  resizeMode="contain"
+                />
               )}
             </Stack>
           </Pressable>
-        </Stack>
+
+          {/* Send button - only show when typing or in event chat mode */}
+          {(canSend || isEventChatMode) && (
+            <Pressable
+              testID={isEventChatMode ? 'event-chat-send-button' : 'send-message-button'}
+              onPress={() => void handleSend()}
+              disabled={!canSend}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Stack
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor={
+                  isEventChatMode ? '$warning' : canSend ? '$primary' : '$backgroundTertiary'
+                }
+                alignItems="center"
+                justifyContent="center"
+              >
+                {sending ? (
+                  <ActivityIndicator
+                    size="small"
+                    color="white"
+                  />
+                ) : (
+                  <Image
+                    source={SEND_ICON}
+                    style={{ width: 24, height: 24 }}
+                    resizeMode="contain"
+                    tintColor={canSend || isEventChatMode ? 'white' : '#8e8e93'}
+                  />
+                )}
+              </Stack>
+            </Pressable>
+          )}
+        </XStack>
 
         {/* Character count */}
         {nearLimit && (
-          <Stack alignItems="flex-end">
+          <Stack alignItems="flex-end" paddingHorizontal="$3" paddingBottom="$2">
             <TamaguiText
               testID="character-count"
               fontSize="$xs"

@@ -18,7 +18,7 @@ export interface ConversationListItemProps {
   /**
    * The conversation data to display.
    */
-  conversation: ConversationWithLastMessage;
+  conversation: ConversationWithLastMessage & { isMock?: boolean };
 
   /**
    * Callback when the conversation is pressed.
@@ -110,8 +110,10 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
   const { t } = useTranslation();
 
   const handlePress = useCallback(() => {
+    // Don't allow clicking on mock conversations
+    if (conversation.isMock) return;
     onPress(conversation.id);
-  }, [conversation.id, onPress]);
+  }, [conversation.id, conversation.isMock, onPress]);
 
   const displayName = getConversationDisplayName(conversation);
   const lastMessagePreview = getLastMessagePreview(conversation);
@@ -119,6 +121,7 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
     ? formatTimestamp(conversation.last_message.created_at, t)
     : null;
   const hasUnread = conversation.unread_count > 0;
+  const isMock = conversation.isMock;
 
   // Generate testID based on conversation name
   const itemTestID =
@@ -128,8 +131,9 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
     <Pressable
       onPress={handlePress}
       testID={itemTestID}
-      accessibilityRole="button"
+      accessibilityRole={isMock ? undefined : "button"}
       accessibilityLabel={`${displayName} conversation`}
+      style={{ opacity: isMock ? 0.5 : 1 }}
     >
       <Stack
         flexDirection="row"

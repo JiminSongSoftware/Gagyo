@@ -171,6 +171,40 @@ function PrayerCardMessage({
 }
 
 /**
+ * Render message content based on type.
+ * Returns a single element to avoid whitespace issues between siblings.
+ */
+function MessageContentView({
+  contentType,
+  content,
+  isOwnMessage,
+  textColor,
+  handlePress,
+}: {
+  contentType: string;
+  content: string | null;
+  isOwnMessage: boolean;
+  textColor: string;
+  handlePress: () => void;
+}) {
+  console.log('[MessageContentView] Rendering with new code', contentType);
+  // Render content and timestamp in a single Stack to avoid sibling whitespace
+  return (
+    <Stack gap="$2">
+      {contentType === 'image' ? (
+        <ImageMessage content={content} onPress={handlePress} />
+      ) : contentType === 'prayer_card' ? (
+        <PrayerCardMessage content={content} isOwnMessage={isOwnMessage} />
+      ) : (
+        <TamaguiText testID="message-content" fontSize="$md" color={textColor} lineHeight="$5">
+          {content || ''}
+        </TamaguiText>
+      )}
+    </Stack>
+  );
+}
+
+/**
  * MessageBubble component.
  */
 export function MessageBubble({
@@ -214,6 +248,7 @@ export function MessageBubble({
       testID={testID || `message-${message.id}`}
       style={alignmentStyle}
       maxWidth="80%"
+      marginHorizontal="$3"
       marginBottom="$2"
     >
       {/* Sender info for group chats */}
@@ -232,65 +267,9 @@ export function MessageBubble({
         </Pressable>
       )}
 
-      {/* Message bubble */}
+      {/* Message bubble - renders content and timestamp */}
       <Pressable onPress={handlePress}>
-        <Stack borderRadius="$3" padding="$3" backgroundColor={backgroundColor} gap="$2">
-          {/* Message content based on type */}
-          {message.content_type === 'image' && (
-            <ImageMessage content={message.content} onPress={handlePress} />
-          )}
-
-          {message.content_type === 'prayer_card' && (
-            <PrayerCardMessage content={message.content} isOwnMessage={isOwnMessage} />
-          )}
-
-          {message.content_type === 'text' && (
-            <TamaguiText testID="message-content" fontSize="$md" color={textColor} lineHeight="$5">
-              {message.content || ''}
-            </TamaguiText>
-          )}
-
-          {/* Timestamp and reply count */}
-          <Stack
-            flexDirection="row"
-            alignItems="center"
-            gap="$2"
-            alignSelf={isOwnMessage ? 'flex-end' : 'flex-start'}
-          >
-            <TamaguiText
-              testID="message-timestamp"
-              fontSize="$xs"
-              color={isOwnMessage ? '$primaryLight' : '$color3'}
-            >
-              {formatMessageTime(message.created_at)}
-            </TamaguiText>
-
-            {/* Thread reply count indicator */}
-            {showThreadIndicator && message.reply_count && message.reply_count > 0 && (
-              <Stack
-                testID="reply-count-badge"
-                flexDirection="row"
-                alignItems="center"
-                gap="$1"
-                backgroundColor={isOwnMessage ? '$primaryDark' : '$backgroundTertiary'}
-                borderRadius={8}
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-              >
-                <TamaguiText testID="reply-count-text" fontSize="$xs" color={isOwnMessage ? 'white' : '$color2'}>
-                  {message.reply_count}
-                </TamaguiText>
-              </Stack>
-            )}
-
-            {/* Event Chat indicator (only for sender) */}
-            {message.is_event_chat && isOwnMessage && (
-              <TamaguiText fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>
-                👁️
-              </TamaguiText>
-            )}
-          </Stack>
-        </Stack>
+        <Stack borderRadius="$3" padding="$3" backgroundColor={backgroundColor}><MessageContentView contentType={message.content_type} content={message.content} isOwnMessage={isOwnMessage} textColor={textColor} handlePress={handlePress} /><Stack flexDirection="row" alignItems="center" gap="$2" style={{ alignSelf: isOwnMessage ? 'flex-end' : 'flex-start' }}><TamaguiText testID="message-timestamp" fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>{formatMessageTime(message.created_at)}</TamaguiText>{showThreadIndicator && message.reply_count && message.reply_count > 0 ? <Stack testID="reply-count-badge" flexDirection="row" alignItems="center" gap="$1" backgroundColor={isOwnMessage ? '$primaryDark' : '$backgroundTertiary'} borderRadius={8} paddingHorizontal="$2" paddingVertical="$1"><TamaguiText testID="reply-count-text" fontSize="$xs" color={isOwnMessage ? 'white' : '$color2'}>{message.reply_count}</TamaguiText></Stack> : null}{message.is_event_chat && isOwnMessage ? <TamaguiText fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>👁️</TamaguiText> : null}</Stack></Stack>
       </Pressable>
     </Stack>
   );

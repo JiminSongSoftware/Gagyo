@@ -313,10 +313,10 @@ export default function ThreadViewScreen() {
       alignItems="center"
       padding="$4"
     >
-      <Text color="$colorSubtle" fontSize="$5" textAlign="center">
+      <Text color="$colorSubtle" fontSize={20} textAlign="center">
         {t('chat.thread_no_replies')}
       </Text>
-      <Text color="$colorSubtle" fontSize="$3" textAlign="center" marginTop="$2">
+      <Text color="$colorSubtle" fontSize={12} textAlign="center" marginTop="$2">
         {t('chat.thread_start_conversation')}
       </Text>
     </YStack>
@@ -331,7 +331,7 @@ export default function ThreadViewScreen() {
           headerShown: true,
           headerLeft: () => (
             <TamaguiStack testID="thread-back-button" px="$4" onPress={handleBack}>
-              <TamaguiText fontSize="$8" color={theme.color1?.val}>
+              <TamaguiText fontSize={40} color={theme.color1?.val}>
                 ←
               </TamaguiText>
             </TamaguiStack>
@@ -482,12 +482,12 @@ function ThreadReplyInput({
         </TouchableOpacity>
       </XStack>
       {error && (
-        <TamaguiText color="$red10" fontSize="$2" marginTop="$1">
+        <TamaguiText color="$red10" fontSize={14} marginTop="$1">
           {error.message}
         </TamaguiText>
       )}
       {!enabled && (
-        <TamaguiText color="$colorSubtle" fontSize="$2" marginTop="$1">
+        <TamaguiText color="$colorSubtle" fontSize={14} marginTop="$1">
           Loading conversation...
         </TamaguiText>
       )}

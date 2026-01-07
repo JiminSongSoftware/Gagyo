@@ -13,7 +13,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Pressable,
   ScrollView,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import {
@@ -110,7 +109,7 @@ const ParticipantItem = styled(Pressable, {
   borderBottomWidth: 1,
   borderBottomColor: '$borderLight',
   backgroundColor: '$background',
-} as any); // Pressable styling workaround
+} as unknown); // Pressable styling workaround
 
 const Avatar = styled(Stack, {
   name: 'Avatar',
@@ -177,11 +176,22 @@ export function EventChatSelector({
         // Transform data and filter out current user
         const transformedData =
           data
-            ?.map((item: any) => ({
-              membership_id: item.membership_id,
-              display_name: item.memberships?.users?.display_name,
-              photo_url: item.memberships?.users?.photo_url,
-            }))
+            ?.map((item: unknown) => {
+              const member = item as {
+                membership_id: string;
+                memberships?: {
+                  users?: {
+                    display_name: string | null;
+                    photo_url: string | null;
+                  };
+                };
+              };
+              return {
+                membership_id: member.membership_id,
+                display_name: member.memberships?.users?.display_name,
+                photo_url: member.memberships?.users?.photo_url,
+              };
+            })
             .filter((p) => p.membership_id !== currentMembershipId) ?? [];
 
         setParticipants(transformedData);
@@ -192,7 +202,7 @@ export function EventChatSelector({
       }
     };
 
-    fetchParticipants();
+    void fetchParticipants();
   }, [visible, conversationId, tenantId, currentMembershipId]);
 
   // Reset selections when modal closes
@@ -429,8 +439,8 @@ function AvatarImage({ uri }: { uri: string }) {
     >
       {/* In a real implementation, this would use Image component */}
       {/* <Image source={{ uri }} style={{ width: 40, height: 40 }} /> */}
-      <TamaguiText fontSize="$xs" color="$color3" padding="$2">
-        Avatar
+      <TamaguiText fontSize="$xs" color="$color1" padding="$2">
+        {uri}
       </TamaguiText>
     </Stack>
   );

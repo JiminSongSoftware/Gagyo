@@ -330,7 +330,7 @@ function CommentForm({
         size="$3"
         backgroundColor="$primary"
         color="white"
-        onPress={handleSubmit}
+        onPress={() => void handleSubmit()}
         disabled={!content.trim() || adding}
       >
         {adding ? (
@@ -460,7 +460,7 @@ export function PastoralJournalDetail({
   if (!journal) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$6">
-        <TamaguiText fontSize="$6" color="$color4">
+        <TamaguiText fontSize={24} color="$color4">
           📝
         </TamaguiText>
         <TamaguiText fontSize="$lg" fontWeight="600" color="$color" marginTop="$4">

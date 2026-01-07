@@ -98,7 +98,7 @@ export default function PastoralScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('pastoral.create_journal')}
         >
-          <TamaguiText fontSize="$8" color="white" fontWeight="bold">
+          <TamaguiText fontSize={40} color="white" fontWeight="bold">
             +
           </TamaguiText>
         </FAB>

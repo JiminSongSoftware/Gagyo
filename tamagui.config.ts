@@ -1,6 +1,8 @@
 import { createTamagui } from '@tamagui/core';
 
 const fontSizeTokens = {
+  '1': 16, // Default font size for Tamagui (use string key)
+  true: 16, // Default font size for Tamagui (boolean key for New Architecture)
   xs: 12,
   sm: 14,
   md: 16,
@@ -204,8 +206,8 @@ const bodyFont = {
   family:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   size: {
-    ...fontSizeTokens,
-    1: 12,
+    ...fontSizeTokens, // Includes 1: 16, true: 16, xs: 12, sm: 14, md: 16, lg: 18, etc.
+    // Additional body-specific sizes (numbered keys for different body sizes)
     2: 14,
     3: 16,
     4: 18,

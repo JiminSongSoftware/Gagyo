@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import { TamaguiProvider, Text, YStack, useThemeName } from 'tamagui';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTranslation, i18n } from '@/i18n';
 import config from '../tamagui.config';
@@ -60,16 +61,16 @@ function ErrorFallback({
       backgroundColor="$background"
     >
       <YStack alignItems="center" gap="$4">
-        <Text fontSize="$8" color="$danger">
+        <Text fontSize={40} color="$danger">
           ⚠️
         </Text>
-        <Text fontSize="$6" fontWeight="bold" color="$color">
+        <Text fontSize={24} fontWeight="bold" color="$color">
           {t('errors.something_went_wrong')}
         </Text>
-        <Text fontSize="$4" textAlign="center" color="$colorHover">
+        <Text fontSize={16} textAlign="center" color="$colorHover">
           {t('errors.app_crashed')}
         </Text>
-        <Text fontSize="$3" color="$colorHover" textAlign="center" numberOfLines={3} maxWidth={300}>
+        <Text fontSize={12} color="$colorHover" textAlign="center" numberOfLines={3} maxWidth={300}>
           {errorMessage}
         </Text>
         <YStack
@@ -80,7 +81,7 @@ function ErrorFallback({
           pressStyle={{ opacity: 0.8 }}
           onPress={resetError}
         >
-          <Text color="white" fontWeight="600" fontSize="$4">
+          <Text color="white" fontWeight="600" fontSize={16}>
             {t('errors.try_again')}
           </Text>
         </YStack>
@@ -106,32 +107,38 @@ function AuthGuard() {
 
   useEffect(() => {
     // Load tenant context on mount
+    console.log('[AuthGuard] Loading tenant from storage...');
     void loadTenantFromStorage();
   }, [loadTenantFromStorage]);
 
   useEffect(() => {
+    console.log('[AuthGuard] State:', { authLoading, tenantLoading, user: !!user, activeTenantId, segments });
     if (authLoading || tenantLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    console.log('[AuthGuard] Redirect check:', { user: !!user, activeTenantId, inAuthGroup, segments });
 
     // Redirect logic
     if (!user && !inAuthGroup) {
       // Not authenticated → go to login
+      console.log('[AuthGuard] Redirecting to login...');
       router.replace('/(auth)/login');
     } else if (user && !activeTenantId && !inAuthGroup) {
       // Authenticated but no tenant → go to tenant selection
+      console.log('[AuthGuard] Redirecting to tenant selection...');
       router.replace('/(auth)/tenant-selection');
     } else if (user && activeTenantId && inAuthGroup) {
       // Authenticated with tenant → go to main app
+      console.log('[AuthGuard] Redirecting to tabs...');
       router.replace('/(tabs)');
     }
   }, [user, activeTenantId, segments, authLoading, tenantLoading, router]);
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <StatusBarWrapper />
       <Slot />
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -177,15 +184,17 @@ export default function RootLayout() {
   }
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <TamaguiProvider config={config} defaultTheme={theme}>
-        <Sentry.ErrorBoundary fallback={ErrorFallback}>
-          <NotificationHandlerWrapper>
-            <AuthGuard />
-          </NotificationHandlerWrapper>
-        </Sentry.ErrorBoundary>
-      </TamaguiProvider>
-    </I18nextProvider>
+    <SafeAreaProvider>
+      <I18nextProvider i18n={i18n}>
+        <TamaguiProvider config={config} defaultTheme={theme}>
+          <Sentry.ErrorBoundary fallback={ErrorFallback}>
+            <NotificationHandlerWrapper>
+              <AuthGuard />
+            </NotificationHandlerWrapper>
+          </Sentry.ErrorBoundary>
+        </TamaguiProvider>
+      </I18nextProvider>
+    </SafeAreaProvider>
   );
 }
 
