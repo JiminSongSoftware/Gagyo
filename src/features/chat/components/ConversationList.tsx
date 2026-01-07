@@ -91,19 +91,10 @@ function EmptyState() {
       gap="$3"
     >
       <TamaguiText fontSize={48}>💬</TamaguiText>
-      <TamaguiText
-        fontSize="$lg"
-        fontWeight="600"
-        color="$color1"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
         {t('chat.empty_state')}
       </TamaguiText>
-      <TamaguiText
-        fontSize="$md"
-        color="$color2"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$md" color="$color2" textAlign="center">
         {t('chat.empty_state_description')}
       </TamaguiText>
     </Stack>
@@ -115,13 +106,7 @@ function EmptyState() {
  */
 function LoadingState() {
   return (
-    <Stack
-      flex={1}
-      alignItems="center"
-      justifyContent="center"
-      padding="$6"
-      gap="$3"
-    >
+    <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
       <Spinner size="large" color="$primary" />
       <TamaguiText fontSize="$md" color="$color2">
         {t('loading')}
@@ -135,27 +120,12 @@ function LoadingState() {
  */
 function ErrorState({ error }: { error: Error }) {
   return (
-    <Stack
-      flex={1}
-      alignItems="center"
-      justifyContent="center"
-      padding="$6"
-      gap="$3"
-    >
+    <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
       <TamaguiText fontSize={48}>⚠️</TamaguiText>
-      <TamaguiText
-        fontSize="$lg"
-        fontWeight="600"
-        color="$danger"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$lg" fontWeight="600" color="$danger" textAlign="center">
         {t('error')}
       </TamaguiText>
-      <TamaguiText
-        fontSize="$md"
-        color="$color2"
-        textAlign="center"
-      >
+      <TamaguiText fontSize="$md" color="$color2" textAlign="center">
         {error.message}
       </TamaguiText>
     </Stack>
@@ -190,8 +160,8 @@ export function ConversationList({
       if (conv.name?.toLowerCase().includes(query)) {
         return true;
       }
-      // Search in participant names (for direct messages)
-      if (conv.participant_names?.some((name) => name.toLowerCase().includes(query))) {
+      // Search in participant names (for direct messages) - filter out null/undefined first
+      if (conv.participant_names?.some((name) => name?.toLowerCase().includes(query) ?? false)) {
         return true;
       }
       // Search in last message content
@@ -202,35 +172,31 @@ export function ConversationList({
     });
   }, [conversations, searchQuery]);
 
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-    onSearchChange?.(query);
-  }, [onSearchChange]);
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      onSearchChange?.(query);
+    },
+    [onSearchChange]
+  );
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<ConversationWithLastMessage>) => (
-      <ConversationListItem
-        conversation={item}
-        onPress={onConversationPress}
-      />
+      <ConversationListItem conversation={item} onPress={onConversationPress} />
     ),
     [onConversationPress]
   );
 
-  const keyExtractor = useCallback(
-    (item: ConversationWithLastMessage) => item.id,
-    []
-  );
+  const keyExtractor = useCallback((item: ConversationWithLastMessage) => item.id, []);
 
   // ListHeaderComponent for the header
-  const ListHeader = useCallback(() => (
-    showHeader ? (
-      <ChatListHeader
-        onSearchChange={handleSearchChange}
-        onNewChat={onNewChat}
-      />
-    ) : null
-  ), [showHeader, handleSearchChange, onNewChat]);
+  const ListHeader = useCallback(
+    () =>
+      showHeader ? (
+        <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} />
+      ) : null,
+    [showHeader, handleSearchChange, onNewChat]
+  );
 
   // Show loading state on initial load
   if (loading && conversations.length === 0) {
