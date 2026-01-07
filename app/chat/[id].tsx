@@ -11,7 +11,7 @@
  * - Bottom sheet for photos/videos/files/participants/settings
  */
 
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -433,7 +433,10 @@ export default function ChatDetailScreen() {
   const [participantCount, setParticipantCount] = useState(0);
 
   // Attachment action sheet state
-  const [_showAttachmentSheet, _setShowAttachmentSheet] = useState(false);
+  const [showAttachmentSheet, setShowAttachmentSheet] = useState(false);
+
+  // Ref to access MessageInput methods
+  const messageInputRef = useRef<{ triggerImageUpload?: () => void }>(null);
 
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -744,6 +747,7 @@ export default function ChatDetailScreen() {
 
             {/* Message input */}
             <MessageInput
+              ref={messageInputRef}
               onSend={handleSend}
               onSendEventChat={handleSendEventChat}
               sending={sendingMessage}
@@ -751,6 +755,7 @@ export default function ChatDetailScreen() {
               conversationId={conversationId}
               tenantId={tenantId}
               currentMembershipId={membershipId}
+              onPlusPress={() => setShowAttachmentSheet(true)}
             />
           </KeyboardAvoidingView>
         </TamaguiStack>
@@ -767,6 +772,17 @@ export default function ChatDetailScreen() {
         onSearchChange={setSearchQuery}
         messages={filteredMessages}
         currentUserId={membershipId || ''}
+      />
+
+      {/* Attachment Action Sheet */}
+      <_AttachmentActionSheet
+        visible={showAttachmentSheet}
+        onClose={() => setShowAttachmentSheet(false)}
+        onUploadImage={() => {
+          setShowAttachmentSheet(false);
+          // Trigger image upload via ref callback
+          messageInputRef.current?.triggerImageUpload?.();
+        }}
       />
     </>
   );
