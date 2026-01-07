@@ -58,7 +58,7 @@
     "categories": {
       "small_group": "목장",
       "zone": "초원",
-      "group_team": "그룹팀",
+      "group_team": "그룹·팀",
       "member": "멤버",
       "all": "전체"
     },
@@ -66,7 +66,7 @@
       "all": "모두",
       "small_group": "목장",
       "zone": "초원",
-      "group_team": "그룹팀",
+      "group_team": "그룹·팀",
       "member": "멤버",
       "external": "외부"
     }

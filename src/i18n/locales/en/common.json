@@ -58,7 +58,7 @@
     "categories": {
       "small_group": "Small Groups",
       "zone": "Prairies",
-      "group_team": "GroupTeams",
+      "group_team": "Groups·Teams",
       "member": "Members",
       "all": "All"
     },
@@ -66,7 +66,7 @@
       "all": "All",
       "small_group": "Small Groups",
       "zone": "Prairies",
-      "group_team": "GroupTeams",
+      "group_team": "Groups·Teams",
       "member": "Members",
       "external": "External"
     }
