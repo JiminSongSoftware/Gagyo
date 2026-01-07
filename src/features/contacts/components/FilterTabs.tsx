@@ -69,11 +69,7 @@ export function FilterTabs({
   );
 
   return (
-    <XStack
-      borderBottomWidth={1}
-      borderBottomColor="$borderLight"
-      testID={testID ?? 'contact-filter-tabs'}
-    >
+    <XStack testID={testID ?? 'contact-filter-tabs'}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
