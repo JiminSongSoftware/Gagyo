@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { Pressable, TextInput as RNTextInput, LayoutChangeEvent } from 'react-native';
-import { Stack, Text as TamaguiText, XStack } from 'tamagui';
+import { Stack, Text as TamaguiText, XStack, useTheme } from 'tamagui';
 import { Svg, Circle, Path } from 'react-native-svg';
 import { useTranslation } from '@/i18n';
 

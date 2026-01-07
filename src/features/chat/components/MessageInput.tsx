@@ -178,21 +178,6 @@ export function MessageInput({
   const actualPlaceholder = placeholder ?? t('chat.message_placeholder');
   const canUploadImages = showImageUpload && conversationId && tenantId && currentMembershipId;
 
-  // Track if we just sent a message to clear input after send completes
-  const justSentRef = useRef(false);
-
-  // Reset input on successful send
-  useEffect(() => {
-    if (!sending && justSentRef.current) {
-      setInputText('');
-      setInputHeight(40);
-      justSentRef.current = false;
-    }
-    if (sending) {
-      justSentRef.current = true;
-    }
-  }, [sending]);
-
   const handleSend = useCallback(async () => {
     const trimmed = inputText.trim();
     if (!trimmed || sending) {
