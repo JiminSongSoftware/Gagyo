@@ -96,8 +96,8 @@ export function FilterTabs({
                 justifyContent="center"
               >
                 <TamaguiText
-                  fontSize="$sm"
-                  fontWeight={isSelected ? '700' : '400'}
+                  fontSize={15}
+                  fontWeight={isSelected ? '600' : '400'}
                   color={isSelected ? '$color1' : '$color2'}
                   allowFontScaling
                 >
