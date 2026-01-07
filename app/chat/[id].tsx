@@ -18,11 +18,13 @@ import {
   Platform,
   Pressable,
   Modal,
+  TextInput,
   TouchableOpacity,
   StatusBar,
   StyleSheet,
+  FlatList,
 } from 'react-native';
-import { Stack as TamaguiStack, useTheme, XStack, Text } from 'tamagui';
+import { Stack as TamaguiStack, useTheme, XStack, YStack, Text } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useCurrentMembership } from '@/hooks/useCurrentMembership';
@@ -63,6 +65,53 @@ interface MenuItem {
   isSettings?: boolean;
 }
 
+interface AttachmentActionSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  onUploadImage: () => void;
+}
+
+function _AttachmentActionSheet({ visible, onClose, onUploadImage }: AttachmentActionSheetProps) {
+  if (!visible) return null;
+
+  return (
+    <>
+      {/* Backdrop overlay - positioned absolutely, not in Modal */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        {/* Action sheet content - positioned at bottom */}
+        <Pressable style={styles.attachmentSheetContainer} onPress={(e) => e.stopPropagation()}>
+          <YStack backgroundColor="$background" borderRadius="$4" padding="$2" paddingBottom="$4">
+            <Pressable
+              style={styles.attachmentOption}
+              onPress={() => {
+                onClose();
+                onUploadImage();
+              }}
+            >
+              <XStack alignItems="center" gap="$3" padding="$3">
+                <Ionicons name="image-outline" size={24} color="#8e8e93" />
+                <Text fontSize="$md" color="$color">
+                  {t('chat.upload_image')}
+                </Text>
+              </XStack>
+            </Pressable>
+
+            <YStack height={1} backgroundColor="$borderLight" marginHorizontal="$2" />
+
+            <Pressable style={styles.attachmentOption} onPress={onClose}>
+              <XStack alignItems="center" justifyContent="center" padding="$3">
+                <Text fontSize="$md" color="$primary" fontWeight="bold">
+                  {t('chat.cancel')}
+                </Text>
+              </XStack>
+            </Pressable>
+          </YStack>
+        </Pressable>
+      </Pressable>
+    </>
+  );
+}
+
 interface ChatMenuSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -73,21 +122,13 @@ function ChatMenuSheet({ visible, onClose, menuItems }: ChatMenuSheetProps) {
   const theme = useTheme();
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
         activeOpacity={1}
         onPress={onClose}
       >
-        <TamaguiStack
-          flex={1}
-          justifyContent="flex-end"
-        >
+        <TamaguiStack flex={1} justifyContent="flex-end">
           <TouchableOpacity activeOpacity={1}>
             <TamaguiStack
               backgroundColor="$background"
@@ -135,10 +176,7 @@ function ChatMenuSheet({ visible, onClose, menuItems }: ChatMenuSheetProps) {
                         size={24}
                         color={item.isSettings ? '#8e8e93' : theme.color1?.val}
                       />
-                      <Text
-                        fontSize={16}
-                        color={item.isSettings ? '#8e8e93' : '$color'}
-                      >
+                      <Text fontSize={16} color={item.isSettings ? '#8e8e93' : '$color'}>
                         {item.label}
                       </Text>
                     </XStack>
@@ -153,6 +191,153 @@ function ChatMenuSheet({ visible, onClose, menuItems }: ChatMenuSheetProps) {
                   </XStack>
                 </TouchableOpacity>
               ))}
+            </TamaguiStack>
+          </TouchableOpacity>
+        </TamaguiStack>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
+interface SearchModalProps {
+  visible: boolean;
+  onClose: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  messages: MessageWithSender[];
+  currentUserId: string;
+}
+
+function SearchModal({
+  visible,
+  onClose,
+  searchQuery,
+  onSearchChange,
+  messages,
+  currentUserId,
+}: SearchModalProps) {
+  const theme = useTheme();
+
+  const renderMessage = useCallback(
+    ({ item }: { item: MessageWithSender }) => {
+      // Import the MessageBubble component
+      // For now, we'll use a simple render since MessageBubble is in another file
+      const isCurrentUser = item.sender_id === currentUserId;
+      const backgroundColor = isCurrentUser ? '$primaryLight' : '$background';
+      const textColor = isCurrentUser ? '$color' : '$color';
+      const align = isCurrentUser ? 'flex-end' : 'flex-start';
+
+      return (
+        <XStack key={item.id} width="100%" justifyContent={align} marginBottom="$2">
+          <TamaguiStack
+            maxWidth="75%"
+            backgroundColor={backgroundColor}
+            padding="$3"
+            borderRadius="$2"
+            shadowColor="#000"
+            shadowOffset={{ width: 0, height: 1 }}
+            shadowOpacity={0.1}
+            shadowRadius={2}
+          >
+            <Text fontSize={14} color={textColor}>
+              {item.content}
+            </Text>
+            <Text fontSize="$xs" color="$color3" marginTop="$1">
+              {item.sender?.user?.display_name ?? t('chat.unknown')}
+            </Text>
+          </TamaguiStack>
+        </XStack>
+      );
+    },
+    [currentUserId]
+  );
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <TamaguiStack flex={1} justifyContent="flex-end">
+          <TouchableOpacity activeOpacity={1}>
+            <TamaguiStack
+              backgroundColor="$background"
+              borderTopLeftRadius={20}
+              borderTopRightRadius={20}
+              paddingBottom={Platform.OS === 'ios' ? 40 : 20}
+              height="80%"
+            >
+              {/* Search header */}
+              <XStack
+                alignItems="center"
+                justifyContent="space-between"
+                paddingHorizontal="$4"
+                paddingVertical="$3"
+                borderBottomWidth={1}
+                borderBottomColor="$borderLight"
+              >
+                <Text fontSize="$lg" fontWeight="600">
+                  {t('chat.search_messages')}
+                </Text>
+                <Pressable onPress={onClose} hitSlop={8}>
+                  <Ionicons name="close" size={24} color={theme.color1?.val} />
+                </Pressable>
+              </XStack>
+
+              {/* Search input */}
+              <XStack paddingHorizontal="$4" paddingVertical="$3" gap="$2" alignItems="center">
+                <TamaguiStack
+                  flex={1}
+                  backgroundColor="$backgroundTertiary"
+                  borderRadius="$2"
+                  paddingHorizontal="$3"
+                  height={36}
+                  alignItems="center"
+                >
+                  <Ionicons name="search" size={18} color={theme.color3?.val} />
+                  <TextInput
+                    value={searchQuery}
+                    onChangeText={onSearchChange}
+                    placeholder={t('chat.search_conversations')}
+                    placeholderTextColor={theme.color3?.val}
+                    style={{
+                      flex: 1,
+                      marginLeft: 8,
+                      fontSize: 16,
+                      color: theme.color1?.val,
+                      padding: 0,
+                      height: 36,
+                    }}
+                    autoFocus
+                  />
+                  {searchQuery.length > 0 && (
+                    <Pressable onPress={() => onSearchChange('')} hitSlop={8}>
+                      <Ionicons name="close-circle" size={18} color={theme.color3?.val} />
+                    </Pressable>
+                  )}
+                </TamaguiStack>
+              </XStack>
+
+              {/* Search results */}
+              <TamaguiStack flex={1} paddingHorizontal="$4">
+                {messages.length === 0 ? (
+                  <TamaguiStack flex={1} alignItems="center" justifyContent="center" gap="$2">
+                    <Ionicons name="search-outline" size={48} color={theme.color3?.val} />
+                    <Text fontSize="$md" color="$color3">
+                      {searchQuery ? t('chat.no_conversations') : t('chat.search_placeholder')}
+                    </Text>
+                  </TamaguiStack>
+                ) : (
+                  <FlatList
+                    data={messages}
+                    renderItem={renderMessage}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={{ paddingVertical: 16 }}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
+              </TamaguiStack>
             </TamaguiStack>
           </TouchableOpacity>
         </TamaguiStack>
@@ -177,11 +362,7 @@ function ChatHeader({ title, onBack, onSearch, onMenu }: ChatHeaderProps) {
         borderBottomWidth={StyleSheet.hairlineWidth}
         borderBottomColor="rgba(0, 0, 0, 0.1)"
       >
-        <XStack
-          alignItems="center"
-          height={44}
-          width="100%"
-        >
+        <XStack alignItems="center" height={44} width="100%">
           {/* Left: Back button - fixed position from left edge */}
           <XStack
             width={44}
@@ -251,6 +432,13 @@ export default function ChatDetailScreen() {
   const [mediaCounts, setMediaCounts] = useState({ photos: 0, videos: 0, files: 0 });
   const [participantCount, setParticipantCount] = useState(0);
 
+  // Attachment action sheet state
+  const [_showAttachmentSheet, _setShowAttachmentSheet] = useState(false);
+
+  // Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Fetch messages for this conversation
   const { messages, loading, error, loadMore, hasMore } = useMessages(conversationId, tenantId);
 
@@ -268,6 +456,23 @@ export default function ChatDetailScreen() {
   const displayMessages = useMemo(() => {
     return realTimeMessages.length > 0 ? realTimeMessages : messages;
   }, [realTimeMessages, messages]);
+
+  // Filter messages based on search query
+  const filteredMessages = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return displayMessages;
+    }
+    const query = searchQuery.toLowerCase();
+    return displayMessages.filter((msg) => {
+      if (msg.content?.toLowerCase().includes(query)) {
+        return true;
+      }
+      if (msg.sender?.user?.display_name?.toLowerCase().includes(query)) {
+        return true;
+      }
+      return false;
+    });
+  }, [displayMessages, searchQuery]);
 
   // Send message mutation
   const {
@@ -318,15 +523,9 @@ export default function ChatDetailScreen() {
   useEffect(() => {
     if (!displayMessages.length) return;
 
-    const photos = displayMessages.filter(
-      (m) => m.content_type === 'image'
-    ).length;
-    const videos = displayMessages.filter(
-      (m) => m.content_type === 'video'
-    ).length;
-    const files = displayMessages.filter(
-      (m) => m.content_type === 'file'
-    ).length;
+    const photos = displayMessages.filter((m) => m.content_type === 'image').length;
+    const videos = displayMessages.filter((m) => m.content_type === 'video').length;
+    const files = displayMessages.filter((m) => m.content_type === 'file').length;
 
     setMediaCounts({ photos, videos, files });
   }, [displayMessages]);
@@ -431,8 +630,13 @@ export default function ChatDetailScreen() {
   );
 
   const handleSearch = useCallback(() => {
-    // TODO: Implement search in chat
-    console.log('Search in chat');
+    setShowSearch((prev) => {
+      if (!prev) {
+        // Opening search - clear previous query
+        setSearchQuery('');
+      }
+      return !prev;
+    });
   }, []);
 
   const getHeaderTitle = useCallback(() => {
@@ -553,11 +757,31 @@ export default function ChatDetailScreen() {
       </TamaguiStack>
 
       {/* Menu Bottom Sheet */}
-      <ChatMenuSheet
-        visible={showMenu}
-        onClose={() => setShowMenu(false)}
-        menuItems={menuItems}
+      <ChatMenuSheet visible={showMenu} onClose={() => setShowMenu(false)} menuItems={menuItems} />
+
+      {/* Search Modal */}
+      <SearchModal
+        visible={showSearch}
+        onClose={() => setShowSearch(false)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        messages={filteredMessages}
+        currentUserId={membershipId || ''}
       />
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  attachmentSheetContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+  },
+  attachmentOption: {
+    width: '100%',
+  },
+});
