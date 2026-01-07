@@ -10,12 +10,12 @@
  * - 외부 (External)
  */
 
+import enTranslations from '@/i18n/locales/en/common.json';
+import koTranslations from '@/i18n/locales/ko/common.json';
 import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text as TamaguiText, XStack } from 'tamagui';
 import type { ContactFilterType } from '../types';
-import koTranslations from '@/i18n/locales/ko/common.json';
-import enTranslations from '@/i18n/locales/en/common.json';
 
 export interface FilterTabsProps {
   selectedFilter: ContactFilterType;
@@ -92,7 +92,7 @@ export function FilterTabs({
                 paddingVertical="$3"
                 alignItems="center"
                 justifyContent="center"
-                minWidth={80}
+                minWidth={65}
                 position="relative"
               >
                 <TamaguiText
