@@ -13,7 +13,7 @@
 import enTranslations from '@/i18n/locales/en/common.json';
 import koTranslations from '@/i18n/locales/ko/common.json';
 import { useCallback } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Text as TamaguiText, XStack } from 'tamagui';
 import type { ContactFilterType } from '../types';
 
@@ -69,7 +69,11 @@ export function FilterTabs({
   );
 
   return (
-    <XStack testID={testID ?? 'contact-filter-tabs'}>
+    <XStack
+      borderBottomWidth={1}
+      borderBottomColor="$borderLight"
+      testID={testID ?? 'contact-filter-tabs'}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -85,26 +89,24 @@ export function FilterTabs({
               testID={`filter-tab-${filterKey}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: isSelected }}
-              style={styles.tab}
             >
               <XStack
                 paddingHorizontal="$3"
-                paddingVertical="$3"
+                paddingVertical="$2"
+                borderBottomWidth={isSelected ? 2 : 0}
+                borderBottomColor="$color1"
+                minWidth={60}
                 alignItems="center"
                 justifyContent="center"
-                minWidth={65}
-                position="relative"
               >
                 <TamaguiText
-                  fontSize={15}
-                  fontWeight={isSelected ? '600' : '400'}
-                  color={isSelected ? '#000000' : '#6d6d73'}
+                  fontSize="$sm"
+                  fontWeight={isSelected ? '700' : '400'}
+                  color={isSelected ? '$color1' : '$color2'}
                   allowFontScaling
                 >
                   {getFilterLabel(filterKey, locale)}
                 </TamaguiText>
-                {/* Underline indicator for selected tab */}
-                {isSelected && <View style={styles.underline} />}
               </XStack>
             </Pressable>
           );
@@ -117,17 +119,5 @@ export function FilterTabs({
 const styles = StyleSheet.create({
   scrollView: {
     paddingHorizontal: 16,
-  },
-  tab: {
-    paddingVertical: 0,
-  },
-  underline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 12,
-    right: 12,
-    height: 2,
-    backgroundColor: '#000000',
-    borderRadius: 1,
   },
 });
