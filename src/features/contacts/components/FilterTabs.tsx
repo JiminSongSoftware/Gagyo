@@ -92,7 +92,7 @@ export function FilterTabs({
                 paddingVertical="$3"
                 alignItems="center"
                 justifyContent="center"
-                minWidth={60}
+                minWidth={80}
                 position="relative"
               >
                 <TamaguiText
@@ -104,9 +104,7 @@ export function FilterTabs({
                   {getFilterLabel(filterKey, locale)}
                 </TamaguiText>
                 {/* Underline indicator for selected tab */}
-                {isSelected && (
-                  <View style={styles.underline} />
-                )}
+                {isSelected && <View style={styles.underline} />}
               </XStack>
             </Pressable>
           );
