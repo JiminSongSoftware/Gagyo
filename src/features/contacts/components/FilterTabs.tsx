@@ -88,7 +88,7 @@ export function FilterTabs({
             >
               <XStack
                 paddingHorizontal="$3"
-                paddingVertical="$2"
+                paddingVertical="$3"
                 borderBottomWidth={isSelected ? 2 : 0}
                 borderBottomColor="$color1"
                 minWidth={60}
