@@ -1,12 +1,5 @@
 import type { ButtonProps as TamaguiButtonProps } from 'tamagui';
-import {
-  Button as TamaguiButton,
-  useTheme,
-  XStack,
-  Spinner,
-  Text,
-  styled,
-} from 'tamagui';
+import { Button as TamaguiButton, XStack, Spinner, Text, styled } from 'tamagui';
 import { useTranslation } from '@/i18n';
 
 export interface ButtonProps extends Omit<TamaguiButtonProps, 'children'> {
@@ -124,7 +117,6 @@ export function Button({
   ...props
 }: ButtonProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   const labelText = t(labelKey, i18nParams);
   const isDisabled = disabled || loading;
@@ -138,19 +130,21 @@ export function Button({
   };
 
   return (
-    <TamaguiButton
-      {...baseStyle}
-      disabled={isDisabled}
-      {...props}
-      style={style}
-    >
+    <TamaguiButton {...baseStyle} disabled={isDisabled} {...props} style={style}>
       <XStack gap="$2" alignItems="center" justifyContent="center">
         {loading ? (
-          <Spinner size="small" color={variant === 'outline' || variant === 'ghost' ? '$color' : '$color4'} />
+          <Spinner
+            size="small"
+            color={variant === 'outline' || variant === 'ghost' ? '$color' : '$color4'}
+          />
         ) : (
           leadingIcon
         )}
-        {!loading && <Text>{labelText}</Text>}
+        {!loading && (
+          <Text color={variant === 'outline' || variant === 'ghost' ? '$color' : '$color4'}>
+            {labelText}
+          </Text>
+        )}
         {!loading && trailingIcon}
       </XStack>
     </TamaguiButton>

@@ -39,7 +39,12 @@ export default function LoginScreen() {
       // Navigation is handled by auth guard in _layout.tsx
     } catch (error: unknown) {
       const errorKey = getAuthErrorMessage(error);
-      Alert.alert(t(errorKey, { defaultValue: 'Authentication failed' }));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log('[login] error caught:', errorMessage);
+      Alert.alert(
+        t(errorKey, { defaultValue: 'Authentication failed' }),
+        errorMessage !== 'Invalid login credentials' ? `Details: ${errorMessage}` : undefined
+      );
     } finally {
       setLoading(false);
     }

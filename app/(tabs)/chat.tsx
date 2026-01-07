@@ -7,23 +7,17 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { Spinner, YStack } from 'tamagui';
 import { Container } from '@/components/ui';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
-import { useCurrentMembership } from '@/hooks/useCurrentMembership';
 import { useConversations, useConversationListSubscription } from '@/features/chat/hooks';
 import { ConversationList } from '@/features/chat/components';
 
 export default function ChatScreen() {
-  const { tenantId } = useRequireAuth();
-  const { membershipId } = useCurrentMembership();
+  const { tenantId, membershipId, loading: authLoading } = useRequireAuth();
   const router = useRouter();
 
-  const {
-    conversations,
-    loading,
-    error,
-    refetch,
-  } = useConversations(tenantId, membershipId);
+  const { conversations, loading, error, refetch } = useConversations(tenantId, membershipId);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,7 +25,7 @@ export default function ChatScreen() {
   useConversationListSubscription(membershipId, tenantId, {
     onNewMessage: useCallback(() => {
       // Refetch conversations when a new message arrives
-      refetch();
+      void refetch();
     }, [refetch]),
     onError: useCallback((err: Error) => {
       console.error('Conversation list subscription error:', err);
@@ -45,11 +39,21 @@ export default function ChatScreen() {
     [router]
   );
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    void refetch().finally(() => {
+      setRefreshing(false);
+    });
   }, [refetch]);
+
+  // Show loading spinner while auth/tenant is loading
+  if (authLoading) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center">
+        <Spinner size="large" />
+      </YStack>
+    );
+  }
 
   return (
     <Container testID="chat-screen" flex={1}>

@@ -77,6 +77,8 @@ export function useIsProtectedRoute(): boolean {
 /**
  * Hook that ensures the user has both auth and tenant context.
  * Throws an error or redirects if not.
+ *
+ * IMPORTANT: Check loading state before using the returned values.
  */
 export function useRequireAuth(): {
   user: NonNullable<ReturnType<typeof useAuth>['user']>;
@@ -85,25 +87,30 @@ export function useRequireAuth(): {
   membershipId: string | null;
   membershipLoading: boolean;
   membershipError: Error | null;
+  loading: boolean;
 } {
-  const { user } = useAuth();
-  const { activeTenantId } = useTenantContext();
+  const { user, loading: authLoading } = useAuth();
+  const { activeTenantId, loading: tenantLoading } = useTenantContext();
   const { membership, membershipId, loading, error } = useCurrentMembership();
 
-  if (!user) {
+  const isLoading = authLoading || tenantLoading;
+
+  // Only throw if NOT loading and auth/tenant is missing
+  if (!isLoading && !user) {
     throw new Error('useRequireAuth: User is not authenticated');
   }
 
-  if (!activeTenantId) {
+  if (!isLoading && !activeTenantId) {
     throw new Error('useRequireAuth: No active tenant');
   }
 
   return {
-    user,
-    tenantId: activeTenantId,
+    user: user!, // Non-null asserted after loading completes
+    tenantId: activeTenantId!, // Non-null asserted after loading completes
     membership,
     membershipId,
     membershipLoading: loading,
     membershipError: error,
+    loading: isLoading,
   };
 }

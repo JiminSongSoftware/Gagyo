@@ -59,6 +59,8 @@ export function useMemberships(userId: string | undefined): MembershipsState {
       setLoading(true);
       setError(null);
 
+      console.log('[useMemberships] Fetching for userId:', userId);
+
       try {
         const { data, error: fetchError } = await supabase
           .from('memberships')
@@ -66,6 +68,8 @@ export function useMemberships(userId: string | undefined): MembershipsState {
           .eq('user_id', userId)
           .eq('status', 'active')
           .order('created_at', { ascending: true });
+
+        console.log('[useMemberships] Response:', { data, error: fetchError });
 
         if (fetchError) {
           throw fetchError;
@@ -75,6 +79,7 @@ export function useMemberships(userId: string | undefined): MembershipsState {
           setMemberships((data ?? []) as Membership[]);
         }
       } catch (err) {
+        console.error('[useMemberships] Error:', err);
         if (!cancelled) {
           setError(err as Error);
           setMemberships([]);

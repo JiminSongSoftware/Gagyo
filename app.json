@@ -21,7 +21,9 @@
         "NSCameraUsageDescription": "Take photos to share with your community",
         "NSPhotoLibraryUsageDescription": "Share photos with your community",
         "NSPhotoLibraryAddUsageDescription": "Save photos to your device",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -57,6 +59,9 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

@@ -85,8 +85,14 @@ export function initPostHog(config: PostHogConfig): void {
  */
 export function trackEvent(
   eventName: string,
-  properties: Partial<PostHogEventProperties> = {},
+  properties: Partial<PostHogEventProperties> = {}
 ): void {
+  // Skip if PostHog is disabled (e.g., in development)
+  if (getEnvironment() === 'development') {
+    console.log('[PostHog] Skipping trackEvent in development:', eventName);
+    return;
+  }
+
   // Enrich with base properties
   const enrichedProperties: PostHogEventProperties = {
     app_version: APP_VERSION,
@@ -103,6 +109,12 @@ export function trackEvent(
  * @param properties - User properties
  */
 export function identifyUser(userId: string, properties: PostHogUserProperties): void {
+  // Skip if PostHog is disabled (e.g., in development)
+  if (getEnvironment() === 'development') {
+    console.log('[PostHog] Skipping identify in development');
+    return;
+  }
+
   PostHog.identify(userId, {
     ...properties,
     $set: properties,
@@ -113,6 +125,12 @@ export function identifyUser(userId: string, properties: PostHogUserProperties):
  * Reset the user session (call on logout).
  */
 export function resetUser(): void {
+  // Skip if PostHog is disabled (e.g., in development)
+  if (getEnvironment() === 'development') {
+    console.log('[PostHog] Skipping reset in development');
+    return;
+  }
+
   PostHog.reset();
 }
 
@@ -126,7 +144,7 @@ export function resetUser(): void {
 export function setGroup(
   groupType: string,
   groupKey: string,
-  properties: PostHogGroupProperties,
+  properties: PostHogGroupProperties
 ): void {
   PostHog.group(groupType, groupKey, {
     ...properties,

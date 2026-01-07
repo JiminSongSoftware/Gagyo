@@ -40,6 +40,12 @@ function getEnvironment(): Environment {
 }
 
 /**
+ * Track whether Sentry has been initialized.
+ * In development, we skip Sentry but still call the functions for safety.
+ */
+let isSentryInitialized = false;
+
+/**
  * Get the release version (app version).
  */
 function getRelease(): string {
@@ -71,11 +77,19 @@ export function initSentry(config: {
   // Skip initialization if DSN is empty
   if (!dsn || dsn.trim() === '') {
     console.warn('[Sentry] DSN is empty, skipping initialization');
+    isSentryInitialized = false;
+    return;
+  }
+
+  // In development, skip actual Sentry initialization
+  const env = environment || getEnvironment();
+  if (env === 'development') {
+    console.log('[Sentry] Skipping Sentry initialization in development mode');
+    isSentryInitialized = false;
     return;
   }
 
   // Determine appropriate sample rates based on environment
-  const env = environment || getEnvironment();
   const defaultSampleRate = 1.0; // Capture all errors
   const defaultTracesSampleRate = env === 'development' ? 1.0 : env === 'preview' ? 0.5 : 0.25;
 
@@ -116,6 +130,9 @@ export function initSentry(config: {
       return defaultIntegrations;
     },
   });
+
+  isSentryInitialized = true;
+  console.log('[Sentry] Initialized successfully');
 }
 
 /**
@@ -185,6 +202,11 @@ export function captureMessage(
  * @param context - User context data
  */
 export function setUserContext(userId: string, context: Partial<SentryUserContext> = {}): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping setUserContext (not initialized)');
+    return;
+  }
+
   const user: SentryUserContext = {
     id: userId,
     ...context,
@@ -204,6 +226,11 @@ export function setUserContext(userId: string, context: Partial<SentryUserContex
  * Clear the current user context.
  */
 export function clearUserContext(): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping clearUserContext (not initialized)');
+    return;
+  }
+
   Sentry.setUser(null);
 }
 
@@ -213,6 +240,11 @@ export function clearUserContext(): void {
  * @param tags - Tags to set
  */
 export function setTags(tags: Partial<SentryContextTags>): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping setTags (not initialized)');
+    return;
+  }
+
   Sentry.setTag('tenant_id', tags.tenant_id);
   Sentry.setTag('user_role', tags.user_role);
   Sentry.setTag('locale', tags.locale);
@@ -227,6 +259,11 @@ export function setTags(tags: Partial<SentryContextTags>): void {
  * @param breadcrumb - Breadcrumb data
  */
 export function addBreadcrumb(breadcrumb: BreadcrumbData): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping addBreadcrumb (not initialized)');
+    return;
+  }
+
   const crumb: Breadcrumb = {
     category: breadcrumb.category || 'default',
     message: breadcrumb.message,
@@ -248,6 +285,11 @@ export function addBreadcrumb(breadcrumb: BreadcrumbData): void {
  * @param context - Context data
  */
 export function setContext(key: string, context: Record<string, unknown>): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping setContext (not initialized)');
+    return;
+  }
+
   sentrySetContext(key, context);
 }
 
@@ -257,6 +299,11 @@ export function setContext(key: string, context: Record<string, unknown>): void 
  * @param callback - Scope configuration callback
  */
 export function configureScope(callback: (scope: Scope) => void): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping configureScope (not initialized)');
+    return;
+  }
+
   sentryConfigureScope(callback);
 }
 
@@ -268,6 +315,11 @@ export function configureScope(callback: (scope: Scope) => void): void {
  * @param properties - Group properties
  */
 export function setGroup(type: string, id: string, _properties: Record<string, unknown>): void {
+  if (!isSentryInitialized) {
+    console.log('[Sentry] Skipping setGroup (not initialized)');
+    return;
+  }
+
   sentryConfigureScope((scope: Scope) => {
     scope.setTag(type, id);
   });

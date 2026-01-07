@@ -20,15 +20,23 @@ export async function signIn(
   email: string,
   password: string
 ): Promise<AuthTokenResponsePassword['data']> {
+  console.log('[auth] signIn called for:', email);
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
+    console.log('[auth] signIn error:', {
+      message: error.message,
+      name: error.name,
+      status: error.status,
+    });
     throw error;
   }
 
+  console.log('[auth] signIn success, user:', data.user?.id);
   return data;
 }
 
