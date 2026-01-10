@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { XStack, YStack, Text as TamaguiText, Stack, Dialog, Adapt, Button } from 'tamagui';
+import { XStack, YStack, Text as TamaguiText, Stack, Dialog, Button } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from '@/i18n';
 import { usePrayerCardStore } from '@/stores/prayerCardStore';
@@ -467,65 +467,63 @@ export default function PrayerCardDetailScreen() {
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
             }}
           />
-          <Adapt.Contents key="contents">
-            <Dialog.Content
-              style={{
-                backgroundColor: '#ffffff',
-                borderRadius: 16,
-                padding: 20,
-                margin: 20,
-              }}
-            >
-              <YStack gap={16}>
-                <YStack gap={4}>
-                  <TamaguiText fontSize={18} fontWeight="700" color="#11181C">
-                    {t('prayer.mark_answered_dialog_title')}
-                  </TamaguiText>
-                  <TamaguiText fontSize={14} color="#687076">
-                    {t('prayer.mark_answered_dialog_description')}
-                  </TamaguiText>
-                </YStack>
-
-                <TextInput
-                  style={styles.dialogInput}
-                  placeholder={t('prayer.mark_answered_placeholder')}
-                  placeholderTextColor="#8e8e93"
-                  value={responseContent}
-                  onChangeText={setResponseContent}
-                  multiline
-                  maxLength={500}
-                  testID="response-input"
-                />
-
-                <XStack gap={8}>
-                  <Button
-                    flex={1}
-                    size="$4"
-                    backgroundColor="#f5f5f5"
-                    onPress={() => {
-                      setShowAnswerDialog(false);
-                      setResponseContent('');
-                    }}
-                  >
-                    <TamaguiText color="#11181C" fontWeight="600">
-                      {t('prayer.cancel_button')}
-                    </TamaguiText>
-                  </Button>
-                  <Button
-                    flex={1}
-                    size="$4"
-                    backgroundColor="#10b981"
-                    onPress={handleMarkAnswered}
-                    testID="confirm-answer-button"
-                  >
-                    <TamaguiText color="#ffffff" fontWeight="600">
-                      {t('prayer.confirm_button')}
-                    </TamaguiText>
-                  </Button>
-                </XStack>
+          <Dialog.Content
+            key="contents"
+            backgroundColor="#ffffff"
+            borderRadius={16}
+            padding={20}
+            margin={20}
+            zIndex={100}
+          >
+            <YStack gap={16}>
+              <YStack gap={4}>
+                <TamaguiText fontSize={18} fontWeight="700" color="#11181C">
+                  {t('prayer.mark_answered_dialog_title')}
+                </TamaguiText>
+                <TamaguiText fontSize={14} color="#687076">
+                  {t('prayer.mark_answered_dialog_description')}
+                </TamaguiText>
               </YStack>
-            </Dialog.Content>
-          </Adapt.Contents>
+
+              <TextInput
+                style={styles.dialogInput}
+                placeholder={t('prayer.mark_answered_placeholder')}
+                placeholderTextColor="#8e8e93"
+                value={responseContent}
+                onChangeText={setResponseContent}
+                multiline
+                maxLength={500}
+                testID="response-input"
+              />
+
+              <XStack gap={8}>
+                <Button
+                  flex={1}
+                  size="$4"
+                  backgroundColor="#f5f5f5"
+                  onPress={() => {
+                    setShowAnswerDialog(false);
+                    setResponseContent('');
+                  }}
+                >
+                  <TamaguiText color="#11181C" fontWeight="600">
+                    {t('prayer.cancel_button')}
+                  </TamaguiText>
+                </Button>
+                <Button
+                  flex={1}
+                  size="$4"
+                  backgroundColor="#10b981"
+                  onPress={handleMarkAnswered}
+                  testID="confirm-answer-button"
+                >
+                  <TamaguiText color="#ffffff" fontWeight="600">
+                    {t('prayer.confirm_button')}
+                  </TamaguiText>
+                </Button>
+              </XStack>
+            </YStack>
+          </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
     </Stack>
