@@ -16,6 +16,7 @@ import { Pressable, View, StyleSheet } from 'react-native';
 import { Stack, Text as TamaguiText, Image, XStack, YStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import type { MessageWithSender } from '@/types/database';
+import PISTOS_LOGO from '../../../../assets/pistos-logo.svg';
 
 export interface MessageBubbleProps {
   /**
@@ -248,18 +249,9 @@ export function MessageBubble({
   // Show sender info only for others' messages
   const showSenderInfo = !isOwnMessage;
 
-  // Get sender avatar URL or generate initials
+  // Get sender avatar URL
   const senderName = message.sender?.user?.display_name || 'Unknown';
   const senderAvatar = message.sender?.user?.photo_url;
-  const senderInitials = senderName.charAt(0).toUpperCase();
-
-  // Generate a consistent color from sender name for avatar fallback
-  const getAvatarColor = (name: string) => {
-    const colors = ['#0a7ea4', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-  const avatarBackgroundColor = senderAvatar ? undefined : getAvatarColor(senderName);
 
   // Highlight styles for search results
   const highlightStyle = highlighted
@@ -366,8 +358,6 @@ export function MessageBubble({
             marginRight="$3"
             borderRadius={26}
             overflow="hidden"
-            borderWidth={2}
-            borderColor="$backgroundStrong"
             shadowColor="$shadowColor"
             shadowOffset={{ width: 0, height: 2 }}
             shadowOpacity={0.15}
@@ -386,11 +376,9 @@ export function MessageBubble({
                 height={52}
                 alignItems="center"
                 justifyContent="center"
-                backgroundColor={avatarBackgroundColor as '$color1' | undefined}
+                backgroundColor="$backgroundTertiary"
               >
-                <TamaguiText fontSize={22} fontWeight="700" color="white">
-                  {senderInitials}
-                </TamaguiText>
+                <PISTOS_LOGO width={32} height={32} />
               </Stack>
             )}
           </Stack>
