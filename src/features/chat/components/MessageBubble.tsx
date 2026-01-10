@@ -250,6 +250,14 @@ export function MessageBubble({
   const senderAvatar = message.sender?.user?.photo_url;
   const senderInitials = senderName.charAt(0).toUpperCase();
 
+  // Generate a consistent color from sender name for avatar fallback
+  const getAvatarColor = (name: string) => {
+    const colors = ['#0a7ea4', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+  const avatarBackgroundColor = senderAvatar ? undefined : getAvatarColor(senderName);
+
   // Highlight styles for search results
   const highlightStyle = highlighted
     ? {
@@ -309,7 +317,7 @@ export function MessageBubble({
           {/* Sender name (right-aligned for own messages) */}
           <TamaguiText
             testID="sender-name"
-            fontSize="$xs"
+            fontSize="$sm"
             fontWeight="600"
             color="$color3"
             marginBottom="$1"
@@ -351,12 +359,12 @@ export function MessageBubble({
             {/* Avatar on right for own messages */}
             <Stack marginLeft="$2">
               <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-                <Avatar circular size="$3">
+                <Avatar circular width={44} height={44}>
                   {senderAvatar ? (
                     <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
                   ) : (
-                    <Avatar.Fallback backgroundColor="$backgroundTertiary">
-                      <TamaguiText fontSize="$sm" fontWeight="600" color="$color2">
+                    <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
+                      <TamaguiText fontSize="$lg" fontWeight="600" color="white">
                         {senderInitials}
                       </TamaguiText>
                     </Avatar.Fallback>
@@ -383,12 +391,12 @@ export function MessageBubble({
     >
       {/* Profile avatar */}
       <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-        <Avatar circular size="$3" marginRight="$2">
+        <Avatar circular width={44} height={44} marginRight="$2">
           {senderAvatar ? (
             <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
           ) : (
-            <Avatar.Fallback backgroundColor="$backgroundTertiary">
-              <TamaguiText fontSize="$sm" fontWeight="600" color="$color2">
+            <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
+              <TamaguiText fontSize="$lg" fontWeight="600" color="white">
                 {senderInitials}
               </TamaguiText>
             </Avatar.Fallback>
@@ -402,7 +410,7 @@ export function MessageBubble({
         <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
           <TamaguiText
             testID="sender-name"
-            fontSize="$xs"
+            fontSize="$sm"
             fontWeight="600"
             color="$color3"
             marginBottom="$1"
