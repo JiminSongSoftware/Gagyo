@@ -251,7 +251,7 @@ export function MessageBubble({
 
   // Get sender avatar URL or generate initials
   const senderName = message.sender?.user?.display_name || 'Unknown';
-  const senderAvatar = message.sender?.user?.profile_photo_url;
+  const senderAvatar = message.sender?.user?.photo_url;
   const senderInitials = senderName.charAt(0).toUpperCase();
 
   // Highlight styles for search results

@@ -28859,21 +28859,35 @@
           "isVar": true,
           "key": "$lightBackgroundWarm",
           "name": "c-color-lightBackgroundWarm",
-          "val": "#FFF8F0",
+          "val": "#99CD69",
           "variable": ""
         },
         "lightBackgroundCool": {
           "isVar": true,
           "key": "$lightBackgroundCool",
           "name": "c-color-lightBackgroundCool",
-          "val": "#F0F8FF",
+          "val": "#B9C2DD",
           "variable": ""
         },
         "lightBackgroundAccent": {
           "isVar": true,
           "key": "$lightBackgroundAccent",
           "name": "c-color-lightBackgroundAccent",
-          "val": "#FFF0F8",
+          "val": "#B9C2DD",
+          "variable": ""
+        },
+        "lightChatBubbleOwn": {
+          "isVar": true,
+          "key": "$lightChatBubbleOwn",
+          "name": "c-color-lightChatBubbleOwn",
+          "val": "#FFD700",
+          "variable": ""
+        },
+        "lightChatBubbleOther": {
+          "isVar": true,
+          "key": "$lightChatBubbleOther",
+          "name": "c-color-lightChatBubbleOther",
+          "val": "#FFFFFF",
           "variable": ""
         },
         "lightText": {
@@ -29104,21 +29118,35 @@
           "isVar": true,
           "key": "$darkBackgroundWarm",
           "name": "c-color-darkBackgroundWarm",
-          "val": "#2A2520",
+          "val": "#3D5A28",
           "variable": ""
         },
         "darkBackgroundCool": {
           "isVar": true,
           "key": "$darkBackgroundCool",
           "name": "c-color-darkBackgroundCool",
-          "val": "#1A2530",
+          "val": "#3A4255",
           "variable": ""
         },
         "darkBackgroundAccent": {
           "isVar": true,
           "key": "$darkBackgroundAccent",
           "name": "c-color-darkBackgroundAccent",
-          "val": "#2A1A25",
+          "val": "#3A4255",
+          "variable": ""
+        },
+        "darkChatBubbleOwn": {
+          "isVar": true,
+          "key": "$darkChatBubbleOwn",
+          "name": "c-color-darkChatBubbleOwn",
+          "val": "#B8960B",
+          "variable": ""
+        },
+        "darkChatBubbleOther": {
+          "isVar": true,
+          "key": "$darkChatBubbleOther",
+          "name": "c-color-darkChatBubbleOther",
+          "val": "#2A2D2F",
           "variable": ""
         },
         "darkText": {
@@ -29993,9 +30021,11 @@
         "lightBackground": "#fff",
         "lightBackgroundSecondary": "#f5f5f5",
         "lightBackgroundTertiary": "#eaeaea",
-        "lightBackgroundWarm": "#FFF8F0",
-        "lightBackgroundCool": "#F0F8FF",
-        "lightBackgroundAccent": "#FFF0F8",
+        "lightBackgroundWarm": "#99CD69",
+        "lightBackgroundCool": "#B9C2DD",
+        "lightBackgroundAccent": "#B9C2DD",
+        "lightChatBubbleOwn": "#FFD700",
+        "lightChatBubbleOther": "#FFFFFF",
         "lightText": "#11181C",
         "lightTextSecondary": "#687076",
         "lightTextTertiary": "#9BA1A6",
@@ -30028,9 +30058,11 @@
         "darkBackground": "#151718",
         "darkBackgroundSecondary": "#1a1c1e",
         "darkBackgroundTertiary": "#202224",
-        "darkBackgroundWarm": "#2A2520",
-        "darkBackgroundCool": "#1A2530",
-        "darkBackgroundAccent": "#2A1A25",
+        "darkBackgroundWarm": "#3D5A28",
+        "darkBackgroundCool": "#3A4255",
+        "darkBackgroundAccent": "#3A4255",
+        "darkChatBubbleOwn": "#B8960B",
+        "darkChatBubbleOther": "#2A2D2F",
         "darkText": "#ECEDEE",
         "darkTextSecondary": "#9BA1A6",
         "darkTextTertiary": "#687076",
@@ -30063,9 +30095,11 @@
         "background": "#151718",
         "backgroundSecondary": "#1a1c1e",
         "backgroundTertiary": "#202224",
-        "backgroundWarm": "#2A2520",
-        "backgroundCool": "#1A2530",
-        "backgroundAccent": "#2A1A25",
+        "backgroundWarm": "#3D5A28",
+        "backgroundCool": "#3A4255",
+        "backgroundAccent": "#3A4255",
+        "chatBubbleOwn": "#B8960B",
+        "chatBubbleOther": "#2A2D2F",
         "color": "#ECEDEE",
         "colorHover": "#ECEDEE",
         "primary": "#ffffff",
@@ -30108,9 +30142,11 @@
         "lightBackground": "#fff",
         "lightBackgroundSecondary": "#f5f5f5",
         "lightBackgroundTertiary": "#eaeaea",
-        "lightBackgroundWarm": "#FFF8F0",
-        "lightBackgroundCool": "#F0F8FF",
-        "lightBackgroundAccent": "#FFF0F8",
+        "lightBackgroundWarm": "#99CD69",
+        "lightBackgroundCool": "#B9C2DD",
+        "lightBackgroundAccent": "#B9C2DD",
+        "lightChatBubbleOwn": "#FFD700",
+        "lightChatBubbleOther": "#FFFFFF",
         "lightText": "#11181C",
         "lightTextSecondary": "#687076",
         "lightTextTertiary": "#9BA1A6",
@@ -30143,9 +30179,11 @@
         "darkBackground": "#151718",
         "darkBackgroundSecondary": "#1a1c1e",
         "darkBackgroundTertiary": "#202224",
-        "darkBackgroundWarm": "#2A2520",
-        "darkBackgroundCool": "#1A2530",
-        "darkBackgroundAccent": "#2A1A25",
+        "darkBackgroundWarm": "#3D5A28",
+        "darkBackgroundCool": "#3A4255",
+        "darkBackgroundAccent": "#3A4255",
+        "darkChatBubbleOwn": "#B8960B",
+        "darkChatBubbleOther": "#2A2D2F",
         "darkText": "#ECEDEE",
         "darkTextSecondary": "#9BA1A6",
         "darkTextTertiary": "#687076",
@@ -30178,9 +30216,11 @@
         "background": "#fff",
         "backgroundSecondary": "#f5f5f5",
         "backgroundTertiary": "#eaeaea",
-        "backgroundWarm": "#FFF8F0",
-        "backgroundCool": "#F0F8FF",
-        "backgroundAccent": "#FFF0F8",
+        "backgroundWarm": "#99CD69",
+        "backgroundCool": "#B9C2DD",
+        "backgroundAccent": "#B9C2DD",
+        "chatBubbleOwn": "#FFD700",
+        "chatBubbleOther": "#FFFFFF",
         "color": "#11181C",
         "colorHover": "#11181C",
         "primary": "#0a7ea4",
@@ -30319,14 +30359,14 @@
         "isVar": true,
         "key": "$darkBackgroundAccent",
         "name": "c-color-darkBackgroundAccent",
-        "val": "#2A1A25",
+        "val": "#3A4255",
         "variable": ""
       },
       "$color.darkBackgroundCool": {
         "isVar": true,
         "key": "$darkBackgroundCool",
         "name": "c-color-darkBackgroundCool",
-        "val": "#1A2530",
+        "val": "#3A4255",
         "variable": ""
       },
       "$color.darkBackgroundSecondary": {
@@ -30347,7 +30387,7 @@
         "isVar": true,
         "key": "$darkBackgroundWarm",
         "name": "c-color-darkBackgroundWarm",
-        "val": "#2A2520",
+        "val": "#3D5A28",
         "variable": ""
       },
       "$color.darkBorder": {
@@ -30369,6 +30409,20 @@
         "key": "$darkBorderStrong",
         "name": "c-color-darkBorderStrong",
         "val": "#3a3d3f",
+        "variable": ""
+      },
+      "$color.darkChatBubbleOther": {
+        "isVar": true,
+        "key": "$darkChatBubbleOther",
+        "name": "c-color-darkChatBubbleOther",
+        "val": "#2A2D2F",
+        "variable": ""
+      },
+      "$color.darkChatBubbleOwn": {
+        "isVar": true,
+        "key": "$darkChatBubbleOwn",
+        "name": "c-color-darkChatBubbleOwn",
+        "val": "#B8960B",
         "variable": ""
       },
       "$color.darkDanger": {
@@ -30564,14 +30618,14 @@
         "isVar": true,
         "key": "$lightBackgroundAccent",
         "name": "c-color-lightBackgroundAccent",
-        "val": "#FFF0F8",
+        "val": "#B9C2DD",
         "variable": ""
       },
       "$color.lightBackgroundCool": {
         "isVar": true,
         "key": "$lightBackgroundCool",
         "name": "c-color-lightBackgroundCool",
-        "val": "#F0F8FF",
+        "val": "#B9C2DD",
         "variable": ""
       },
       "$color.lightBackgroundSecondary": {
@@ -30592,7 +30646,7 @@
         "isVar": true,
         "key": "$lightBackgroundWarm",
         "name": "c-color-lightBackgroundWarm",
-        "val": "#FFF8F0",
+        "val": "#99CD69",
         "variable": ""
       },
       "$color.lightBorder": {
@@ -30614,6 +30668,20 @@
         "key": "$lightBorderStrong",
         "name": "c-color-lightBorderStrong",
         "val": "#c0c0c0",
+        "variable": ""
+      },
+      "$color.lightChatBubbleOther": {
+        "isVar": true,
+        "key": "$lightChatBubbleOther",
+        "name": "c-color-lightChatBubbleOther",
+        "val": "#FFFFFF",
+        "variable": ""
+      },
+      "$color.lightChatBubbleOwn": {
+        "isVar": true,
+        "key": "$lightChatBubbleOwn",
+        "name": "c-color-lightChatBubbleOwn",
+        "val": "#FFD700",
         "variable": ""
       },
       "$color.lightDanger": {
