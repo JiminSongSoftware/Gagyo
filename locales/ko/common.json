@@ -117,7 +117,24 @@
       "announcements": "공지사항",
       "resources": "설교",
       "volunteers": "봉사",
-      "gagyo_team": "가교팀"
+      "gagyo_team": "가교팀",
+      "files": "파일"
     }
+  },
+  "files": {
+    "title": "파일",
+    "search": "검색",
+    "search_placeholder": "파일 이름 검색",
+    "filters": {
+      "all": "전체"
+    },
+    "selected": "선택됨",
+    "unknown_conversation": "알 수 없는 대화",
+    "no_results": "검색 결과가 없습니다",
+    "empty": "파일이 없습니다",
+    "no_files_for_type": "이 유형의 파일이 없습니다",
+    "load_more": "더 보기",
+    "end_of_list": "모든 파일을 불러왔습니다",
+    "detail_not_found": "파일을 찾을 수 없습니다"
   }
 }

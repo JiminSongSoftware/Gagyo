@@ -117,7 +117,24 @@
       "announcements": "Announcements",
       "resources": "Sermons",
       "volunteers": "Volunteers",
-      "gagyo_team": "Gagyo Team"
+      "gagyo_team": "Gagyo Team",
+      "files": "Files"
     }
+  },
+  "files": {
+    "title": "Files",
+    "search": "Search",
+    "search_placeholder": "Search file names",
+    "filters": {
+      "all": "All"
+    },
+    "selected": "Selected",
+    "unknown_conversation": "Unknown conversation",
+    "no_results": "No results found",
+    "empty": "No files yet",
+    "no_files_for_type": "No files of this type",
+    "load_more": "Load more",
+    "end_of_list": "All files loaded",
+    "detail_not_found": "File not found"
   }
 }
