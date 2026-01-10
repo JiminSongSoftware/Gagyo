@@ -12,8 +12,8 @@
  */
 
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import {
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -23,6 +23,8 @@ import {
   StatusBar,
   StyleSheet,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Stack as TamaguiStack, useTheme, XStack, YStack, Text } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
@@ -34,6 +36,7 @@ import {
   appendMessage,
   updateMessage,
   removeMessage,
+  useMediaUpload,
 } from '@/features/chat/hooks';
 import { MessageList, MessageInput } from '@/features/chat/components';
 import type { MessageInputHandle, MessageListHandle } from '@/features/chat/components';
@@ -54,10 +57,20 @@ interface MenuItem {
 interface AttachmentActionSheetProps {
   visible: boolean;
   onClose: () => void;
-  onUploadImage: () => void;
+  onUploadPhoto: () => Promise<void>;
+  onUploadVideo: () => Promise<void>;
+  onUploadFile: () => Promise<void>;
+  onOpenCamera: () => Promise<void>;
 }
 
-function AttachmentActionSheet({ visible, onClose, onUploadImage }: AttachmentActionSheetProps) {
+function AttachmentActionSheet({
+  visible,
+  onClose,
+  onUploadPhoto,
+  onUploadVideo,
+  onUploadFile,
+  onOpenCamera,
+}: AttachmentActionSheetProps) {
   const { t } = useTranslation();
 
   if (!visible) return null;
@@ -69,17 +82,66 @@ function AttachmentActionSheet({ visible, onClose, onUploadImage }: AttachmentAc
         {/* Action sheet content - positioned at bottom */}
         <Pressable style={styles.attachmentSheetContainer} onPress={(e) => e.stopPropagation()}>
           <YStack backgroundColor="$background" borderRadius="$4" padding="$2" paddingBottom="$4">
+            {/* Photo */}
             <Pressable
               style={styles.attachmentOption}
               onPress={() => {
                 onClose();
-                onUploadImage();
+                void onUploadPhoto();
               }}
             >
               <XStack alignItems="center" gap="$3" padding="$3">
                 <Ionicons name="image-outline" size={24} color="#8e8e93" />
                 <Text fontSize="$md" color="$color">
-                  {t('chat.upload_image')}
+                  {t('chat.upload_photo')}
+                </Text>
+              </XStack>
+            </Pressable>
+
+            {/* Video */}
+            <Pressable
+              style={styles.attachmentOption}
+              onPress={() => {
+                onClose();
+                void onUploadVideo();
+              }}
+            >
+              <XStack alignItems="center" gap="$3" padding="$3">
+                <Ionicons name="videocam-outline" size={24} color="#8e8e93" />
+                <Text fontSize="$md" color="$color">
+                  {t('chat.upload_video')}
+                </Text>
+              </XStack>
+            </Pressable>
+
+            {/* File */}
+            <Pressable
+              style={styles.attachmentOption}
+              onPress={() => {
+                onClose();
+                void onUploadFile();
+              }}
+            >
+              <XStack alignItems="center" gap="$3" padding="$3">
+                <Ionicons name="document-outline" size={24} color="#8e8e93" />
+                <Text fontSize="$md" color="$color">
+                  {t('chat.upload_file')}
+                </Text>
+              </XStack>
+            </Pressable>
+
+            {/* Camera */}
+            <Pressable
+              style={styles.attachmentOption}
+              onPress={() => {
+                onClose();
+                void onOpenCamera();
+              }}
+            >
+              <XStack alignItems="center" gap="$3" padding="$3">
+                <Ionicons name="camera-outline" size={24} color="#8e8e93" />
+                <Text fontSize="$md" color="$color">
+                  {t('chat.open_camera')}
                 </Text>
               </XStack>
             </Pressable>
@@ -108,79 +170,80 @@ interface ChatMenuSheetProps {
 
 function ChatMenuSheet({ visible, onClose, menuItems }: ChatMenuSheetProps) {
   const theme = useTheme();
+  const _insets = useSafeAreaInsets();
+  const slideAnim = useRef(new Animated.Value(256)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: visible ? 0 : 256,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [visible, slideAnim]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <TouchableOpacity
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
         activeOpacity={1}
         onPress={onClose}
       >
-        <TamaguiStack flex={1} justifyContent="flex-end">
-          <TouchableOpacity activeOpacity={1}>
+        <TamaguiStack flex={1} alignItems="flex-end">
+          <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
             <TamaguiStack
+              width={256}
+              height="100%"
               backgroundColor="$background"
-              borderTopLeftRadius={20}
-              borderTopRightRadius={20}
-              paddingBottom={Platform.OS === 'ios' ? 40 : 20}
+              borderLeftWidth={StyleSheet.hairlineWidth}
+              borderLeftColor="$borderLight"
               shadowColor="#000"
-              shadowOffset={{ width: 0, height: -2 }}
-              shadowOpacity={0.1}
+              shadowOffset={{ width: -2, height: 0 }}
+              shadowOpacity={0.15}
               shadowRadius={10}
-              elevation={10}
             >
-              {/* Handle bar */}
-              <TamaguiStack
-                width={40}
-                height={4}
-                backgroundColor="$gray8Light"
-                borderRadius={2}
-                alignSelf="center"
-                marginTop={12}
-                marginBottom={8}
-              />
-
               {/* Menu items */}
-              {menuItems.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    onClose();
-                    item.onPress();
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <XStack
-                    alignItems="center"
-                    justifyContent="space-between"
-                    paddingHorizontal={20}
-                    paddingVertical={16}
-                    borderBottomWidth={index < menuItems.length - 1 ? 1 : 0}
-                    borderBottomColor="$borderLight"
+              <YStack flex={1} paddingTop={Math.max(_insets.top, 16)}>
+                {menuItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      onClose();
+                      item.onPress();
+                    }}
+                    activeOpacity={0.7}
                   >
-                    <XStack alignItems="center" gap={16}>
-                      <Ionicons
-                        name={item.icon}
-                        size={24}
-                        color={item.isSettings ? '#8e8e93' : theme.color1?.val}
-                      />
-                      <Text fontSize={16} color={item.isSettings ? '#8e8e93' : '$color'}>
-                        {item.label}
-                      </Text>
+                    <XStack
+                      alignItems="center"
+                      justifyContent="space-between"
+                      paddingHorizontal={20}
+                      paddingVertical={16}
+                      borderBottomWidth={index < menuItems.length - 1 ? 1 : 0}
+                      borderBottomColor="$borderLight"
+                    >
+                      <XStack alignItems="center" gap={16} flex={1}>
+                        <Ionicons
+                          name={item.icon}
+                          size={24}
+                          color={item.isSettings ? '#8e8e93' : theme.color1?.val}
+                        />
+                        <Text fontSize={16} color={item.isSettings ? '#8e8e93' : '$color'}>
+                          {item.label}
+                        </Text>
+                      </XStack>
+                      {item.count !== undefined && (
+                        <Text fontSize={14} color="$color3" marginRight={8}>
+                          {item.count}
+                        </Text>
+                      )}
+                      {item.isSettings && (
+                        <Ionicons name="chevron-forward" size={20} color="#8e8e93" />
+                      )}
                     </XStack>
-                    {item.count !== undefined && (
-                      <Text fontSize={14} color="$gray11Light">
-                        {item.count}
-                      </Text>
-                    )}
-                    {item.isSettings && (
-                      <Ionicons name="chevron-forward" size={20} color="#8e8e93" />
-                    )}
-                  </XStack>
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                ))}
+              </YStack>
             </TamaguiStack>
-          </TouchableOpacity>
+          </Animated.View>
         </TamaguiStack>
       </TouchableOpacity>
     </Modal>
@@ -467,6 +530,32 @@ export default function ChatDetailScreen() {
     sending: sendingMessage,
     error: sendError,
   } = useSendMessage(conversationId, tenantId, membershipId);
+
+  // Media upload hook
+  const {
+    pickAndUploadPhoto,
+    pickAndUploadVideo,
+    pickAndUploadFile,
+    openCamera,
+    uploading: _uploadingMedia,
+    error: mediaError,
+    clearError: _clearMediaError,
+  } = useMediaUpload(conversationId ?? null, tenantId ?? null, membershipId ?? null);
+
+  // Debug logging for media upload parameters
+  console.log('Media upload params:', {
+    conversationId,
+    tenantId,
+    membershipId,
+  });
+
+  // Show error alert when media upload fails
+  useEffect(() => {
+    if (mediaError) {
+      console.error('Media upload error:', mediaError);
+      // TODO: Show error toast/alert to user
+    }
+  }, [mediaError]);
 
   // Fetch conversation details and media counts
   useEffect(() => {
@@ -780,10 +869,25 @@ export default function ChatDetailScreen() {
       <AttachmentActionSheet
         visible={showAttachmentSheet}
         onClose={() => setShowAttachmentSheet(false)}
-        onUploadImage={() => {
+        onUploadPhoto={async () => {
           setShowAttachmentSheet(false);
-          // Trigger image upload via ref callback
-          messageInputRef.current?.triggerImageUpload?.();
+          await pickAndUploadPhoto();
+          // Real-time subscription will automatically add the message
+        }}
+        onUploadVideo={async () => {
+          setShowAttachmentSheet(false);
+          await pickAndUploadVideo();
+          // Real-time subscription will automatically add the message
+        }}
+        onUploadFile={async () => {
+          setShowAttachmentSheet(false);
+          await pickAndUploadFile();
+          // Real-time subscription will automatically add the message
+        }}
+        onOpenCamera={async () => {
+          setShowAttachmentSheet(false);
+          await openCamera();
+          // Real-time subscription will automatically add the message
         }}
       />
     </>

@@ -12,7 +12,7 @@
  */
 
 import { useCallback } from 'react';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet, Image as RNImage } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import { Stack, Text as TamaguiText, Image, XStack, YStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
@@ -144,6 +144,11 @@ function SystemMessage({ content }: { content: string | null }) {
  * Render image message.
  */
 function ImageMessage({ content, onPress }: { content: string | null; onPress?: () => void }) {
+  // Extract URL from content (format: "filename|url")
+  const imageUrl = content?.includes('|') ? content.split('|')[1] : content;
+  // Check if still uploading (temp:// protocol)
+  const isUploading = imageUrl?.startsWith('temp://');
+
   return (
     <Pressable onPress={onPress}>
       <Stack
@@ -151,12 +156,34 @@ function ImageMessage({ content, onPress }: { content: string | null; onPress?: 
         overflow="hidden"
         maxWidth={200}
         maxHeight={200}
-        backgroundColor="$backgroundTertiary"
+        backgroundColor="$backgroundTransparent"
       >
-        {content ? (
-          <Image source={{ uri: content }} style={{ width: 200, height: 200 }} resizeMode="cover" />
+        {isUploading ? (
+          <Stack
+            width={200}
+            height={200}
+            alignItems="center"
+            justifyContent="center"
+            backgroundColor="$backgroundTertiary"
+          >
+            <TamaguiText fontSize="$sm" color="$color3">
+              ⏳ Uploading...
+            </TamaguiText>
+          </Stack>
+        ) : imageUrl ? (
+          <RNImage
+            source={{ uri: imageUrl }}
+            style={{ width: 200, height: 200 }}
+            resizeMode="cover"
+          />
         ) : (
-          <Stack width={200} height={200} alignItems="center" justifyContent="center">
+          <Stack
+            width={200}
+            height={200}
+            alignItems="center"
+            justifyContent="center"
+            backgroundColor="$backgroundTertiary"
+          >
             <TamaguiText fontSize="$lg">📷</TamaguiText>
           </Stack>
         )}
@@ -175,6 +202,8 @@ function PrayerCardMessage({
   content: string | null;
   isOwnMessage: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Stack
       borderWidth={1}
@@ -185,7 +214,7 @@ function PrayerCardMessage({
       gap="$2"
     >
       <TamaguiText fontSize={14} fontWeight="600" color="$primary">
-        🙏 {isOwnMessage ? 'Prayer Request' : 'Prayer Card'}
+        🙏 {isOwnMessage ? t('chat.prayer_request') : t('chat.prayer_card')}
       </TamaguiText>
       <TamaguiText fontSize="$lg" color="$color1" lineHeight="$5">
         {content || ''}

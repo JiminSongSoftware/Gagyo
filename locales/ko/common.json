@@ -40,10 +40,11 @@
   "nav": {
     "home": "홈",
     "chat": "채팅",
-    "prayer": "기도",
-    "pastoral": "목회 일지",
+    "prayer": "기도카드",
+    "pastoral": "목회일기",
     "images": "이미지",
-    "settings": "설정"
+    "settings": "설정",
+    "more": "전체"
   },
   "home_screen": {
     "welcome": "{{churchName}}에 오신 것을 환영합니다",
@@ -56,5 +57,67 @@
     "start_conversation": "대화 시작",
     "create_prayer": "기도 카드 작성",
     "write_journal": "일지 작성"
+  },
+  "more": {
+    "title": "전체",
+    "edit_profile": "프로필 편집",
+    "services_title": "서비스",
+    "roles": {
+      "admin": "관리자",
+      "pastor": "목사님",
+      "zone_leader": "초원지기님",
+      "small_group_leader": "목자님",
+      "member": "성도",
+      "senior_pastor": "담임목사님",
+      "associate_pastor": "부목사님",
+      "education_pastor": "교육목사님",
+      "youth_pastor": "청년목사님",
+      "assistant_pastor": "협동목사님",
+      "emeritus_pastor": "원로목사님",
+      "retired_pastor": "은퇴목사님",
+      "licensed_preacher": "강도사님",
+      "evangelist": "전도사님",
+      "elder": "장로님",
+      "active_elder": "시무장로님",
+      "retired_elder": "은퇴장로님",
+      "honorary_elder": "명예장로님",
+      "elder_emeritus": "원로장로님",
+      "deacon": "집사님",
+      "ordained_deacon": "안수집사님",
+      "staff_deacon": "서리집사님",
+      "deaconess": "권사님",
+      "active_deaconess": "시무권사님",
+      "retired_deaconess": "은퇴권사님",
+      "honorary_deaconess": "명예권사님",
+      "shepherdess": "목녀님",
+      "assistant_shepherd": "부목자님",
+      "preparing_shepherd": "예비목자님"
+    },
+    "ministries": {
+      "shepherding": "목장 · 소그룹 사역",
+      "worship": "찬양 사역",
+      "education": "교육 사역",
+      "mission": "선교 사역",
+      "service": "봉사 사역",
+      "prayer": "기도 사역",
+      "outreach": "전도 사역",
+      "media": "미디어 사역",
+      "youth": "청년 사역",
+      "children": "아동 사역"
+    },
+    "services": {
+      "pastoral": "목회일지",
+      "prayer": "기도카드",
+      "settings": "설정",
+      "profile_edit": "프로필 편집",
+      "chat_rooms": "채팅방",
+      "members": "멤버",
+      "calendar": "달력",
+      "giving": "헌금",
+      "announcements": "공지사항",
+      "resources": "설교",
+      "volunteers": "봉사",
+      "gagyo_team": "가교팀"
+    }
   }
 }

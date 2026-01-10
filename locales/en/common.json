@@ -43,7 +43,8 @@
     "prayer": "Prayer",
     "pastoral": "Pastoral Journal",
     "images": "Images",
-    "settings": "Settings"
+    "settings": "Settings",
+    "more": "More"
   },
   "home_screen": {
     "welcome": "Welcome to {{churchName}}",
@@ -56,5 +57,67 @@
     "start_conversation": "Start Conversation",
     "create_prayer": "Create Prayer Card",
     "write_journal": "Write Journal Entry"
+  },
+  "more": {
+    "title": "More",
+    "edit_profile": "Edit Profile",
+    "services_title": "Services",
+    "roles": {
+      "admin": "Admin",
+      "pastor": "Pastor",
+      "zone_leader": "Cluster Leader",
+      "small_group_leader": "Shepherd",
+      "member": "Member",
+      "senior_pastor": "Senior Pastor",
+      "associate_pastor": "Associate Pastor",
+      "education_pastor": "Education Pastor",
+      "youth_pastor": "Youth Pastor",
+      "assistant_pastor": "Assistant Pastor",
+      "emeritus_pastor": "Pastor Emeritus",
+      "retired_pastor": "Retired Pastor",
+      "licensed_preacher": "Licensed Preacher",
+      "evangelist": "Evangelist",
+      "elder": "Elder",
+      "active_elder": "Active Elder",
+      "retired_elder": "Retired Elder",
+      "honorary_elder": "Honorary Elder",
+      "elder_emeritus": "Elder Emeritus",
+      "deacon": "Deacon",
+      "ordained_deacon": "Ordained Deacon",
+      "staff_deacon": "Staff Deacon",
+      "deaconess": "Deaconess",
+      "active_deaconess": "Active Deaconess",
+      "retired_deaconess": "Retired Deaconess",
+      "honorary_deaconess": "Honorary Deaconess",
+      "shepherdess": "Shepherdess",
+      "assistant_shepherd": "Assistant Shepherd",
+      "preparing_shepherd": "Preparing Shepherd"
+    },
+    "ministries": {
+      "shepherding": "Shepherding & Small Group",
+      "worship": "Worship Ministry",
+      "education": "Education Ministry",
+      "mission": "Missions Ministry",
+      "service": "Service Ministry",
+      "prayer": "Prayer Ministry",
+      "outreach": "Outreach Ministry",
+      "media": "Media Ministry",
+      "youth": "Youth Ministry",
+      "children": "Children's Ministry"
+    },
+    "services": {
+      "pastoral": "Pastoral Diary",
+      "prayer": "Prayer Card",
+      "settings": "Settings",
+      "profile_edit": "Edit Profile",
+      "chat_rooms": "Chat Rooms",
+      "members": "Members",
+      "calendar": "Calendar",
+      "giving": "Giving",
+      "announcements": "Announcements",
+      "resources": "Sermons",
+      "volunteers": "Volunteers",
+      "gagyo_team": "Gagyo Team"
+    }
   }
 }
