@@ -13,7 +13,7 @@
 
 import { useCallback } from 'react';
 import { Pressable, View, StyleSheet } from 'react-native';
-import { Stack, Text as TamaguiText, Image, Avatar, XStack, YStack } from 'tamagui';
+import { Stack, Text as TamaguiText, Image, XStack, YStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import type { MessageWithSender } from '@/types/database';
 
@@ -360,17 +360,40 @@ export function MessageBubble({
       {/* Profile avatar */}
       {showSenderInfo ? (
         <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-          <Avatar circular width={52} height={52} marginRight="$3">
+          <Stack
+            width={52}
+            height={52}
+            marginRight="$3"
+            borderRadius={26}
+            overflow="hidden"
+            borderWidth={2}
+            borderColor="$backgroundStrong"
+            shadowColor="$shadowColor"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.15}
+            shadowRadius={4}
+            elevation={2}
+          >
             {senderAvatar ? (
-              <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
+              <Image
+                source={{ uri: senderAvatar }}
+                style={{ width: 52, height: 52 }}
+                resizeMode="cover"
+              />
             ) : (
-              <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
-                <TamaguiText fontSize={20} fontWeight="600" color="white">
+              <Stack
+                width={52}
+                height={52}
+                alignItems="center"
+                justifyContent="center"
+                backgroundColor={avatarBackgroundColor as '$color1' | undefined}
+              >
+                <TamaguiText fontSize={22} fontWeight="700" color="white">
                   {senderInitials}
                 </TamaguiText>
-              </Avatar.Fallback>
+              </Stack>
             )}
-          </Avatar>
+          </Stack>
         </Pressable>
       ) : null}
 
