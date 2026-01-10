@@ -245,6 +245,9 @@ export function MessageBubble({
   const bubbleBackgroundColor = getBubbleBackgroundColor(isOwnMessage);
   const textColor = getTextColor(isOwnMessage);
 
+  // Show sender info only for others' messages
+  const showSenderInfo = !isOwnMessage;
+
   // Get sender avatar URL or generate initials
   const senderName = message.sender?.user?.display_name || 'Unknown';
   const senderAvatar = message.sender?.user?.photo_url;
@@ -268,7 +271,7 @@ export function MessageBubble({
       }
     : {};
 
-  // Own messages: bubble on right, avatar on right, timestamp on left
+  // Own messages: bubble on right, timestamp on left
   // Others' messages: profile + bubble on left, timestamp on right
   if (isOwnMessage) {
     return (
@@ -312,68 +315,33 @@ export function MessageBubble({
           </TamaguiText>
         </YStack>
 
-        {/* Message content column with bubble */}
-        <YStack flex={1} maxWidth="80%" alignItems="flex-end">
-          {/* Sender name (right-aligned for own messages) */}
-          <TamaguiText
-            testID="sender-name"
-            fontSize={14}
-            fontWeight="600"
-            color="$color3"
-            marginBottom="$1"
-            textAlign="right"
-          >
-            {senderName}
-          </TamaguiText>
-
-          {/* Bubble row */}
-          <XStack alignItems="flex-end" justifyContent="flex-end" flex={1}>
-            {/* Message bubble */}
-            <Pressable onPress={handlePress}>
-              <View style={bubbleStyles.bubbleWrapper}>
-                <Stack
-                  borderRadius={16}
-                  borderTopRightRadius={4}
-                  padding="$2.5"
-                  paddingHorizontal="$3"
-                  backgroundColor={bubbleBackgroundColor}
-                  maxWidth={260}
-                  shadowColor="$shadowColor"
-                  shadowOffset={{ width: 0, height: 1 }}
-                  shadowOpacity={0.1}
-                  shadowRadius={2}
-                  elevation={1}
-                >
-                  <MessageContentView
-                    contentType={message.content_type}
-                    content={message.content}
-                    isOwnMessage={isOwnMessage}
-                    textColor={textColor}
-                    handlePress={handlePress}
-                  />
-                </Stack>
-                <BubbleTail isOwnMessage={true} />
-              </View>
-            </Pressable>
-
-            {/* Avatar on right for own messages */}
-            <Stack marginLeft="$3">
-              <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-                <Avatar circular width={52} height={52}>
-                  {senderAvatar ? (
-                    <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
-                  ) : (
-                    <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
-                      <TamaguiText fontSize={20} fontWeight="600" color="white">
-                        {senderInitials}
-                      </TamaguiText>
-                    </Avatar.Fallback>
-                  )}
-                </Avatar>
-              </Pressable>
+        {/* Message bubble */}
+        <Pressable onPress={handlePress}>
+          <View style={bubbleStyles.bubbleWrapper}>
+            <Stack
+              borderRadius={16}
+              borderTopRightRadius={4}
+              padding="$2.5"
+              paddingHorizontal="$3"
+              backgroundColor={bubbleBackgroundColor}
+              maxWidth={260}
+              shadowColor="$shadowColor"
+              shadowOffset={{ width: 0, height: 1 }}
+              shadowOpacity={0.1}
+              shadowRadius={2}
+              elevation={1}
+            >
+              <MessageContentView
+                contentType={message.content_type}
+                content={message.content}
+                isOwnMessage={isOwnMessage}
+                textColor={textColor}
+                handlePress={handlePress}
+              />
             </Stack>
-          </XStack>
-        </YStack>
+            <BubbleTail isOwnMessage={true} />
+          </View>
+        </Pressable>
       </XStack>
     );
   }
@@ -390,34 +358,38 @@ export function MessageBubble({
       {...highlightStyle}
     >
       {/* Profile avatar */}
-      <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-        <Avatar circular width={52} height={52} marginRight="$3">
-          {senderAvatar ? (
-            <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
-          ) : (
-            <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
-              <TamaguiText fontSize={20} fontWeight="600" color="white">
-                {senderInitials}
-              </TamaguiText>
-            </Avatar.Fallback>
-          )}
-        </Avatar>
-      </Pressable>
+      {showSenderInfo ? (
+        <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
+          <Avatar circular width={52} height={52} marginRight="$3">
+            {senderAvatar ? (
+              <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
+            ) : (
+              <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
+                <TamaguiText fontSize={20} fontWeight="600" color="white">
+                  {senderInitials}
+                </TamaguiText>
+              </Avatar.Fallback>
+            )}
+          </Avatar>
+        </Pressable>
+      ) : null}
 
       {/* Message content column */}
       <YStack flex={1} maxWidth="80%">
         {/* Sender name */}
-        <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-          <TamaguiText
-            testID="sender-name"
-            fontSize={14}
-            fontWeight="600"
-            color="$color3"
-            marginBottom="$1"
-          >
-            {senderName}
-          </TamaguiText>
-        </Pressable>
+        {showSenderInfo ? (
+          <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
+            <TamaguiText
+              testID="sender-name"
+              fontSize={14}
+              fontWeight="600"
+              color="$color3"
+              marginBottom="$1"
+            >
+              {senderName}
+            </TamaguiText>
+          </Pressable>
+        ) : null}
 
         {/* Bubble and timestamp row */}
         <XStack alignItems="flex-end">
