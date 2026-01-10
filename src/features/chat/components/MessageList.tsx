@@ -10,7 +10,7 @@
  * - Auto-scroll to bottom on new messages
  */
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
   FlatList,
   ListRenderItemInfo,
@@ -22,11 +22,20 @@ import { useTranslation } from '@/i18n';
 import { MessageBubble, DateSeparator } from './MessageBubble';
 import type { MessageWithSender, ConversationType } from '@/types/database';
 
+export interface MessageListHandle {
+  scrollToMessage: (messageId: string) => void;
+}
+
 export interface MessageListProps {
   /**
    * List of messages to display.
    */
   messages: MessageWithSender[];
+
+  /**
+   * ID of the message to highlight (for search results).
+   */
+  highlightedMessageId?: string | null;
 
   /**
    * Whether messages are currently loading.
@@ -152,6 +161,7 @@ function MessageItem({
   onMessagePress,
   onSenderPress,
   showThreadIndicator,
+  highlightedMessageId,
 }: {
   item: MessageWithSender;
   previousItem?: MessageWithSender;
@@ -160,8 +170,10 @@ function MessageItem({
   onMessagePress?: (message: MessageWithSender) => void;
   onSenderPress?: (membershipId: string) => void;
   showThreadIndicator: boolean;
+  highlightedMessageId?: string | null;
 }) {
   const isOwnMessage = item.sender_id === currentUserId;
+  const isHighlighted = item.id === highlightedMessageId;
 
   return (
     <>
@@ -173,6 +185,7 @@ function MessageItem({
         onPress={onMessagePress}
         onSenderPress={onSenderPress}
         showThreadIndicator={showThreadIndicator}
+        highlighted={isHighlighted}
       />
     </>
   );
@@ -181,144 +194,179 @@ function MessageItem({
 /**
  * MessageList component.
  */
-export function MessageList({
-  messages,
-  loading,
-  loadingMore = false,
-  hasMore = false,
-  error,
-  conversationType,
-  currentUserId,
-  onLoadMore,
-  onMessagePress,
-  onSenderPress,
-  showThreadIndicators = true,
-  testID,
-}: MessageListProps) {
-  const { t } = useTranslation();
+export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
+  (
+    {
+      messages,
+      highlightedMessageId,
+      loading,
+      loadingMore = false,
+      hasMore = false,
+      error,
+      conversationType,
+      currentUserId,
+      onLoadMore,
+      onMessagePress,
+      onSenderPress,
+      showThreadIndicators = true,
+      testID,
+    }: MessageListProps,
+    ref
+  ) => {
+    const { t } = useTranslation();
 
-  // Ref for FlatList to control scrolling
-  const flatListRef = useRef<FlatList>(null);
+    // Ref for FlatList to control scrolling
+    const flatListRef = useRef<FlatList>(null);
 
-  // Track if we're near bottom to auto-scroll on new messages
-  const isNearBottomRef = useRef(true);
+    // Track if we're near bottom to auto-scroll on new messages
+    const isNearBottomRef = useRef(true);
 
-  // Initial scroll to bottom when messages load
-  useEffect(() => {
-    if (messages.length > 0 && !loading) {
-      // Scroll to bottom after a short delay to ensure layout is complete
-      const timeoutId = setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 100);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [messages.length, loading]);
+    // Initial scroll to bottom when messages load
+    useEffect(() => {
+      if (messages.length > 0 && !loading) {
+        // Scroll to bottom after a short delay to ensure layout is complete
+        const timeoutId = setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: false });
+        }, 100);
+        return () => clearTimeout(timeoutId);
+      }
+    }, [messages.length, loading]);
 
-  // Handle scroll events to track position
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 100;
+    // Handle scroll events to track position
+    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+      const paddingToBottom = 100;
 
-    // Check if near bottom (for non-inverted list)
-    isNearBottomRef.current =
-      layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-  }, []);
+      // Check if near bottom (for non-inverted list)
+      isNearBottomRef.current =
+        layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    }, []);
 
-  // Auto-scroll to bottom when new message arrives and we were at bottom
-  const messagesLengthRef = useRef(messages.length);
-  useEffect(() => {
-    const prevLength = messagesLengthRef.current;
-    const currentLength = messages.length;
+    // Auto-scroll to bottom when new message arrives and we were at bottom
+    const messagesLengthRef = useRef(messages.length);
+    useEffect(() => {
+      const prevLength = messagesLengthRef.current;
+      const currentLength = messages.length;
 
-    if (currentLength > prevLength && isNearBottomRef.current) {
-      // New message arrived and we were near bottom, scroll to new message
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }
+      if (currentLength > prevLength && isNearBottomRef.current) {
+        // New message arrived and we were near bottom, scroll to new message
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }
 
-    messagesLengthRef.current = currentLength;
-  }, [messages.length]);
+      messagesLengthRef.current = currentLength;
+    }, [messages.length]);
 
-  const renderItem = useCallback(
-    ({ item, index }: ListRenderItemInfo<MessageWithSender>) => {
-      const previousItem = index > 0 ? messages[index - 1] : undefined;
+    // Expose scrollToMessage function via ref
+    useImperativeHandle(
+      ref,
+      () => ({
+        scrollToMessage: (messageId: string) => {
+          const index = messages.findIndex((msg) => msg.id === messageId);
+          if (index !== -1) {
+            flatListRef.current?.scrollToIndex({
+              index,
+              animated: true,
+              viewPosition: 0.5,
+            });
+          }
+        },
+      }),
+      [messages]
+    );
+
+    const renderItem = useCallback(
+      ({ item, index }: ListRenderItemInfo<MessageWithSender>) => {
+        const previousItem = index > 0 ? messages[index - 1] : undefined;
+        return (
+          <MessageItem
+            item={item}
+            previousItem={previousItem}
+            conversationType={conversationType}
+            currentUserId={currentUserId}
+            onMessagePress={onMessagePress}
+            onSenderPress={onSenderPress}
+            showThreadIndicator={showThreadIndicators}
+            highlightedMessageId={highlightedMessageId}
+          />
+        );
+      },
+      [
+        conversationType,
+        currentUserId,
+        messages,
+        onMessagePress,
+        onSenderPress,
+        showThreadIndicators,
+        highlightedMessageId,
+      ]
+    );
+
+    const keyExtractor = useCallback((item: MessageWithSender) => item.id, []);
+
+    const ListFooterComponent = useCallback(() => {
+      if (loadingMore) {
+        return <LoadingMore />;
+      }
+      return null;
+    }, [loadingMore]);
+
+    // Handle reaching end of list (for loading older messages)
+    const handleEndReached = useCallback(() => {
+      if (hasMore && !loadingMore && onLoadMore) {
+        onLoadMore();
+      }
+    }, [hasMore, loadingMore, onLoadMore]);
+
+    // Show loading state on initial load
+    if (loading && messages.length === 0) {
       return (
-        <MessageItem
-          item={item}
-          previousItem={previousItem}
-          conversationType={conversationType}
-          currentUserId={currentUserId}
-          onMessagePress={onMessagePress}
-          onSenderPress={onSenderPress}
-          showThreadIndicator={showThreadIndicators}
-        />
+        <Stack
+          testID="messages-loading"
+          flex={1}
+          alignItems="center"
+          justifyContent="center"
+          padding="$6"
+          gap="$3"
+        >
+          <Spinner size="large" color="$primary" />
+          <TamaguiText fontSize="$md" color="$color2">
+            {t('chat.loading_messages')}
+          </TamaguiText>
+        </Stack>
       );
-    },
-    [conversationType, currentUserId, messages, onMessagePress, onSenderPress, showThreadIndicators]
-  );
-
-  const keyExtractor = useCallback((item: MessageWithSender) => item.id, []);
-
-  const ListFooterComponent = useCallback(() => {
-    if (loadingMore) {
-      return <LoadingMore />;
     }
-    return null;
-  }, [loadingMore]);
 
-  // Handle reaching end of list (for loading older messages)
-  const handleEndReached = useCallback(() => {
-    if (hasMore && !loadingMore && onLoadMore) {
-      onLoadMore();
+    // Show error state
+    if (error && messages.length === 0) {
+      return <ErrorState error={error} />;
     }
-  }, [hasMore, loadingMore, onLoadMore]);
 
-  // Show loading state on initial load
-  if (loading && messages.length === 0) {
+    // Show empty state
+    if (!loading && messages.length === 0) {
+      return <EmptyMessages />;
+    }
+
     return (
-      <Stack
-        testID="messages-loading"
-        flex={1}
-        alignItems="center"
-        justifyContent="center"
-        padding="$6"
-        gap="$3"
-      >
-        <Spinner size="large" color="$primary" />
-        <TamaguiText fontSize="$md" color="$color2">
-          {t('chat.loading_messages')}
-        </TamaguiText>
-      </Stack>
+      <FlatList
+        ref={flatListRef}
+        testID={testID || 'message-list'}
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        ListFooterComponent={ListFooterComponent}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingVertical: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      />
     );
   }
+);
 
-  // Show error state
-  if (error && messages.length === 0) {
-    return <ErrorState error={error} />;
-  }
-
-  // Show empty state
-  if (!loading && messages.length === 0) {
-    return <EmptyMessages />;
-  }
-
-  return (
-    <FlatList
-      ref={flatListRef}
-      testID={testID || 'message-list'}
-      data={messages}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      ListFooterComponent={ListFooterComponent}
-      onEndReached={handleEndReached}
-      onEndReachedThreshold={0.5}
-      onScroll={handleScroll}
-      scrollEventThrottle={400}
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingVertical: 16,
-      }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    />
-  );
-}
+MessageList.displayName = 'MessageList';

@@ -22,7 +22,6 @@ import {
   TouchableOpacity,
   StatusBar,
   StyleSheet,
-  FlatList,
 } from 'react-native';
 import { Stack as TamaguiStack, useTheme, XStack, YStack, Text } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -37,25 +36,12 @@ import {
   removeMessage,
 } from '@/features/chat/hooks';
 import { MessageList, MessageInput } from '@/features/chat/components';
+import type { MessageInputHandle, MessageListHandle } from '@/features/chat/components';
 import { getRoomBackgroundColor } from '@/features/chat/utils/getRoomBackgroundColor';
 import { supabase } from '@/lib/supabase';
 import type { ConversationType, MessageWithSender } from '@/types/database';
 import type { SendMessageOptions } from '@/features/chat/hooks/useSendMessage';
-import koTranslations from '@/i18n/locales/ko/common.json';
-import enTranslations from '@/i18n/locales/en/common.json';
-
-/**
- * Get translation by key (defaults to Korean).
- */
-function t(key: string, locale: 'ko' | 'en' = 'ko'): string {
-  const translations = locale === 'ko' ? koTranslations : enTranslations;
-  const keys = key.split('.');
-  let value: unknown = translations;
-  for (const k of keys) {
-    value = (value as Record<string, unknown>)?.[k];
-  }
-  return (value as string) || key;
-}
+import { useTranslation } from '@/i18n';
 
 interface MenuItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -71,7 +57,9 @@ interface AttachmentActionSheetProps {
   onUploadImage: () => void;
 }
 
-function _AttachmentActionSheet({ visible, onClose, onUploadImage }: AttachmentActionSheetProps) {
+function AttachmentActionSheet({ visible, onClose, onUploadImage }: AttachmentActionSheetProps) {
+  const { t } = useTranslation();
+
   if (!visible) return null;
 
   return (
@@ -199,161 +187,121 @@ function ChatMenuSheet({ visible, onClose, menuItems }: ChatMenuSheetProps) {
   );
 }
 
-interface SearchModalProps {
-  visible: boolean;
-  onClose: () => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  messages: MessageWithSender[];
-  currentUserId: string;
-}
-
-function SearchModal({
-  visible,
-  onClose,
-  searchQuery,
-  onSearchChange,
-  messages,
-  currentUserId,
-}: SearchModalProps) {
-  const theme = useTheme();
-
-  const renderMessage = useCallback(
-    ({ item }: { item: MessageWithSender }) => {
-      // Import the MessageBubble component
-      // For now, we'll use a simple render since MessageBubble is in another file
-      const isCurrentUser = item.sender_id === currentUserId;
-      const backgroundColor = isCurrentUser ? '$primaryLight' : '$background';
-      const textColor = isCurrentUser ? '$color' : '$color';
-      const align = isCurrentUser ? 'flex-end' : 'flex-start';
-
-      return (
-        <XStack key={item.id} width="100%" justifyContent={align} marginBottom="$2">
-          <TamaguiStack
-            maxWidth="75%"
-            backgroundColor={backgroundColor}
-            padding="$3"
-            borderRadius="$2"
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 1 }}
-            shadowOpacity={0.1}
-            shadowRadius={2}
-          >
-            <Text fontSize={14} color={textColor}>
-              {item.content}
-            </Text>
-            <Text fontSize="$xs" color="$color3" marginTop="$1">
-              {item.sender?.user?.display_name ?? t('chat.unknown')}
-            </Text>
-          </TamaguiStack>
-        </XStack>
-      );
-    },
-    [currentUserId]
-  );
-
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
-        activeOpacity={1}
-        onPress={onClose}
-      >
-        <TamaguiStack flex={1} justifyContent="flex-end">
-          <TouchableOpacity activeOpacity={1}>
-            <TamaguiStack
-              backgroundColor="$background"
-              borderTopLeftRadius={20}
-              borderTopRightRadius={20}
-              paddingBottom={Platform.OS === 'ios' ? 40 : 20}
-              height="80%"
-            >
-              {/* Search header */}
-              <XStack
-                alignItems="center"
-                justifyContent="space-between"
-                paddingHorizontal="$4"
-                paddingVertical="$3"
-                borderBottomWidth={1}
-                borderBottomColor="$borderLight"
-              >
-                <Text fontSize="$lg" fontWeight="600">
-                  {t('chat.search_messages')}
-                </Text>
-                <Pressable onPress={onClose} hitSlop={8}>
-                  <Ionicons name="close" size={24} color={theme.color1?.val} />
-                </Pressable>
-              </XStack>
-
-              {/* Search input */}
-              <XStack paddingHorizontal="$4" paddingVertical="$3" gap="$2" alignItems="center">
-                <TamaguiStack
-                  flex={1}
-                  backgroundColor="$backgroundTertiary"
-                  borderRadius="$2"
-                  paddingHorizontal="$3"
-                  height={36}
-                  alignItems="center"
-                >
-                  <Ionicons name="search" size={18} color={theme.color3?.val} />
-                  <TextInput
-                    value={searchQuery}
-                    onChangeText={onSearchChange}
-                    placeholder={t('chat.search_conversations')}
-                    placeholderTextColor={theme.color3?.val}
-                    style={{
-                      flex: 1,
-                      marginLeft: 8,
-                      fontSize: 16,
-                      color: theme.color1?.val,
-                      padding: 0,
-                      height: 36,
-                    }}
-                    autoFocus
-                  />
-                  {searchQuery.length > 0 && (
-                    <Pressable onPress={() => onSearchChange('')} hitSlop={8}>
-                      <Ionicons name="close-circle" size={18} color={theme.color3?.val} />
-                    </Pressable>
-                  )}
-                </TamaguiStack>
-              </XStack>
-
-              {/* Search results */}
-              <TamaguiStack flex={1} paddingHorizontal="$4">
-                {messages.length === 0 ? (
-                  <TamaguiStack flex={1} alignItems="center" justifyContent="center" gap="$2">
-                    <Ionicons name="search-outline" size={48} color={theme.color3?.val} />
-                    <Text fontSize="$md" color="$color3">
-                      {searchQuery ? t('chat.no_conversations') : t('chat.search_placeholder')}
-                    </Text>
-                  </TamaguiStack>
-                ) : (
-                  <FlatList
-                    data={messages}
-                    renderItem={renderMessage}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ paddingVertical: 16 }}
-                    showsVerticalScrollIndicator={false}
-                  />
-                )}
-              </TamaguiStack>
-            </TamaguiStack>
-          </TouchableOpacity>
-        </TamaguiStack>
-      </TouchableOpacity>
-    </Modal>
-  );
-}
-
 interface ChatHeaderProps {
   title: string;
   onBack: () => void;
   onSearch: () => void;
+  onSearchClose: () => void;
   onMenu: () => void;
+  searchExpanded: boolean;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  searchResultCount?: number;
+  currentSearchIndex?: number;
+  onPreviousResult?: () => void;
+  onNextResult?: () => void;
 }
 
-function ChatHeader({ title, onBack, onSearch, onMenu }: ChatHeaderProps) {
+function ChatHeader({
+  title,
+  onBack,
+  onSearch,
+  onSearchClose,
+  onMenu,
+  searchExpanded,
+  searchQuery,
+  onSearchChange,
+  searchResultCount,
+  currentSearchIndex,
+  onPreviousResult,
+  onNextResult,
+}: ChatHeaderProps) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+
+  if (searchExpanded) {
+    return (
+      <>
+        <StatusBar barStyle="dark-content" />
+        <TamaguiStack
+          backgroundColor="rgba(255, 255, 255, 0.95)"
+          borderBottomWidth={StyleSheet.hairlineWidth}
+          borderBottomColor="rgba(0, 0, 0, 0.1)"
+          paddingVertical="$2"
+        >
+          {/* Search input row */}
+          <XStack alignItems="center" paddingHorizontal="$3" gap="$2" height={44}>
+            {/* Back button */}
+            <Pressable onPress={onSearchClose} hitSlop={8}>
+              <Ionicons name="chevron-back" size={24} color="#000" />
+            </Pressable>
+
+            {/* Search input */}
+            <XStack
+              flex={1}
+              backgroundColor="$backgroundTertiary"
+              borderRadius="$2"
+              paddingHorizontal="$3"
+              height={36}
+              alignItems="center"
+            >
+              <Ionicons name="search" size={18} color={theme.color3?.val} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={onSearchChange}
+                placeholder={t('chat.search_placeholder')}
+                placeholderTextColor={theme.color3?.val}
+                style={{
+                  flex: 1,
+                  marginLeft: 8,
+                  fontSize: 16,
+                  color: theme.color1?.val,
+                  padding: 0,
+                  height: 36,
+                }}
+                autoFocus
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => onSearchChange('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color={theme.color3?.val} />
+                </Pressable>
+              )}
+            </XStack>
+
+            {/* Navigation buttons (only show when there are results) */}
+            {searchResultCount !== undefined && searchResultCount > 0 && (
+              <>
+                <Pressable onPress={onPreviousResult} hitSlop={8} disabled={!onPreviousResult}>
+                  <Ionicons
+                    name="chevron-back"
+                    size={20}
+                    color={onPreviousResult ? '#007AFF' : theme.color3?.val}
+                  />
+                </Pressable>
+                <Text fontSize="$sm" color="$color2" minWidth={40} textAlign="center">
+                  {currentSearchIndex !== undefined ? currentSearchIndex + 1 : 0} /{' '}
+                  {searchResultCount}
+                </Text>
+                <Pressable onPress={onNextResult} hitSlop={8} disabled={!onNextResult}>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={onNextResult ? '#007AFF' : theme.color3?.val}
+                  />
+                </Pressable>
+              </>
+            )}
+
+            {/* Menu button */}
+            <Pressable onPress={onMenu} hitSlop={8}>
+              <Ionicons name="ellipsis-horizontal" size={22} color="#000" />
+            </Pressable>
+          </XStack>
+        </TamaguiStack>
+      </>
+    );
+  }
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -416,6 +364,7 @@ function ChatHeader({ title, onBack, onSearch, onMenu }: ChatHeaderProps) {
 }
 
 export default function ChatDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const { tenantId } = useRequireAuth();
@@ -436,11 +385,17 @@ export default function ChatDetailScreen() {
   const [showAttachmentSheet, setShowAttachmentSheet] = useState(false);
 
   // Ref to access MessageInput methods
-  const messageInputRef = useRef<{ triggerImageUpload?: () => void }>(null);
+  const messageInputRef = useRef<MessageInputHandle | null>(null);
+
+  // Ref to access MessageList methods
+  const messageListRef = useRef<MessageListHandle | null>(null);
 
   // Search state
-  const [showSearch, setShowSearch] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResultIds, setSearchResultIds] = useState<string[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   // Fetch messages for this conversation
   const { messages, loading, error, loadMore, hasMore } = useMessages(conversationId, tenantId);
@@ -460,22 +415,50 @@ export default function ChatDetailScreen() {
     return realTimeMessages.length > 0 ? realTimeMessages : messages;
   }, [realTimeMessages, messages]);
 
-  // Filter messages based on search query
-  const filteredMessages = useMemo(() => {
+  // Update search results when query or messages change
+  useEffect(() => {
     if (!searchQuery.trim()) {
-      return displayMessages;
+      setSearchResultIds([]);
+      setCurrentSearchIndex(0);
+      setHighlightedMessageId(null);
+      return;
     }
+
     const query = searchQuery.toLowerCase();
-    return displayMessages.filter((msg) => {
-      if (msg.content?.toLowerCase().includes(query)) {
-        return true;
-      }
-      if (msg.sender?.user?.display_name?.toLowerCase().includes(query)) {
-        return true;
-      }
-      return false;
-    });
-  }, [displayMessages, searchQuery]);
+    const results = displayMessages
+      .map((msg, index) => ({ msg, index }))
+      .filter(({ msg }) => {
+        if (msg.content?.toLowerCase().includes(query)) {
+          return true;
+        }
+        if (msg.sender?.user?.display_name?.toLowerCase().includes(query)) {
+          return true;
+        }
+        return false;
+      })
+      .map(({ msg }) => msg.id);
+
+    setSearchResultIds(results);
+
+    // Reset to first result when query changes
+    if (results.length > 0 && currentSearchIndex >= results.length) {
+      setCurrentSearchIndex(0);
+    }
+  }, [displayMessages, searchQuery, currentSearchIndex]);
+
+  // Scroll to and highlight the current search result
+  useEffect(() => {
+    if (searchResultIds.length > 0 && searchResultIds[currentSearchIndex]) {
+      const messageId = searchResultIds[currentSearchIndex];
+      setHighlightedMessageId(messageId);
+      // Scroll to the message with a small delay to ensure layout is ready
+      setTimeout(() => {
+        messageListRef.current?.scrollToMessage(messageId);
+      }, 100);
+    } else {
+      setHighlightedMessageId(null);
+    }
+  }, [searchResultIds, currentSearchIndex]);
 
   // Send message mutation
   const {
@@ -633,14 +616,33 @@ export default function ChatDetailScreen() {
   );
 
   const handleSearch = useCallback(() => {
-    setShowSearch((prev) => {
-      if (!prev) {
-        // Opening search - clear previous query
-        setSearchQuery('');
-      }
-      return !prev;
-    });
+    setSearchExpanded(true);
+    setSearchQuery('');
+    setSearchResultIds([]);
+    setCurrentSearchIndex(0);
   }, []);
+
+  const handleSearchClose = useCallback(() => {
+    setSearchExpanded(false);
+    setSearchQuery('');
+    setSearchResultIds([]);
+    setCurrentSearchIndex(0);
+    setHighlightedMessageId(null);
+  }, []);
+
+  const handlePreviousResult = useCallback(() => {
+    setCurrentSearchIndex((prev) => {
+      if (searchResultIds.length === 0) return prev;
+      return prev > 0 ? prev - 1 : searchResultIds.length - 1;
+    });
+  }, [searchResultIds.length]);
+
+  const handleNextResult = useCallback(() => {
+    setCurrentSearchIndex((prev) => {
+      if (searchResultIds.length === 0) return prev;
+      return prev < searchResultIds.length - 1 ? prev + 1 : 0;
+    });
+  }, [searchResultIds.length]);
 
   const getHeaderTitle = useCallback(() => {
     if (conversationName) {
@@ -656,7 +658,7 @@ export default function ChatDetailScreen() {
       default:
         return t('chat.chat');
     }
-  }, [conversationName, conversationType]);
+  }, [conversationName, conversationType, t]);
 
   // Menu items for the bottom sheet
   const menuItems: MenuItem[] = [
@@ -722,7 +724,15 @@ export default function ChatDetailScreen() {
           title={getHeaderTitle()}
           onBack={handleBack}
           onSearch={handleSearch}
+          onSearchClose={handleSearchClose}
           onMenu={() => setShowMenu(true)}
+          searchExpanded={searchExpanded}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchResultCount={searchResultIds.length}
+          currentSearchIndex={currentSearchIndex}
+          onPreviousResult={searchResultIds.length > 0 ? handlePreviousResult : undefined}
+          onNextResult={searchResultIds.length > 0 ? handleNextResult : undefined}
         />
 
         {/* Content */}
@@ -734,7 +744,9 @@ export default function ChatDetailScreen() {
           >
             {/* Message list */}
             <MessageList
+              ref={messageListRef}
               messages={displayMessages}
+              highlightedMessageId={highlightedMessageId}
               loading={loading}
               loadingMore={!loading && sendingMessage}
               hasMore={hasMore}
@@ -752,9 +764,9 @@ export default function ChatDetailScreen() {
               onSendEventChat={handleSendEventChat}
               sending={sendingMessage}
               error={sendError}
-              conversationId={conversationId}
-              tenantId={tenantId}
-              currentMembershipId={membershipId}
+              conversationId={conversationId ?? undefined}
+              tenantId={tenantId ?? undefined}
+              currentMembershipId={membershipId ?? undefined}
               onPlusPress={() => setShowAttachmentSheet(true)}
             />
           </KeyboardAvoidingView>
@@ -764,18 +776,8 @@ export default function ChatDetailScreen() {
       {/* Menu Bottom Sheet */}
       <ChatMenuSheet visible={showMenu} onClose={() => setShowMenu(false)} menuItems={menuItems} />
 
-      {/* Search Modal */}
-      <SearchModal
-        visible={showSearch}
-        onClose={() => setShowSearch(false)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        messages={filteredMessages}
-        currentUserId={membershipId || ''}
-      />
-
       {/* Attachment Action Sheet */}
-      <_AttachmentActionSheet
+      <AttachmentActionSheet
         visible={showAttachmentSheet}
         onClose={() => setShowAttachmentSheet(false)}
         onUploadImage={() => {

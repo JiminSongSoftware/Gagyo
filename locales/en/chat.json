@@ -60,5 +60,23 @@
   "new_chat": "New Chat",
   "regular_chat": "Regular Chat",
   "team_chat": "Team Chat",
-  "open_chat": "Open Chat"
+  "open_chat": "Open Chat",
+  "no_search_results": "No conversations found for",
+  "loading_messages": "Loading messages...",
+  "no_messages": "No messages yet",
+  "unknown_conversation": "Unknown Conversation",
+  "unknown_sender": "Unknown",
+  "unknown": "Unknown",
+  "search_placeholder": "Search messages in this conversation...",
+  "small_group": "Small Group",
+  "ministry": "Ministry",
+  "church_wide": "Church Wide",
+  "chat": "Chat",
+  "menu": {
+    "photos": "Photos",
+    "videos": "Videos",
+    "files": "Files",
+    "participants": "Participants",
+    "chat_settings": "Chat Settings"
+  }
 }

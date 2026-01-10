@@ -48,6 +48,11 @@ export interface MessageBubbleProps {
   showThreadIndicator?: boolean;
 
   /**
+   * Whether to highlight this message (e.g., from search results).
+   */
+  highlighted?: boolean;
+
+  /**
    * Test ID for E2E testing.
    */
   testID?: string;
@@ -214,6 +219,7 @@ export function MessageBubble({
   onPress,
   onSenderPress,
   showThreadIndicator = true,
+  highlighted = false,
   testID,
 }: MessageBubbleProps) {
   const handlePress = useCallback(() => {
@@ -250,6 +256,10 @@ export function MessageBubble({
       maxWidth="80%"
       marginHorizontal="$3"
       marginBottom="$2"
+      borderWidth={highlighted ? 2 : undefined}
+      borderColor="$primary"
+      borderRadius={highlighted ? '$3' : undefined}
+      padding={highlighted ? '$1' : undefined}
     >
       {/* Sender info for group chats */}
       {showSenderInfo && (
@@ -269,7 +279,54 @@ export function MessageBubble({
 
       {/* Message bubble - renders content and timestamp */}
       <Pressable onPress={handlePress}>
-        <Stack borderRadius="$3" padding="$3" backgroundColor={backgroundColor}><MessageContentView contentType={message.content_type} content={message.content} isOwnMessage={isOwnMessage} textColor={textColor} handlePress={handlePress} /><Stack flexDirection="row" alignItems="center" gap="$2" style={{ alignSelf: isOwnMessage ? 'flex-end' : 'flex-start' }}><TamaguiText testID="message-timestamp" fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>{formatMessageTime(message.created_at)}</TamaguiText>{showThreadIndicator && message.reply_count && message.reply_count > 0 ? <Stack testID="reply-count-badge" flexDirection="row" alignItems="center" gap="$1" backgroundColor={isOwnMessage ? '$primaryDark' : '$backgroundTertiary'} borderRadius={8} paddingHorizontal="$2" paddingVertical="$1"><TamaguiText testID="reply-count-text" fontSize="$xs" color={isOwnMessage ? 'white' : '$color2'}>{message.reply_count}</TamaguiText></Stack> : null}{message.is_event_chat && isOwnMessage ? <TamaguiText fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>👁️</TamaguiText> : null}</Stack></Stack>
+        <Stack borderRadius="$3" padding="$3" backgroundColor={backgroundColor}>
+          <MessageContentView
+            contentType={message.content_type}
+            content={message.content}
+            isOwnMessage={isOwnMessage}
+            textColor={textColor}
+            handlePress={handlePress}
+          />
+          <Stack
+            flexDirection="row"
+            alignItems="center"
+            gap="$2"
+            style={{ alignSelf: isOwnMessage ? 'flex-end' : 'flex-start' }}
+          >
+            <TamaguiText
+              testID="message-timestamp"
+              fontSize="$xs"
+              color={isOwnMessage ? '$primaryLight' : '$color3'}
+            >
+              {formatMessageTime(message.created_at)}
+            </TamaguiText>
+            {showThreadIndicator && message.reply_count && message.reply_count > 0 ? (
+              <Stack
+                testID="reply-count-badge"
+                flexDirection="row"
+                alignItems="center"
+                gap="$1"
+                backgroundColor={isOwnMessage ? '$primaryDark' : '$backgroundTertiary'}
+                borderRadius={8}
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+              >
+                <TamaguiText
+                  testID="reply-count-text"
+                  fontSize="$xs"
+                  color={isOwnMessage ? 'white' : '$color2'}
+                >
+                  {message.reply_count}
+                </TamaguiText>
+              </Stack>
+            ) : null}
+            {message.is_event_chat && isOwnMessage ? (
+              <TamaguiText fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>
+                👁️
+              </TamaguiText>
+            ) : null}
+          </Stack>
+        </Stack>
       </Pressable>
     </Stack>
   );

@@ -21,16 +21,8 @@
  */
 
 import { useTranslation } from '@/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActionSheetIOS,
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  TextInput,
-} from 'react-native';
+import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { ActivityIndicator, Image, Platform, Pressable, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
@@ -40,9 +32,9 @@ import { EmojiPicker } from './EmojiPicker';
 import { EventChatSelector } from './EventChatSelector';
 
 // Import icon assets from assets folder (PNG files)
-const PLUS_ICON = require('../../../../assets/plus-circle.png');
-const SMILE_ICON = require('../../../../assets/smile.png');
-const SEND_ICON = require('../../../../assets/send.png');
+const PLUS_ICON = require('../../../../assets/plus-circle.png') as number;
+const SMILE_ICON = require('../../../../assets/smile.png') as number;
+const SEND_ICON = require('../../../../assets/send.png') as number;
 
 // Close icon SVG (inline since no PNG provided)
 function CloseIcon({ size = 24, color = '#8e8e93' }: { size?: number; color?: string }) {
@@ -115,6 +107,15 @@ export interface MessageInputProps {
    * Callback when an image is successfully uploaded.
    */
   onImageUploaded?: () => void;
+
+  /**
+   * Callback when plus icon is pressed (opens attachment menu).
+   */
+  onPlusPress?: () => void;
+}
+
+export interface MessageInputHandle {
+  triggerImageUpload: () => void;
 }
 
 const DEFAULT_MAX_LENGTH = 2000;
@@ -122,20 +123,22 @@ const DEFAULT_MAX_LENGTH = 2000;
 /**
  * MessageInput component.
  */
-export function MessageInput({
-  onSend,
-  onSendEventChat,
-  sending,
-  error,
-  maxLength = DEFAULT_MAX_LENGTH,
-  placeholder,
-  testID,
-  conversationId,
-  tenantId,
-  currentMembershipId,
-  showImageUpload = true,
-  onImageUploaded,
-}: MessageInputProps) {
+export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((props, ref) => {
+  const {
+    onSend,
+    onSendEventChat,
+    sending,
+    error,
+    maxLength = DEFAULT_MAX_LENGTH,
+    placeholder,
+    testID,
+    conversationId,
+    tenantId,
+    currentMembershipId,
+    showImageUpload = true,
+    onImageUploaded,
+    onPlusPress,
+  } = props;
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -248,43 +251,8 @@ export function MessageInput({
 
   // Show action sheet for plus icon
   const handlePlusPress = useCallback(() => {
-    const options = [
-      t('chat.upload_image'),
-      t('chat.cancel'),
-    ];
-
-    const cancelButtonIndex = 1;
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 0) {
-            void handleImageUpload();
-          }
-        }
-      );
-    } else {
-      // For Android, show a simple alert
-      Alert.alert(
-        t('chat.attachment'),
-        undefined,
-        [
-          {
-            text: t('chat.upload_image'),
-            onPress: () => void handleImageUpload(),
-          },
-          {
-            text: t('chat.cancel'),
-            style: 'cancel',
-          },
-        ]
-      );
-    }
-  }, [t, handleImageUpload, canUploadImages, uploading]);
+    onPlusPress?.();
+  }, [onPlusPress]);
 
   const handleToggleEmojiPicker = useCallback(() => {
     setShowEmojiPicker((prev) => !prev);
@@ -292,6 +260,15 @@ export function MessageInput({
 
   const canSend = inputText.trim().length > 0 && !sending;
   const charCount = inputText.length;
+
+  // Expose image upload method via ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      triggerImageUpload: handleImageUpload,
+    }),
+    [handleImageUpload]
+  );
   const nearLimit = charCount > maxLength * 0.9;
   const hasEventChatSupport = onSendEventChat && conversationId && tenantId && currentMembershipId;
 
@@ -363,10 +340,7 @@ export function MessageInput({
 
         {/* Emoji Picker - rendered above the input bar */}
         {showEmojiPicker && (
-          <EmojiPicker
-            onEmojiSelect={handleEmojiSelect}
-            testID="emoji-picker-panel"
-          />
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} testID="emoji-picker-panel" />
         )}
 
         {/* Input bar */}
@@ -383,6 +357,9 @@ export function MessageInput({
             onPress={handlePlusPress}
             disabled={sending}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.6 : 1,
+            })}
           >
             <Stack
               width={40}
@@ -391,6 +368,7 @@ export function MessageInput({
               backgroundColor="$backgroundTertiary"
               alignItems="center"
               justifyContent="center"
+              pointerEvents="none"
             >
               <Image
                 source={PLUS_ICON}
@@ -444,6 +422,9 @@ export function MessageInput({
             onPress={handleToggleEmojiPicker}
             disabled={sending}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.6 : 1,
+            })}
           >
             <Stack
               width={40}
@@ -452,15 +433,12 @@ export function MessageInput({
               backgroundColor={showEmojiPicker ? '$primary' : '$backgroundTertiary'}
               alignItems="center"
               justifyContent="center"
+              pointerEvents="none"
             >
               {showEmojiPicker ? (
                 <CloseIcon size={20} color="white" />
               ) : (
-                <Image
-                  source={SMILE_ICON}
-                  style={{ width: 24, height: 24 }}
-                  resizeMode="contain"
-                />
+                <Image source={SMILE_ICON} style={{ width: 24, height: 24 }} resizeMode="contain" />
               )}
             </Stack>
           </Pressable>
@@ -484,10 +462,7 @@ export function MessageInput({
                 justifyContent="center"
               >
                 {sending ? (
-                  <ActivityIndicator
-                    size="small"
-                    color="white"
-                  />
+                  <ActivityIndicator size="small" color="white" />
                 ) : (
                   <Image
                     source={SEND_ICON}
@@ -528,4 +503,6 @@ export function MessageInput({
       )}
     </>
   );
-}
+});
+
+MessageInput.displayName = 'MessageInput';

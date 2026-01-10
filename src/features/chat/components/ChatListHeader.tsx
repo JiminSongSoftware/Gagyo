@@ -7,11 +7,11 @@
  * - New chat button with options (regular chat, team chat, open chat)
  */
 
-import { useState } from 'react';
-import { Pressable, TextInput as RNTextInput, LayoutChangeEvent } from 'react-native';
-import { Stack, Text as TamaguiText, XStack, useTheme } from 'tamagui';
-import { Svg, Circle, Path } from 'react-native-svg';
 import { useTranslation } from '@/i18n';
+import { useState } from 'react';
+import { LayoutChangeEvent, Modal, Pressable, TextInput as RNTextInput } from 'react-native';
+import { Circle, Path, Svg } from 'react-native-svg';
+import { Stack, Text as TamaguiText, XStack, useTheme } from 'tamagui';
 
 export interface ChatListHeaderProps {
   /**
@@ -124,25 +124,20 @@ function NewChatMenu({
 }) {
   const { t } = useTranslation();
 
-  if (!visible) return null;
-
   return (
-    <Pressable
-      onPress={onClose}
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}
-    >
-      <Stack flex={1} backgroundColor="rgba(0,0,0,0.3)">
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1 }}>
+        {/* Menu - positioned absolutely below the header */}
         <Stack
           position="absolute"
-          top={60}
-          right={16}
+          top={95}
+          right={12}
           backgroundColor="white"
           borderRadius={12}
           shadowColor="#000"
           shadowOffset={{ width: 0, height: 2 }}
           shadowOpacity={0.15}
           shadowRadius={8}
-          elevation={5}
           width={180}
         >
           <Pressable
@@ -209,8 +204,8 @@ function NewChatMenu({
             </Stack>
           </Pressable>
         </Stack>
-      </Stack>
-    </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 

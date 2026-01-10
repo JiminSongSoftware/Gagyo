@@ -14,21 +14,7 @@ import { Stack, Text as TamaguiText, Spinner, useTheme, YStack } from 'tamagui';
 import { ConversationListItem } from './ConversationListItem';
 import { ChatListHeader } from './ChatListHeader';
 import type { ConversationWithLastMessage } from '@/types/database';
-import koTranslations from '@/i18n/locales/ko/common.json';
-import enTranslations from '@/i18n/locales/en/common.json';
-
-/**
- * Get translation by key (defaults to Korean).
- */
-function t(key: string, locale: 'ko' | 'en' = 'ko'): string {
-  const translations = locale === 'ko' ? koTranslations : enTranslations;
-  const keys = key.split('.');
-  let value: unknown = translations;
-  for (const k of keys) {
-    value = (value as Record<string, unknown>)?.[k];
-  }
-  return (value as string) || key;
-}
+import { useTranslation } from '@/i18n';
 
 export interface ConversationListProps {
   /**
@@ -81,6 +67,8 @@ export interface ConversationListProps {
  * Empty state component.
  */
 function EmptyState() {
+  const { t } = useTranslation();
+
   return (
     <Stack
       testID="chat-empty-state"
@@ -92,10 +80,10 @@ function EmptyState() {
     >
       <TamaguiText fontSize={48}>💬</TamaguiText>
       <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
-        {t('chat.empty_state')}
+        {t('chat.no_conversations')}
       </TamaguiText>
       <TamaguiText fontSize="$md" color="$color2" textAlign="center">
-        {t('chat.empty_state_description')}
+        {t('chat.start_conversation')}
       </TamaguiText>
     </Stack>
   );
@@ -105,6 +93,8 @@ function EmptyState() {
  * Loading state component.
  */
 function LoadingState() {
+  const { t } = useTranslation();
+
   return (
     <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
       <Spinner size="large" color="$primary" />
@@ -119,6 +109,8 @@ function LoadingState() {
  * Error state component.
  */
 function ErrorState({ error }: { error: Error }) {
+  const { t } = useTranslation();
+
   return (
     <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
       <TamaguiText fontSize={48}>⚠️</TamaguiText>
@@ -146,6 +138,7 @@ export function ConversationList({
   onNewChat,
   showHeader = true,
 }: ConversationListProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -236,10 +229,10 @@ export function ConversationList({
         <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
           <TamaguiText fontSize={48}>🔍</TamaguiText>
           <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
-            {t('chat.no_conversations')}
+            {t('chat.no_search_results')}
           </TamaguiText>
           <TamaguiText fontSize="$md" color="$color2" textAlign="center">
-            &quot;{searchQuery}&quot; {t('chat.search_messages')}
+            &quot;{searchQuery}&quot;
           </TamaguiText>
         </Stack>
       </YStack>

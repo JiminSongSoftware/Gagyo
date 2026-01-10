@@ -17,7 +17,7 @@ export { MessageBubble, DateSeparator } from './MessageBubble';
 export type { MessageBubbleProps, DateSeparatorProps } from './MessageBubble';
 
 export { MessageList } from './MessageList';
-export type { MessageListProps } from './MessageList';
+export type { MessageListProps, MessageListHandle } from './MessageList';
 
 export { MessageInput } from './MessageInput';
-export type { MessageInputProps } from './MessageInput';
+export type { MessageInputProps, MessageInputHandle } from './MessageInput';
