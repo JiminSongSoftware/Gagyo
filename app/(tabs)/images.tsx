@@ -54,13 +54,29 @@ function Header({
 
       <Pressable
         testID="images-filter-button"
+        accessibilityLabel={t('images.filter_by_conversation')}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: false }}
         onPress={onFilterPress}
-        style={({ pressed }) => [styles.filterButton, pressed && styles.filterButtonPressed]}
+        style={({ pressed }) => [
+          styles.filterButton,
+          pressed && styles.filterButtonPressed,
+          selectedConversationName && styles.filterButtonActive,
+        ]}
       >
-        <TamaguiText fontSize="$sm" color="$primary">
+        <TamaguiText
+          fontSize="$sm"
+          color={selectedConversationName ? "$primary" : "$color3"}
+          numberOfLines={1}
+          style={styles.filterButtonText}
+        >
           {selectedConversationName ?? t('images.all_conversations')}
         </TamaguiText>
-        <TamaguiText fontSize="$sm" color="$primary">
+        <TamaguiText
+          fontSize="$xs"
+          color={selectedConversationName ? "$primary" : "$color3"}
+          marginLeft="$1"
+        >
           ▼
         </TamaguiText>
       </Pressable>
@@ -136,36 +152,41 @@ export default function ImagesScreen() {
   }, []);
 
   return (
-    <Container testID="images-screen" flex={1}>
-      {/* Header with filter */}
-      <Header
-        selectedConversationName={selectedConversationName}
-        onFilterPress={handleFilterPress}
-      />
-
-      {/* Image grid */}
-      <Stack flex={1}>
-        <ImageGrid
-          images={images}
-          onImagePress={handleImagePress}
-          onLoadMore={loadMore}
-          loading={loading}
-          hasMore={hasMore}
-          error={error}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
+    <>
+      <Container testID="images-screen" flex={1}>
+        {/* Header with filter */}
+        <Header
+          selectedConversationName={selectedConversationName}
+          onFilterPress={handleFilterPress}
         />
-      </Stack>
 
-      {/* Image viewer modal */}
-      <ImageViewer
-        visible={viewerVisible}
-        images={images}
-        initialIndex={selectedImageIndex}
-        onClose={handleCloseViewer}
-      />
+        {/* Image grid */}
+        <Stack flex={1}>
+          <ImageGrid
+            images={images}
+            onImagePress={handleImagePress}
+            onLoadMore={loadMore}
+            loading={loading}
+            hasMore={hasMore}
+            error={error}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+            filteredConversationId={selectedConversationId}
+          />
+        </Stack>
+      </Container>
 
-      {/* Filter sheet */}
+      {/* Image viewer modal - rendered outside Container to avoid SafeArea conflicts */}
+      {viewerVisible && (
+        <ImageViewer
+          visible={viewerVisible}
+          images={images}
+          initialIndex={selectedImageIndex}
+          onClose={handleCloseViewer}
+        />
+      )}
+
+      {/* Filter sheet - always rendered so animation values initialize on app load */}
       <ImageFilterSheet
         open={filterOpen}
         onOpenChange={setFilterOpen}
@@ -174,7 +195,7 @@ export default function ImagesScreen() {
         onSelectConversation={handleSelectConversation}
         loading={conversationsLoading}
       />
-    </Container>
+    </>
   );
 }
 
@@ -183,12 +204,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: 'transparent',
+    minWidth: 100,
+  },
+  filterButtonActive: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#007AFF',
   },
   filterButtonPressed: {
-    opacity: 0.7,
+    backgroundColor: '#F5F5F5',
+    opacity: 0.9,
+  },
+  filterButtonText: {
+    maxWidth: 150,
+    flexShrink: 1,
   },
 });

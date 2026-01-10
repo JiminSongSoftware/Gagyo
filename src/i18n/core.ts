@@ -52,7 +52,7 @@ const resources = {
  */
 export async function initI18n(): Promise<typeof i18n> {
   await i18n.use(initReactI18next).init({
-    lng: 'en',
+    lng: 'ko',
     fallbackLng: 'en',
     ns: ['common', 'auth', 'chat', 'prayer', 'pastoral', 'settings', 'errors', 'images'],
     defaultNS: 'common',

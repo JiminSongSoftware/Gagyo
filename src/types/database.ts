@@ -249,7 +249,7 @@ export interface Database {
           parent_id: string | null;
           thread_id: string | null;
           content: string | null;
-          content_type: 'text' | 'image' | 'prayer_card' | 'system';
+          content_type: 'text' | 'image' | 'video' | 'file' | 'prayer_card' | 'system';
           is_event_chat: boolean;
           created_at: string;
           updated_at: string;
@@ -263,7 +263,7 @@ export interface Database {
           parent_id?: string | null;
           thread_id?: string | null;
           content?: string | null;
-          content_type?: 'text' | 'image' | 'prayer_card' | 'system';
+          content_type?: 'text' | 'image' | 'video' | 'file' | 'prayer_card' | 'system';
           is_event_chat?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -273,7 +273,7 @@ export interface Database {
           parent_id?: string | null;
           thread_id?: string | null;
           content?: string | null;
-          content_type?: 'text' | 'image' | 'prayer_card' | 'system';
+          content_type?: 'text' | 'image' | 'video' | 'file' | 'prayer_card' | 'system';
           is_event_chat?: boolean;
           updated_at?: string;
           deleted_at?: string | null;
@@ -374,6 +374,52 @@ export interface Database {
             columns: ['excluded_membership_id'];
             isOneToOne: false;
             referencedRelation: 'memberships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      attachments: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          message_id: string | null;
+          file_name: string;
+          file_url: string;
+          file_size: number;
+          mime_type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          message_id?: string | null;
+          file_name: string;
+          file_url: string;
+          file_size: number;
+          mime_type: string;
+          created_at?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          message_id?: string | null;
+          file_name?: string;
+          file_url?: string;
+          file_size?: number;
+          mime_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'attachments_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attachments_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
             referencedColumns: ['id'];
           },
         ];
@@ -785,22 +831,32 @@ export type PushNotificationLog = Database['public']['Tables']['push_notificatio
 /**
  * Attachment type for images and files.
  */
-export interface Attachment {
-  id: string;
-  tenant_id: string;
-  message_id: string | null;
-  prayer_card_id: string | null;
-  url: string;
-  file_name: string;
-  file_type: string;
-  file_size: number;
-  created_at: string;
-}
+export type Attachment = Database['public']['Tables']['attachments']['Row'];
 
 /**
  * Prayer card type.
  */
 export type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
+
+/**
+ * Pastoral journal type.
+ */
+export type PastoralJournal = Database['public']['Tables']['pastoral_journals']['Row'];
+
+/**
+ * Pastoral journal comment type.
+ */
+export type PastoralJournalComment = Database['public']['Tables']['pastoral_journal_comments']['Row'];
+
+/**
+ * Small group type.
+ */
+export type SmallGroup = Database['public']['Tables']['small_groups']['Row'];
+
+/**
+ * Zone type.
+ */
+export type Zone = Database['public']['Tables']['zones']['Row'];
 
 /**
  * Prayer card recipient type.

@@ -17,7 +17,8 @@
       "prayer": "Prayer",
       "pastoral": "Pastoral Diary",
       "images": "Images",
-      "settings": "Settings"
+      "settings": "Settings",
+      "more": "More"
     }
   },
   "chat": {
@@ -69,6 +70,25 @@
       "group_team": "Teams",
       "member": "Members",
       "external": "External"
+    }
+  },
+  "more": {
+    "title": "More",
+    "edit_profile": "Edit Profile",
+    "services_title": "Services",
+    "services": {
+      "pastoral": "Pastoral Diary",
+      "prayer": "Prayer Card",
+      "settings": "Settings",
+      "profile_edit": "Edit Profile",
+      "chat_rooms": "Chat Rooms",
+      "members": "Members",
+      "calendar": "Calendar",
+      "giving": "Giving",
+      "announcements": "Announcements",
+      "resources": "Sermons",
+      "volunteers": "Volunteers",
+      "gagyo_team": "Gagyo Team"
     }
   }
 }

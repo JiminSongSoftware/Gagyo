@@ -253,7 +253,7 @@ export function ContactsScreen({ testID, communityName }: ContactsScreenProps) {
       {/* Header with community name and search icon */}
       <XStack
         paddingHorizontal="$4"
-        paddingTop="$4"
+        paddingTop="$1"
         paddingBottom="$4"
         alignItems="center"
         justifyContent="space-between"

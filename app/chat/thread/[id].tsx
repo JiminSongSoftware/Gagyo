@@ -488,7 +488,7 @@ function ThreadReplyInput({
       )}
       {!enabled && (
         <TamaguiText color="$colorSubtle" fontSize={14} marginTop="$1">
-          Loading conversation...
+          {t('chat.loading_messages')}
         </TamaguiText>
       )}
     </YStack>

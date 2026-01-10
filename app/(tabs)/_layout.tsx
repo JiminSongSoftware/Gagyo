@@ -1,49 +1,42 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import { Image } from 'react-native';
 
-import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
-import koTranslations from '@/i18n/locales/ko/common.json';
-import enTranslations from '@/i18n/locales/en/common.json';
-
-/**
- * Get translation by key (defaults to Korean).
- */
-function t(key: string, locale: 'ko' | 'en' = 'ko'): string {
-  const translations = locale === 'ko' ? koTranslations : enTranslations;
-  const keys = key.split('.');
-  let value: unknown = translations;
-  for (const k of keys) {
-    value = (value as Record<string, unknown>)?.[k];
-  }
-  return (value as string) || key;
-}
+import { useTranslation } from '@/i18n';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { loading } = useAuthGuard();
+  const { t } = useTranslation();
 
   if (loading) return null;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#000000',
+        tabBarInactiveTintColor: '#C7C7CC',
+        tabBarActiveBackgroundColor: 'transparent',
+        tabBarStyle: {
+          borderTopColor: '#e0e0e0',
+          backgroundColor: '#ffffff',
+        },
         headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: t('common.nav.home'),
+          title: t('nav.home'),
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: t('common.nav.chat'),
+          title: t('nav.chat'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles" size={size} color={color} />
           ),
@@ -52,29 +45,29 @@ export default function TabLayout() {
       <Tabs.Screen
         name="prayer"
         options={{
-          title: t('common.nav.prayer'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="pastoral"
-        options={{
-          title: t('common.nav.pastoral'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
+          title: t('nav.prayer'),
+          tabBarIcon: ({ color }) => (
+            <Image
+              source={require('../../assets/hands.png')}
+              style={{ width: 24, height: 24, tintColor: color }}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="images"
         options={{
-          title: t('common.nav.images'),
+          title: t('nav.images'),
           tabBarIcon: ({ color, size }) => <Ionicons name="images" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="more"
         options={{
-          title: t('common.nav.settings'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          title: t('nav.more'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="ellipsis-horizontal" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

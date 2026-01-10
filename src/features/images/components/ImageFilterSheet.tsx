@@ -5,15 +5,27 @@
  * Features:
  * - List of conversations with images
  * - "All conversations" option
- * - Search functionality
+ * - Search functionality with sticky header
+ * - Modern, polished design
  *
  * See: claude_docs/17_images_view.md for architecture documentation
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, ListRenderItemInfo } from 'react-native';
-import { Sheet, YStack, XStack, Stack, Text as TamaguiText, Spinner, Input } from 'tamagui';
+import {
+  FlatList,
+  Pressable,
+  ListRenderItemInfo,
+  Modal,
+  StyleSheet,
+  Dimensions,
+  View,
+} from 'react-native';
+import { YStack, XStack, Stack, Text as TamaguiText, Input, Spinner } from 'tamagui';
 import { useTranslation } from '@/i18n';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 /**
  * Simplified conversation type for filter sheet
@@ -48,7 +60,18 @@ export interface ImageFilterSheetProps {
 }
 
 /**
- * "All conversations" option item
+ * Drag handle indicator at the top of the sheet
+ */
+function DragHandle() {
+  return (
+    <Stack alignItems="center" paddingTop="$3" paddingBottom="$2">
+      <Stack width={36} height={4} borderRadius={2} backgroundColor="#E0E0E0" />
+    </Stack>
+  );
+}
+
+/**
+ * "All conversations" option item with modern styling
  */
 function AllConversationsItem({ selected, onPress }: { selected: boolean; onPress: () => void }) {
   const { t } = useTranslation();
@@ -57,46 +80,51 @@ function AllConversationsItem({ selected, onPress }: { selected: boolean; onPres
     <Pressable
       testID="filter-all-conversations"
       onPress={onPress}
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.7 : 1,
-      })}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      style={({ pressed }) => [
+        styles.itemContainer,
+        pressed && styles.itemPressed,
+        selected && styles.itemSelected,
+      ]}
     >
-      <XStack
-        padding="$3"
-        backgroundColor={selected ? '$primaryLight' : 'transparent'}
-        borderRadius="$2"
+      <Stack
+        width={44}
+        height={44}
+        borderRadius={22}
+        backgroundColor={selected ? '#007AFF' : '#F3F4F6'}
         alignItems="center"
-        gap="$3"
+        justifyContent="center"
       >
-        <Stack
-          width={40}
-          height={40}
-          borderRadius={20}
-          backgroundColor="$primary"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <TamaguiText color="white" fontSize={20}>
-            📷
-          </TamaguiText>
-        </Stack>
-        <YStack flex={1}>
-          <TamaguiText fontSize="$md" fontWeight={selected ? '600' : '400'} color="$color">
-            {t('images.all_conversations')}
-          </TamaguiText>
-        </YStack>
-        {selected && (
-          <TamaguiText color="$primary" fontSize="$lg">
+        {selected ? (
+          <TamaguiText fontSize={20} color="#fff">
             ✓
           </TamaguiText>
+        ) : (
+          <TamaguiText fontSize={22}>📷</TamaguiText>
         )}
-      </XStack>
+      </Stack>
+      <TamaguiText
+        fontSize={16}
+        fontWeight={selected ? '600' : '400'}
+        color={selected ? '#007AFF' : '#1C1C1E'}
+        flex={1}
+      >
+        {t('images.all_conversations')}
+      </TamaguiText>
+      {selected && (
+        <Stack width={20} height={20} borderRadius={10} backgroundColor="#007AFF" alignItems="center" justifyContent="center">
+          <TamaguiText fontSize={12} color="#fff" fontWeight="600">
+            ✓
+          </TamaguiText>
+        </Stack>
+      )}
     </Pressable>
   );
 }
 
 /**
- * Conversation item for the filter list
+ * Conversation item with modern styling
  */
 function ConversationItem({
   conversation,
@@ -108,95 +136,196 @@ function ConversationItem({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
-
   const displayName = conversation.name ?? t('chat.unknown_conversation');
 
-  // Get icon based on conversation type
+  // Get icon and color based on conversation type
   const getTypeIcon = () => {
     switch (conversation.type) {
       case 'direct':
-        return '👤';
+        return { icon: '👤', color: '#8B5CF6' };
       case 'group':
-        return '👥';
+        return { icon: '👥', color: '#3B82F6' };
       case 'small_group':
-        return '🏠';
+        return { icon: '🏠', color: '#10B981' };
       case 'ministry':
-        return '⛪';
+        return { icon: '⛪', color: '#F59E0B' };
       default:
-        return '💬';
+        return { icon: '💬', color: '#6B7280' };
     }
   };
+
+  const { icon, color } = getTypeIcon();
 
   return (
     <Pressable
       testID={`filter-conversation-${conversation.id}`}
       onPress={onPress}
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.7 : 1,
-      })}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={displayName}
+      style={({ pressed }) => [
+        styles.itemContainer,
+        pressed && styles.itemPressed,
+        selected && styles.itemSelected,
+      ]}
     >
-      <XStack
-        padding="$3"
-        backgroundColor={selected ? '$primaryLight' : 'transparent'}
-        borderRadius="$2"
+      <Stack
+        width={44}
+        height={44}
+        borderRadius={22}
+        backgroundColor={selected ? '#007AFF' : (color + '15' as any)}
         alignItems="center"
-        gap="$3"
+        justifyContent="center"
       >
-        <Stack
-          testID={`filter-conversation-type-${conversation.type}`}
-          width={40}
-          height={40}
-          borderRadius={20}
-          backgroundColor="$backgroundTertiary"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <TamaguiText fontSize={18}>{getTypeIcon()}</TamaguiText>
-        </Stack>
-        <YStack flex={1}>
-          <TamaguiText
-            fontSize="$md"
-            fontWeight={selected ? '600' : '400'}
-            color="$color"
-            numberOfLines={1}
-          >
-            {displayName}
-          </TamaguiText>
-        </YStack>
-        {selected && (
-          <TamaguiText color="$primary" fontSize="$lg">
+        {selected ? (
+          <TamaguiText fontSize={20} color="#fff">
             ✓
           </TamaguiText>
+        ) : (
+          <TamaguiText fontSize={20}>{icon}</TamaguiText>
         )}
-      </XStack>
+      </Stack>
+      <TamaguiText
+        fontSize={16}
+        fontWeight={selected ? '600' : '400'}
+        color={selected ? '#007AFF' : '#1C1C1E'}
+        flex={1}
+        numberOfLines={1}
+      >
+        {displayName}
+      </TamaguiText>
+      {selected && (
+        <Stack width={20} height={20} borderRadius={10} backgroundColor="#007AFF" alignItems="center" justifyContent="center">
+          <TamaguiText fontSize={12} color="#fff" fontWeight="600">
+            ✓
+          </TamaguiText>
+        </Stack>
+      )}
     </Pressable>
   );
 }
 
 /**
+ * Search input with modern styling
+ */
+function SearchInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <XStack alignItems="center" backgroundColor="#F3F4F6" borderRadius={12} paddingHorizontal="$3" paddingVertical="$2">
+      <TamaguiText fontSize={18} marginRight="$2">
+        🔍
+      </TamaguiText>
+      <Input
+        testID="filter-search-input"
+        placeholder={t('images.search_conversations') ?? 'Search conversations...'}
+        value={value}
+        onChangeText={(e) => onChange(typeof e === 'string' ? e : String(e))}
+        borderWidth={0}
+        backgroundColor="transparent"
+        padding={0}
+        fontSize={16}
+        flex={1}
+        {...({ placeholderTextColor: '#9CA3AF' } as any)}
+      />
+      {value.length > 0 && (
+        <Pressable
+          onPress={() => onChange('')}
+          hitSlop={8}
+          style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+        >
+          <TamaguiText fontSize={16} color="#9CA3AF">
+            ✕
+          </TamaguiText>
+        </Pressable>
+      )}
+    </XStack>
+  );
+}
+
+/**
+ * Sticky header with drag handle and search
+ */
+function StickyHeader({
+  searchQuery,
+  onSearchChange,
+  selectedConversationId,
+  onSelectAll,
+}: {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  selectedConversationId: string | null;
+  onSelectAll: () => void;
+}) {
+  return (
+    <View style={styles.stickyHeader}>
+      {/* All conversations option */}
+      <AllConversationsItem
+        selected={selectedConversationId === null}
+        onPress={onSelectAll}
+      />
+
+      {/* Divider */}
+      <View style={styles.divider} />
+
+      {/* Search input */}
+      <SearchInput value={searchQuery} onChange={onSearchChange} />
+    </View>
+  );
+}
+
+/**
+ * Empty state component with modern design
+ */
+function EmptyState({ hasSearch }: { hasSearch: boolean }) {
+  const { t } = useTranslation();
+
+  return (
+    <YStack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
+      <Stack
+        width={80}
+        height={80}
+        borderRadius={40}
+        backgroundColor="#F3F4F6"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <TamaguiText fontSize={36}>
+          {hasSearch ? '🔍' : '💬'}
+        </TamaguiText>
+      </Stack>
+      <TamaguiText
+        fontSize={18}
+        fontWeight="600"
+        color="#1C1C1E"
+        textAlign="center"
+      >
+        {hasSearch
+          ? t('images.no_matching_conversations')
+          : t('images.no_conversations')}
+      </TamaguiText>
+      <TamaguiText
+        fontSize={14}
+        color="#8E8E93"
+        textAlign="center"
+      >
+        {hasSearch
+          ? t('images.filter_no_matching_conversations_hint')
+          : t('images.filter_no_conversations_hint')}
+      </TamaguiText>
+    </YStack>
+  );
+}
+
+/**
  * ImageFilterSheet component allows users to filter the gallery by conversation.
- *
- * @example
- * ```tsx
- * function ImagesScreen() {
- *   const [filterOpen, setFilterOpen] = useState(false);
- *   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
- *   const { conversations } = useConversations(tenantId, membershipId);
- *
- *   return (
- *     <>
- *       <ImageGrid ... />
- *       <ImageFilterSheet
- *         open={filterOpen}
- *         onOpenChange={setFilterOpen}
- *         conversations={conversations}
- *         selectedConversationId={selectedConversation}
- *         onSelectConversation={setSelectedConversation}
- *       />
- *     </>
- *   );
- * }
- * ```
+ * Features a modern, polished design with smooth animations.
  */
 export function ImageFilterSheet({
   open,
@@ -247,91 +376,151 @@ export function ImageFilterSheet({
 
   const ListHeaderComponent = useCallback(
     () => (
-      <YStack gap="$2" marginBottom="$2">
-        {/* Search input */}
-        <Input
-          testID="filter-search-input"
-          placeholder={t('images.search_conversations') ?? 'Search conversations...'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          borderRadius="$2"
-        />
-
-        {/* All conversations option */}
-        <AllConversationsItem
-          selected={selectedConversationId === null}
-          onPress={handleSelectAll}
-        />
-
-        {/* Separator */}
-        <Stack height={1} backgroundColor="$borderLight" marginVertical="$2" />
-      </YStack>
+      <StickyHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedConversationId={selectedConversationId}
+        onSelectAll={handleSelectAll}
+      />
     ),
-    [t, searchQuery, selectedConversationId, handleSelectAll]
+    [searchQuery, selectedConversationId, handleSelectAll]
   );
 
   const ListEmptyComponent = useCallback(
-    () => (
-      <YStack padding="$4" alignItems="center">
-        <TamaguiText color="$color2" fontSize="$sm">
-          {searchQuery ? t('images.no_matching_conversations') : t('images.no_conversations')}
-        </TamaguiText>
-      </YStack>
-    ),
-    [t, searchQuery]
+    () => <EmptyState hasSearch={searchQuery.length > 0} />,
+    [searchQuery.length]
   );
 
   return (
-    <Sheet
-      modal
-      open={open}
-      onOpenChange={onOpenChange}
-      snapPoints={[60]}
-      dismissOnSnapToBottom
-      dismissOnOverlayPress
+    <Modal
+      visible={open}
+      transparent
+      animationType="slide"
+      onRequestClose={() => onOpenChange(false)}
+      statusBarTranslucent
     >
-      <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
-      <Sheet.Frame
-        testID="image-filter-sheet"
-        backgroundColor="$background"
-        borderTopLeftRadius="$4"
-        borderTopRightRadius="$4"
-      >
-        <Sheet.Handle />
+      {/* Overlay backdrop */}
+      <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
+        {/* Sheet Container */}
+        <Pressable style={styles.sheetContainer}>
+          <Pressable style={styles.sheetContent} onStartShouldSetResponder={() => true}>
+            {/* Drag Handle */}
+            <DragHandle />
 
-        {/* Header */}
-        <XStack
-          padding="$4"
-          paddingTop="$2"
-          borderBottomWidth={1}
-          borderBottomColor="$borderLight"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <TamaguiText fontSize="$lg" fontWeight="600" color="$color">
-            {t('images.filter_by_conversation')}
-          </TamaguiText>
-        </XStack>
+            {/* Title Header */}
+            <XStack
+              paddingHorizontal="$5"
+              paddingBottom="$4"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <TamaguiText fontSize={20} fontWeight="700" color="#1C1C1E">
+                {t('images.filter_by_conversation')}
+              </TamaguiText>
+              <Pressable
+                testID="filter-close-button"
+                onPress={() => onOpenChange(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                hitSlop={12}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  pressed && styles.closeButtonPressed,
+                ]}
+              >
+                <TamaguiText fontSize={18} color="#8E8E93">
+                  ✕
+                </TamaguiText>
+              </Pressable>
+            </XStack>
 
-        {/* Content */}
-        <YStack flex={1} padding="$4">
-          {loading ? (
-            <YStack flex={1} alignItems="center" justifyContent="center">
-              <Spinner size="large" color="$primary" />
-            </YStack>
-          ) : (
-            <FlatList
-              data={filteredConversations}
-              renderItem={renderItem}
-              keyExtractor={keyExtractor}
-              ListHeaderComponent={ListHeaderComponent}
-              ListEmptyComponent={ListEmptyComponent}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ flexGrow: 1 }}
-            />
-          )}
-        </YStack>
-      </Sheet.Frame>
-    </Sheet>
+            {/* Content area */}
+            {loading ? (
+              <YStack flex={1} alignItems="center" justifyContent="center" gap="$3">
+                <Spinner size="large" color="#007AFF" />
+                <TamaguiText color="#8E8E93" fontSize={14}>
+                  {t('images.loading')}
+                </TamaguiText>
+              </YStack>
+            ) : (
+              <FlatList
+                data={filteredConversations}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
+                ListHeaderComponent={ListHeaderComponent}
+                ListEmptyComponent={ListEmptyComponent}
+                stickyHeaderIndices={[0]}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={styles.listContent}
+                ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+              />
+            )}
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    width: '100%',
+    height: SHEET_HEIGHT,
+  },
+  sheetContent: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonPressed: {
+    backgroundColor: '#E5E7EB',
+  },
+  stickyHeader: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 12,
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+  itemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 14,
+  },
+  itemPressed: {
+    backgroundColor: '#F9FAFB',
+  },
+  itemSelected: {
+    backgroundColor: '#F0F9FF',
+  },
+  itemSeparator: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginLeft: 78,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginLeft: 20,
+  },
+});

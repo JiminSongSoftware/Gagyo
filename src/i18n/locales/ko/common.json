@@ -17,7 +17,27 @@
       "prayer": "기도카드",
       "pastoral": "목회일기",
       "images": "이미지",
-      "settings": "세팅"
+      "settings": "세팅",
+      "more": "전체"
+    }
+  },
+  "more": {
+    "title": "전체",
+    "edit_profile": "프로필 편집",
+    "services_title": "서비스",
+    "services": {
+      "pastoral": "목회일지",
+      "prayer": "기도카드",
+      "settings": "설정",
+      "profile_edit": "프로필 편집",
+      "chat_rooms": "채팅방",
+      "members": "멤버",
+      "calendar": "달력",
+      "giving": "헌금",
+      "announcements": "공지사항",
+      "resources": "설교",
+      "volunteers": "봉사",
+      "gagyo_team": "가교팀"
     }
   },
   "chat": {

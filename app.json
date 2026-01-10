@@ -12,7 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "primaryColor": "#007AFF",
+    "primaryColor": "#000000",
     "ios": {
       "bundleIdentifier": "com.gagyo.app",
       "buildNumber": "1",
@@ -43,7 +43,7 @@
       "predictiveBackGestureEnabled": false,
       "notification": {
         "icon": "./assets/notification-icon.png",
-        "color": "#007AFF"
+        "color": "#000000"
       }
     },
     "web": {

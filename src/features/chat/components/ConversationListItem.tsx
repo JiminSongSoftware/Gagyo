@@ -75,7 +75,7 @@ function getConversationDisplayName(conversation: ConversationWithLastMessage): 
 /**
  * Get last message preview text.
  */
-function getLastMessagePreview(conversation: ConversationWithLastMessage): string | null {
+function getLastMessagePreview(conversation: ConversationWithLastMessage, t): string | null {
   if (!conversation.last_message) {
     return null;
   }
@@ -84,13 +84,13 @@ function getLastMessagePreview(conversation: ConversationWithLastMessage): strin
 
   // Handle non-text message types
   if (content_type === 'image') {
-    return '📷 Image';
+    return `📷 ${t('chat.image')}`;
   }
   if (content_type === 'prayer_card') {
-    return '🙏 Prayer Card';
+    return `🙏 ${t('chat.prayer_card')}`;
   }
   if (content_type === 'system') {
-    return content || 'System message';
+    return content || t('chat.system_message');
   }
 
   // Truncate long messages
@@ -116,7 +116,7 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
   }, [conversation.id, conversation.isMock, onPress]);
 
   const displayName = getConversationDisplayName(conversation);
-  const lastMessagePreview = getLastMessagePreview(conversation);
+  const lastMessagePreview = getLastMessagePreview(conversation, t);
   const timestamp = conversation.last_message
     ? formatTimestamp(conversation.last_message.created_at, t)
     : null;

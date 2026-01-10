@@ -15,8 +15,9 @@ import {
   useWindowDimensions,
   StyleSheet,
   ListRenderItemInfo,
+  View,
 } from 'react-native';
-import { Stack, Spinner, Text as TamaguiText } from 'tamagui';
+import { Stack, Text as TamaguiText } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import type { ImageAttachment } from '@/types/database';
 
@@ -57,49 +58,75 @@ export interface ImageGridProps {
 
   /** Whether the list is currently refreshing */
   refreshing?: boolean;
+
+  /** ID of the conversation being filtered (null for all conversations) */
+  filteredConversationId?: string | null;
+}
+
+/**
+ * Skeleton item for loading state
+ */
+function SkeletonItem({ itemSize }: { itemSize: number }) {
+  return (
+    <View
+      style={[
+        styles.skeletonItem,
+        {
+          width: itemSize,
+          height: itemSize,
+        },
+      ]}
+    />
+  );
+}
+
+/**
+ * Loading skeleton grid - maintains grid layout during initial load
+ */
+function LoadingSkeleton({ itemSize }: { itemSize: number }) {
+  // Generate 12 skeleton items for visual feedback
+  const skeletonData = Array.from({ length: 12 }, (_, i) => i);
+
+  return (
+    <FlatList
+      testID="image-grid-loading-skeleton"
+      data={skeletonData}
+      renderItem={() => <SkeletonItem itemSize={itemSize} />}
+      keyExtractor={(item) => `skeleton-${item}`}
+      numColumns={NUM_COLUMNS}
+      columnWrapperStyle={[styles.columnWrapper, { marginHorizontal: GRID_GAP }]}
+      contentContainerStyle={styles.contentContainer}
+      scrollEnabled={false}
+      showsVerticalScrollIndicator={false}
+    />
+  );
 }
 
 /**
  * Empty state component when no images exist
  */
-function EmptyState() {
+function EmptyState({ isFiltered }: { isFiltered: boolean }) {
   const { t } = useTranslation();
 
   return (
     <Stack
-      testID="image-grid-empty"
+      testID={isFiltered ? "image-grid-filter-empty" : "image-grid-empty"}
       flex={1}
       alignItems="center"
       justifyContent="center"
       padding="$6"
       gap="$3"
     >
-      <TamaguiText fontSize={48}>🖼️</TamaguiText>
+      <TamaguiText fontSize={48}>{isFiltered ? '📷' : '🖼️'}</TamaguiText>
       <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
-        {t('images.empty_state')}
+        {isFiltered
+          ? t('images.filter_empty_state')
+          : t('images.empty_state')}
       </TamaguiText>
-    </Stack>
-  );
-}
-
-/**
- * Loading state component for initial load
- */
-function LoadingState() {
-  const { t } = useTranslation();
-
-  return (
-    <Stack
-      testID="image-grid-loading"
-      flex={1}
-      alignItems="center"
-      justifyContent="center"
-      padding="$6"
-      gap="$3"
-    >
-      <Spinner size="large" color="$primary" />
-      <TamaguiText fontSize="$md" color="$color2">
-        {t('images.loading')}
+      <TamaguiText fontSize="$md" color="$color2" textAlign="center">
+        {isFiltered
+          ? t('images.filter_empty_state_description')
+          : t('images.empty_state_description')}
       </TamaguiText>
     </Stack>
   );
@@ -142,7 +169,9 @@ function ListFooter({ loading, hasMore }: { loading: boolean; hasMore: boolean }
   if (loading) {
     return (
       <Stack testID="image-grid-footer-loading" padding="$4" alignItems="center">
-        <Spinner size="small" color="$primary" />
+        <TamaguiText fontSize="$sm" color="$color3">
+          Loading more...
+        </TamaguiText>
       </Stack>
     );
   }
@@ -151,7 +180,7 @@ function ListFooter({ loading, hasMore }: { loading: boolean; hasMore: boolean }
 }
 
 /**
- * Image thumbnail item component
+ * Image thumbnail item component with subtle pressed state
  */
 function ImageThumbnail({
   image,
@@ -172,13 +201,19 @@ function ImageThumbnail({
     <Pressable
       testID={`image-grid-item-${index}`}
       onPress={handlePress}
+      accessibilityRole="imagebutton"
+      accessibilityLabel={`View photo ${index + 1}`}
       style={({ pressed }) => [
         styles.thumbnailContainer,
         { width: itemSize, height: itemSize },
         pressed && styles.thumbnailPressed,
       ]}
     >
-      <Image source={{ uri: image.url }} style={styles.thumbnailImage} resizeMode="cover" />
+      <Image
+        source={{ uri: image.url }}
+        style={styles.thumbnailImage}
+        resizeMode="cover"
+      />
     </Pressable>
   );
 }
@@ -190,6 +225,7 @@ function ImageThumbnail({
  * ```tsx
  * function ImagesScreen() {
  *   const { images, loading, hasMore, loadMore, error } = useImages(tenantId);
+ *   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
  *   const [selectedImage, setSelectedImage] = useState<ImageAttachment | null>(null);
  *
  *   const handleImagePress = (image: ImageAttachment) => {
@@ -204,6 +240,7 @@ function ImageThumbnail({
  *       loading={loading}
  *       hasMore={hasMore}
  *       error={error}
+ *       filteredConversationId={selectedConversation}
  *     />
  *   );
  * }
@@ -218,6 +255,7 @@ export function ImageGrid({
   error,
   onRefresh,
   refreshing = false,
+  filteredConversationId = null,
 }: ImageGridProps) {
   const { width: windowWidth } = useWindowDimensions();
 
@@ -247,9 +285,9 @@ export function ImageGrid({
     [loading, hasMore]
   );
 
-  // Show loading state on initial load
+  // Show loading skeleton on initial load
   if (loading && images.length === 0) {
-    return <LoadingState />;
+    return <LoadingSkeleton itemSize={itemSize} />;
   }
 
   // Show error state
@@ -257,9 +295,9 @@ export function ImageGrid({
     return <ErrorState error={error} />;
   }
 
-  // Show empty state
+  // Show empty state (with filter-specific message if applicable)
   if (!loading && images.length === 0) {
-    return <EmptyState />;
+    return <EmptyState isFiltered={filteredConversationId !== null} />;
   }
 
   return (
@@ -290,13 +328,18 @@ const styles = StyleSheet.create({
     gap: GRID_GAP,
     marginBottom: GRID_GAP,
   },
+  skeletonItem: {
+    backgroundColor: '#E5E5E5',
+    borderRadius: 4,
+  },
   thumbnailContainer: {
     backgroundColor: '#E5E5E5',
     borderRadius: 4,
     overflow: 'hidden',
   },
   thumbnailPressed: {
-    opacity: 0.7,
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   thumbnailImage: {
     width: '100%',

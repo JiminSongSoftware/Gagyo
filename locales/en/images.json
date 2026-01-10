@@ -1,5 +1,5 @@
 {
-  "title": "Images",
+  "title": "Photos",
   "no_images": "No images yet",
   "no_images_description": "Images shared in your conversations will appear here",
   "loading": "Loading images...",
@@ -15,10 +15,15 @@
   "error_title": "Error Loading Images",
   "error_description": "Unable to load images. Please check your connection and try again.",
   "retry_button": "Retry",
-  "empty_state": "No images yet",
+  "empty_state": "No photos yet",
+  "empty_state_description": "Photos shared in conversations will appear here",
   "all_conversations": "All conversations",
-  "search_conversations": "Search conversations",
+  "search_conversations": "Search conversations...",
   "no_matching_conversations": "No matching conversations",
   "no_conversations": "No conversations",
-  "filter_by_conversation": "Filter by conversation"
+  "filter_by_conversation": "Filter by conversation",
+  "filter_empty_state": "No photos in this conversation",
+  "filter_empty_state_description": "No photos have been shared in this conversation yet",
+  "filter_no_matching_conversations_hint": "Try a different search term",
+  "filter_no_conversations_hint": "Start a conversation to see photos here"
 }

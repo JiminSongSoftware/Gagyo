@@ -40,7 +40,7 @@ import type { Locale } from './types';
  * Priority:
  * 1. User preference from preferences store (if available)
  * 2. Device locale detection
- * 3. Fallback to 'en'
+ * 3. Fallback to 'ko'
  */
 export function detectDeviceLocale(): Locale {
   const deviceLocales = getLocales();
@@ -55,7 +55,7 @@ export function detectDeviceLocale(): Locale {
     }
   }
 
-  return 'en';
+  return 'ko';
 }
 
 /**
@@ -79,7 +79,7 @@ export async function initI18nForStorybook(initialLocale?: Locale): Promise<void
     }
   } catch (error) {
     console.error('[i18n] Storybook initialization failed:', error);
-    // Storybook should still work with default English
+    // Storybook should still work with default Korean
     try {
       await baseInitI18n();
     } catch {
@@ -110,8 +110,8 @@ export async function initI18nForApp(savedLocale?: Locale | null): Promise<Local
       // Use saved preference
       targetLocale = savedLocale;
     } else {
-      // Use device locale
-      targetLocale = detectDeviceLocale();
+      // Default to Korean for this app
+      targetLocale = 'ko';
     }
 
     // Set the locale if different from current
@@ -126,16 +126,16 @@ export async function initI18nForApp(savedLocale?: Locale | null): Promise<Local
 
     return targetLocale;
   } catch (error) {
-    console.error('[i18n] App initialization failed, falling back to English:', error);
+    console.error('[i18n] App initialization failed, falling back to Korean:', error);
 
-    // Attempt recovery with English
+    // Attempt recovery with Korean
     try {
       await baseInitI18n();
-      await changeLocale('en');
-      return 'en';
+      await changeLocale('ko');
+      return 'ko';
     } catch {
-      // Last resort - return English even if init failed
-      return 'en';
+      // Last resort - return Korean even if init failed
+      return 'ko';
     }
   }
 }

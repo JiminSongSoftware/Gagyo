@@ -96,6 +96,52 @@ function transformAttachment(raw: RawAttachmentData): ImageAttachment {
 }
 
 /**
+ * Generate mock images for development/testing.
+ *
+ * This is used when no real images exist in the database, allowing
+ * visual verification of the grid layout and pagination.
+ *
+ * @param count - Number of mock images to generate
+ * @param offset - Starting index for pagination
+ * @returns Array of mock ImageAttachment objects
+ *
+ * @example
+ * // To remove mock data later, delete the __DEV__ check in useImages
+ */
+function generateMockImages(count: number, offset: number = 0): ImageAttachment[] {
+  const now = Date.now();
+  const mockImages: ImageAttachment[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // Stagger timestamps so newest appears first (descending order)
+    const timestamp = new Date(now - offset * 60000 - i * 3600000).toISOString();
+
+    mockImages.push({
+      id: `mock-image-${offset}-${i}`,
+      url: `https://picsum.photos/400/400?random=${offset + i}`,
+      fileName: `mock-image-${i}.jpg`,
+      fileSize: 150000 + Math.floor(Math.random() * 200000),
+      createdAt: timestamp,
+      message: {
+        id: `mock-msg-${offset}-${i}`,
+        conversationId: `mock-conv-${i % 3}`,
+        conversation: {
+          id: `mock-conv-${i % 3}`,
+          name: ['가족 chat', '교회 소식', '기도팀'][i % 3] || null,
+          type: ['group', 'ministry', 'small_group'][i % 3] as ConversationType,
+        },
+        sender: {
+          displayName: ['김철수', '이영희', '박목자'][i % 3] || null,
+          photoUrl: null,
+        },
+      },
+    });
+  }
+
+  return mockImages;
+}
+
+/**
  * Hook for querying images from the gallery.
  *
  * @param tenantId - The tenant ID to query images for
@@ -131,6 +177,7 @@ export function useImages(tenantId: string | null, options: UseImagesOptions = {
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   /**
    * Fetch images from the database
@@ -192,21 +239,60 @@ export function useImages(tenantId: string | null, options: UseImagesOptions = {
 
         const transformedData = (data as unknown as RawAttachmentData[]).map(transformAttachment);
 
-        if (append) {
-          setImages((prev) => [...prev, ...transformedData]);
-        } else {
-          setImages(transformedData);
-        }
+        // If no real images exist and this is the initial load, use mock data in development
+        const shouldUseMockData =
+          __DEV__ &&
+          !append &&
+          transformedData.length === 0 &&
+          currentOffset === 0 &&
+          !conversationId;
 
-        // Check if there are more images
-        setHasMore(transformedData.length === limit);
+        if (shouldUseMockData) {
+          console.log('[useImages] No real images found. Using mock data for development.');
+          console.log('[useImages] To remove mock data, delete the __DEV__ check in useImages hook.');
+          const mockData = generateMockImages(18, 0); // 18 mock images for testing
+          setImages(mockData);
+          setHasMore(false); // Mock data doesn't support infinite scroll
+          setUsingMockData(true);
+        } else {
+          if (append) {
+            setImages((prev) => [...prev, ...transformedData]);
+          } else {
+            setImages(transformedData);
+          }
+
+          // Check if there are more images
+          setHasMore(transformedData.length === limit);
+
+          // If we got real data after using mock data, clear the mock flag
+          if (usingMockData && transformedData.length > 0) {
+            setUsingMockData(false);
+          }
+        }
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch images'));
+        console.error('[useImages] Failed to fetch images:', err);
+
+        // In development, fall back to mock data on error
+        if (
+          __DEV__ &&
+          !append &&
+          currentOffset === 0 &&
+          !conversationId
+        ) {
+          console.log('[useImages] Falling back to mock data due to error.');
+          const mockData = generateMockImages(18, 0);
+          setImages(mockData);
+          setHasMore(false);
+          setUsingMockData(true);
+          setError(null); // Clear error since we have mock data
+        } else {
+          setError(err instanceof Error ? err : new Error('Failed to fetch images'));
+        }
       } finally {
         setLoading(false);
       }
     },
-    [tenantId, conversationId, limit]
+    [tenantId, conversationId, limit, usingMockData]
   );
 
   /**
@@ -215,6 +301,7 @@ export function useImages(tenantId: string | null, options: UseImagesOptions = {
   useEffect(() => {
     setOffset(0);
     setHasMore(true);
+    setUsingMockData(false);
     void fetchImages(0, false);
   }, [fetchImages]);
 
@@ -222,14 +309,14 @@ export function useImages(tenantId: string | null, options: UseImagesOptions = {
    * Load more images for pagination
    */
   const loadMore = useCallback(() => {
-    if (loading || !hasMore) {
+    if (loading || !hasMore || usingMockData) {
       return;
     }
 
     const newOffset = offset + limit;
     setOffset(newOffset);
     void fetchImages(newOffset, true);
-  }, [loading, hasMore, offset, limit, fetchImages]);
+  }, [loading, hasMore, offset, limit, fetchImages, usingMockData]);
 
   /**
    * Refresh the image list
@@ -237,6 +324,7 @@ export function useImages(tenantId: string | null, options: UseImagesOptions = {
   const refresh = useCallback(() => {
     setOffset(0);
     setHasMore(true);
+    setUsingMockData(false);
     void fetchImages(0, false);
   }, [fetchImages]);
 

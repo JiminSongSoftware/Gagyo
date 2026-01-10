@@ -274,7 +274,7 @@ export function EventChatSelector({
           <YStack padding="$4" alignItems="center">
             <ActivityIndicator size="small" color={theme.primary?.val} />
             <TamaguiText fontSize="$sm" color="$color3" marginTop="$2">
-              Loading participants...
+              {t('chat.loading_participants')}
             </TamaguiText>
           </YStack>
         )}
@@ -289,7 +289,7 @@ export function EventChatSelector({
             {participants.length === 0 ? (
               <YStack padding="$4" alignItems="center">
                 <TamaguiText fontSize="$sm" color="$color3">
-                  No other participants in this conversation
+                  {t('chat.no_other_participants')}
                 </TamaguiText>
               </YStack>
             ) : (

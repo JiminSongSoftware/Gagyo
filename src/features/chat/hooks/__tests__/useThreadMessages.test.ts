@@ -31,6 +31,7 @@ describe('useThreadMessages', () => {
     conversation_id: 'conv-123',
     sender_id: 'membership-1',
     parent_id: mockParentMessageId,
+    thread_id: null,
     content: 'Test message',
     content_type: 'text',
     is_event_chat: false,

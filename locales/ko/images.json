@@ -16,9 +16,14 @@
   "error_description": "이미지를 불러올 수 없습니다. 연결 상태를 확인하고 다시 시도해 주세요.",
   "retry_button": "재시도",
   "empty_state": "아직 이미지가 없습니다",
+  "empty_state_description": "대화에서 사진을 공유하면 여기에 표시됩니다",
   "all_conversations": "전체 대화",
-  "search_conversations": "대화 검색",
-  "no_matching_conversations": "일치하는 대화가 없습니다",
-  "no_conversations": "대화가 없습니다",
-  "filter_by_conversation": "대화로 필터링"
+  "search_conversations": "대화방 검색...",
+  "no_matching_conversations": "일치하는 대화방이 없습니다",
+  "no_conversations": "대화방이 없습니다",
+  "filter_by_conversation": "대화방별로 필터",
+  "filter_empty_state": "이 대화에 사진이 없습니다",
+  "filter_empty_state_description": "이 대화방에서 공유된 사진이 아직 없습니다",
+  "filter_no_matching_conversations_hint": "다른 검색어를 시도해 보세요",
+  "filter_no_conversations_hint": "대화를 시작하면 여기에 사진이 표시됩니다"
 }
