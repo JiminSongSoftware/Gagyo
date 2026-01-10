@@ -156,7 +156,7 @@ function PrayerCardMessage({
       backgroundColor={isOwnMessage ? '$chatBubbleOwn' : '$chatBubbleOther'}
       gap="$2"
     >
-      <TamaguiText fontSize="$sm" fontWeight="600" color="$primary">
+      <TamaguiText fontSize={14} fontWeight="600" color="$primary">
         🙏 {isOwnMessage ? 'Prayer Request' : 'Prayer Card'}
       </TamaguiText>
       <TamaguiText fontSize="$lg" color="$color1" lineHeight="$5">
@@ -317,7 +317,7 @@ export function MessageBubble({
           {/* Sender name (right-aligned for own messages) */}
           <TamaguiText
             testID="sender-name"
-            fontSize="$sm"
+            fontSize={14}
             fontWeight="600"
             color="$color3"
             marginBottom="$1"
@@ -357,14 +357,14 @@ export function MessageBubble({
             </Pressable>
 
             {/* Avatar on right for own messages */}
-            <Stack marginLeft="$2">
+            <Stack marginLeft="$3">
               <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-                <Avatar circular width={44} height={44}>
+                <Avatar circular width={52} height={52}>
                   {senderAvatar ? (
                     <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
                   ) : (
                     <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
-                      <TamaguiText fontSize="$lg" fontWeight="600" color="white">
+                      <TamaguiText fontSize={20} fontWeight="600" color="white">
                         {senderInitials}
                       </TamaguiText>
                     </Avatar.Fallback>
@@ -391,12 +391,12 @@ export function MessageBubble({
     >
       {/* Profile avatar */}
       <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-        <Avatar circular width={44} height={44} marginRight="$2">
+        <Avatar circular width={52} height={52} marginRight="$3">
           {senderAvatar ? (
             <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
           ) : (
             <Avatar.Fallback style={{ backgroundColor: avatarBackgroundColor }}>
-              <TamaguiText fontSize="$lg" fontWeight="600" color="white">
+              <TamaguiText fontSize={20} fontWeight="600" color="white">
                 {senderInitials}
               </TamaguiText>
             </Avatar.Fallback>
@@ -410,7 +410,7 @@ export function MessageBubble({
         <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
           <TamaguiText
             testID="sender-name"
-            fontSize="$sm"
+            fontSize={14}
             fontWeight="600"
             color="$color3"
             marginBottom="$1"
