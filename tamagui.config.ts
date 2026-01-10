@@ -122,9 +122,11 @@ const colorTokens = {
   lightBackground: '#fff',
   lightBackgroundSecondary: '#f5f5f5',
   lightBackgroundTertiary: '#eaeaea',
-  lightBackgroundWarm: '#FFF8F0', // Small Group
-  lightBackgroundCool: '#F0F8FF', // Ministry
-  lightBackgroundAccent: '#FFF0F8', // Church Wide
+  lightBackgroundWarm: '#99CD69', // Small Group (목장방/초원방) - green
+  lightBackgroundCool: '#B9C2DD', // Ministry - soft blue/gray
+  lightBackgroundAccent: '#B9C2DD', // Church Wide - soft blue/gray
+  lightChatBubbleOwn: '#FFD700', // Own message bubble - gold/yellow
+  lightChatBubbleOther: '#FFFFFF', // Others' message bubble - white
   lightText: '#11181C',
   lightTextSecondary: '#687076',
   lightTextTertiary: '#9BA1A6',
@@ -159,9 +161,11 @@ const colorTokens = {
   darkBackground: '#151718',
   darkBackgroundSecondary: '#1a1c1e',
   darkBackgroundTertiary: '#202224',
-  darkBackgroundWarm: '#2A2520', // Small Group
-  darkBackgroundCool: '#1A2530', // Ministry
-  darkBackgroundAccent: '#2A1A25', // Church Wide
+  darkBackgroundWarm: '#3D5A28', // Small Group (목장방/초원방) - darker green
+  darkBackgroundCool: '#3A4255', // Ministry - darker blue/gray
+  darkBackgroundAccent: '#3A4255', // Church Wide - darker blue/gray
+  darkChatBubbleOwn: '#B8960B', // Own message bubble - darker gold
+  darkChatBubbleOther: '#2A2D2F', // Others' message bubble - dark gray
   darkText: '#ECEDEE',
   darkTextSecondary: '#9BA1A6',
   darkTextTertiary: '#687076',
@@ -302,6 +306,8 @@ const config = createTamagui({
       backgroundWarm: colorTokens.lightBackgroundWarm,
       backgroundCool: colorTokens.lightBackgroundCool,
       backgroundAccent: colorTokens.lightBackgroundAccent,
+      chatBubbleOwn: colorTokens.lightChatBubbleOwn,
+      chatBubbleOther: colorTokens.lightChatBubbleOther,
       color: colorTokens.lightText,
       colorHover: colorTokens.lightText,
       primary: colorTokens.lightPrimary,
@@ -344,6 +350,8 @@ const config = createTamagui({
       backgroundWarm: colorTokens.darkBackgroundWarm,
       backgroundCool: colorTokens.darkBackgroundCool,
       backgroundAccent: colorTokens.darkBackgroundAccent,
+      chatBubbleOwn: colorTokens.darkChatBubbleOwn,
+      chatBubbleOther: colorTokens.darkChatBubbleOther,
       color: colorTokens.darkText,
       colorHover: colorTokens.darkText,
       primary: colorTokens.darkPrimary,

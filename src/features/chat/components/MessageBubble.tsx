@@ -1,19 +1,21 @@
 /**
  * Message bubble component.
  *
- * Displays a single message with:
- * - Sender name and avatar (for group chats)
+ * Displays a single message with KakaoTalk-style design:
+ * - Sender profile image and name (for group chats, others' messages)
  * - Message content based on content type (text, image, prayer_card, system)
- * - Timestamp
- * - Different styling for own messages vs others
+ * - Timestamp displayed outside the bubble
+ * - Gold (#FFD700) bubbles for own messages, white for others
+ * - Bubble tail pointing toward sender
  * - Thread reply count indicator
+ * - Highlight support for search results
  */
 
 import { useCallback } from 'react';
-import { Pressable, ViewStyle } from 'react-native';
-import { Stack, Text as TamaguiText, Image } from 'tamagui';
+import { Pressable, View, StyleSheet } from 'react-native';
+import { Stack, Text as TamaguiText, Image, Avatar, XStack, YStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
-import type { MessageWithSender, ConversationType } from '@/types/database';
+import type { MessageWithSender } from '@/types/database';
 
 export interface MessageBubbleProps {
   /**
@@ -29,7 +31,7 @@ export interface MessageBubbleProps {
   /**
    * The conversation type (affects display behavior).
    */
-  conversationType: ConversationType;
+  conversationType: 'direct' | 'small_group' | 'ministry' | 'church_wide';
 
   /**
    * Callback when the message is pressed (for thread view or image expansion).
@@ -81,31 +83,20 @@ function isSameDay(date1: string, date2: string): boolean {
 }
 
 /**
- * Get background color based on conversation type.
+ * Get bubble background color (KakaoTalk style).
+ * Own messages: Gold (#FFD700)
+ * Others' messages: White
  */
-function getBackgroundColor(isOwnMessage: boolean, conversationType: ConversationType): string {
-  if (isOwnMessage) {
-    return '$primary';
-  }
-
-  // Different background colors for different conversation types
-  switch (conversationType) {
-    case 'small_group':
-      return '$backgroundWarm';
-    case 'ministry':
-      return '$backgroundCool';
-    case 'church_wide':
-      return '$backgroundAccent';
-    default:
-      return '$backgroundTertiary';
-  }
+function getBubbleBackgroundColor(isOwnMessage: boolean): string {
+  return isOwnMessage ? '$chatBubbleOwn' : '$chatBubbleOther';
 }
 
 /**
  * Get text color based on message ownership.
+ * Both use dark text for readability on gold/white backgrounds.
  */
-function getTextColor(isOwnMessage: boolean): string {
-  return isOwnMessage ? 'white' : '$color1';
+function getTextColor(_isOwnMessage: boolean): string {
+  return '$color1';
 }
 
 /**
@@ -159,16 +150,16 @@ function PrayerCardMessage({
   return (
     <Stack
       borderWidth={1}
-      borderColor={isOwnMessage ? '$primary' : '$borderLight'}
+      borderColor="$borderLight"
       borderRadius="$3"
       padding="$3"
-      backgroundColor={isOwnMessage ? '$primary' : '$background'}
+      backgroundColor={isOwnMessage ? '$chatBubbleOwn' : '$chatBubbleOther'}
       gap="$2"
     >
-      <TamaguiText fontSize="$sm" fontWeight="600" color={isOwnMessage ? 'white' : '$primary'}>
+      <TamaguiText fontSize="$sm" fontWeight="600" color="$primary">
         🙏 {isOwnMessage ? 'Prayer Request' : 'Prayer Card'}
       </TamaguiText>
-      <TamaguiText fontSize="$md" color={isOwnMessage ? 'white' : '$color1'} lineHeight="$4">
+      <TamaguiText fontSize="$lg" color="$color1" lineHeight="$5">
         {content || ''}
       </TamaguiText>
     </Stack>
@@ -192,16 +183,15 @@ function MessageContentView({
   textColor: string;
   handlePress: () => void;
 }) {
-  console.log('[MessageContentView] Rendering with new code', contentType);
-  // Render content and timestamp in a single Stack to avoid sibling whitespace
+  // Render content based on type - text uses larger font size per KakaoTalk style
   return (
-    <Stack gap="$2">
+    <Stack>
       {contentType === 'image' ? (
         <ImageMessage content={content} onPress={handlePress} />
       ) : contentType === 'prayer_card' ? (
         <PrayerCardMessage content={content} isOwnMessage={isOwnMessage} />
       ) : (
-        <TamaguiText testID="message-content" fontSize="$md" color={textColor} lineHeight="$5">
+        <TamaguiText testID="message-content" fontSize="$lg" color={textColor} lineHeight="$6">
           {content || ''}
         </TamaguiText>
       )}
@@ -210,7 +200,22 @@ function MessageContentView({
 }
 
 /**
- * MessageBubble component.
+ * Bubble tail component for KakaoTalk-style chat bubbles.
+ */
+function BubbleTail({ isOwnMessage }: { isOwnMessage: boolean }) {
+  return (
+    <View
+      style={[
+        bubbleStyles.tail,
+        isOwnMessage ? bubbleStyles.tailRight : bubbleStyles.tailLeft,
+        { borderBottomColor: isOwnMessage ? '#FFD700' : '#FFFFFF' },
+      ]}
+    />
+  );
+}
+
+/**
+ * MessageBubble component with KakaoTalk-style design.
  */
 export function MessageBubble({
   message,
@@ -237,100 +242,238 @@ export function MessageBubble({
     return <SystemMessage content={message.content} />;
   }
 
-  const backgroundColor = getBackgroundColor(isOwnMessage, conversationType);
+  const bubbleBackgroundColor = getBubbleBackgroundColor(isOwnMessage);
   const textColor = getTextColor(isOwnMessage);
   const isDirectMessage = conversationType === 'direct';
 
-  // Show sender info for group chats when not own message
+  // Show sender info (profile + name) for group chats when not own message
   const showSenderInfo = !isOwnMessage && !isDirectMessage;
 
-  // Determine bubble alignment
-  const alignmentStyle: ViewStyle = isOwnMessage
-    ? { alignSelf: 'flex-end' }
-    : { alignSelf: 'flex-start' };
+  // Get sender avatar URL or generate initials
+  const senderName = message.sender?.user?.display_name || 'Unknown';
+  const senderAvatar = message.sender?.user?.profile_photo_url;
+  const senderInitials = senderName.charAt(0).toUpperCase();
 
+  // Highlight styles for search results
+  const highlightStyle = highlighted
+    ? {
+        borderWidth: 2,
+        borderColor: '$primary' as const,
+        borderRadius: '$3' as const,
+        padding: '$1' as const,
+      }
+    : {};
+
+  // Own messages: bubble on right, timestamp on left of bubble
+  // Others' messages: profile + bubble on left, timestamp on right of bubble
+  if (isOwnMessage) {
+    return (
+      <XStack
+        testID={testID || `message-${message.id}`}
+        justifyContent="flex-end"
+        alignItems="flex-end"
+        marginHorizontal="$3"
+        marginBottom="$2"
+        maxWidth="100%"
+        {...highlightStyle}
+      >
+        {/* Timestamp and metadata on left of bubble */}
+        <YStack alignItems="flex-end" justifyContent="flex-end" marginRight="$1.5" gap="$0.5">
+          {/* Reply count badge */}
+          {showThreadIndicator && message.reply_count && message.reply_count > 0 ? (
+            <Stack
+              testID="reply-count-badge"
+              flexDirection="row"
+              alignItems="center"
+              gap="$1"
+              backgroundColor="$backgroundTertiary"
+              borderRadius={8}
+              paddingHorizontal="$1.5"
+              paddingVertical="$0.5"
+            >
+              <TamaguiText testID="reply-count-text" fontSize={10} color="$color2">
+                {message.reply_count}
+              </TamaguiText>
+            </Stack>
+          ) : null}
+          {/* Event chat indicator */}
+          {message.is_event_chat ? (
+            <TamaguiText fontSize={10} color="$color3">
+              👁️
+            </TamaguiText>
+          ) : null}
+          {/* Timestamp */}
+          <TamaguiText testID="message-timestamp" fontSize={11} color="$color3">
+            {formatMessageTime(message.created_at)}
+          </TamaguiText>
+        </YStack>
+
+        {/* Message bubble */}
+        <Pressable onPress={handlePress}>
+          <View style={bubbleStyles.bubbleWrapper}>
+            <Stack
+              borderRadius={16}
+              borderTopRightRadius={4}
+              padding="$2.5"
+              paddingHorizontal="$3"
+              backgroundColor={bubbleBackgroundColor}
+              maxWidth={260}
+              shadowColor="$shadowColor"
+              shadowOffset={{ width: 0, height: 1 }}
+              shadowOpacity={0.1}
+              shadowRadius={2}
+              elevation={1}
+            >
+              <MessageContentView
+                contentType={message.content_type}
+                content={message.content}
+                isOwnMessage={isOwnMessage}
+                textColor={textColor}
+                handlePress={handlePress}
+              />
+            </Stack>
+            <BubbleTail isOwnMessage={true} />
+          </View>
+        </Pressable>
+      </XStack>
+    );
+  }
+
+  // Others' messages layout
   return (
-    <Stack
+    <XStack
       testID={testID || `message-${message.id}`}
-      style={alignmentStyle}
-      maxWidth="80%"
+      justifyContent="flex-start"
+      alignItems="flex-start"
       marginHorizontal="$3"
       marginBottom="$2"
-      borderWidth={highlighted ? 2 : undefined}
-      borderColor="$primary"
-      borderRadius={highlighted ? '$3' : undefined}
-      padding={highlighted ? '$1' : undefined}
+      maxWidth="100%"
+      {...highlightStyle}
     >
-      {/* Sender info for group chats */}
-      {showSenderInfo && (
+      {/* Profile avatar for group chats */}
+      {showSenderInfo ? (
         <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
-          <TamaguiText
-            testID="sender-name"
-            fontSize="$xs"
-            fontWeight="600"
-            color="$color3"
-            marginLeft="$1"
-            marginBottom="$1"
-          >
-            {message.sender?.user?.display_name || 'Unknown'}
-          </TamaguiText>
+          <Avatar circular size="$3" marginRight="$2">
+            {senderAvatar ? (
+              <Avatar.Image accessibilityLabel={senderName} src={senderAvatar} />
+            ) : (
+              <Avatar.Fallback backgroundColor="$backgroundTertiary">
+                <TamaguiText fontSize="$sm" fontWeight="600" color="$color2">
+                  {senderInitials}
+                </TamaguiText>
+              </Avatar.Fallback>
+            )}
+          </Avatar>
         </Pressable>
+      ) : (
+        // Spacer for direct messages to maintain alignment
+        <Stack width="$3" marginRight="$2" />
       )}
 
-      {/* Message bubble - renders content and timestamp */}
-      <Pressable onPress={handlePress}>
-        <Stack borderRadius="$3" padding="$3" backgroundColor={backgroundColor}>
-          <MessageContentView
-            contentType={message.content_type}
-            content={message.content}
-            isOwnMessage={isOwnMessage}
-            textColor={textColor}
-            handlePress={handlePress}
-          />
-          <Stack
-            flexDirection="row"
-            alignItems="center"
-            gap="$2"
-            style={{ alignSelf: isOwnMessage ? 'flex-end' : 'flex-start' }}
-          >
+      {/* Message content column */}
+      <YStack flex={1} maxWidth="80%">
+        {/* Sender name for group chats */}
+        {showSenderInfo && (
+          <Pressable onPress={handleSenderPress} disabled={!onSenderPress}>
             <TamaguiText
-              testID="message-timestamp"
+              testID="sender-name"
               fontSize="$xs"
-              color={isOwnMessage ? '$primaryLight' : '$color3'}
+              fontWeight="600"
+              color="$color3"
+              marginBottom="$1"
             >
-              {formatMessageTime(message.created_at)}
+              {senderName}
             </TamaguiText>
+          </Pressable>
+        )}
+
+        {/* Bubble and timestamp row */}
+        <XStack alignItems="flex-end">
+          {/* Message bubble */}
+          <Pressable onPress={handlePress}>
+            <View style={bubbleStyles.bubbleWrapper}>
+              <BubbleTail isOwnMessage={false} />
+              <Stack
+                borderRadius={16}
+                borderTopLeftRadius={4}
+                padding="$2.5"
+                paddingHorizontal="$3"
+                backgroundColor={bubbleBackgroundColor}
+                maxWidth={260}
+                shadowColor="$shadowColor"
+                shadowOffset={{ width: 0, height: 1 }}
+                shadowOpacity={0.1}
+                shadowRadius={2}
+                elevation={1}
+              >
+                <MessageContentView
+                  contentType={message.content_type}
+                  content={message.content}
+                  isOwnMessage={isOwnMessage}
+                  textColor={textColor}
+                  handlePress={handlePress}
+                />
+              </Stack>
+            </View>
+          </Pressable>
+
+          {/* Timestamp and metadata on right of bubble */}
+          <YStack alignItems="flex-start" justifyContent="flex-end" marginLeft="$1.5" gap="$0.5">
+            {/* Reply count badge */}
             {showThreadIndicator && message.reply_count && message.reply_count > 0 ? (
               <Stack
                 testID="reply-count-badge"
                 flexDirection="row"
                 alignItems="center"
                 gap="$1"
-                backgroundColor={isOwnMessage ? '$primaryDark' : '$backgroundTertiary'}
+                backgroundColor="$backgroundTertiary"
                 borderRadius={8}
-                paddingHorizontal="$2"
-                paddingVertical="$1"
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
               >
-                <TamaguiText
-                  testID="reply-count-text"
-                  fontSize="$xs"
-                  color={isOwnMessage ? 'white' : '$color2'}
-                >
+                <TamaguiText testID="reply-count-text" fontSize={10} color="$color2">
                   {message.reply_count}
                 </TamaguiText>
               </Stack>
             ) : null}
-            {message.is_event_chat && isOwnMessage ? (
-              <TamaguiText fontSize="$xs" color={isOwnMessage ? '$primaryLight' : '$color3'}>
-                👁️
-              </TamaguiText>
-            ) : null}
-          </Stack>
-        </Stack>
-      </Pressable>
-    </Stack>
+            {/* Timestamp */}
+            <TamaguiText testID="message-timestamp" fontSize={11} color="$color3">
+              {formatMessageTime(message.created_at)}
+            </TamaguiText>
+          </YStack>
+        </XStack>
+      </YStack>
+    </XStack>
   );
 }
+
+/**
+ * Styles for bubble tail.
+ */
+const bubbleStyles = StyleSheet.create({
+  bubbleWrapper: {
+    position: 'relative',
+  },
+  tail: {
+    position: 'absolute',
+    top: 0,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  tailLeft: {
+    left: -6,
+    transform: [{ rotate: '-45deg' }],
+  },
+  tailRight: {
+    right: -6,
+    transform: [{ rotate: '45deg' }],
+  },
+});
 
 /**
  * Date separator component.
