@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { XStack, YStack, Text as TamaguiText, Stack, Dialog, Button } from 'tamagui';
+import { XStack, YStack, Text as TamaguiText, Stack, Button, styled } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from '@/i18n';
 import { usePrayerCardStore } from '@/stores/prayerCardStore';
@@ -121,6 +121,33 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 16,
   },
+});
+
+// ============================================================================
+// STYLIZED DIALOG COMPONENTS
+// ============================================================================
+
+const AnswerDialogOverlay = styled(Stack, {
+  name: 'AnswerDialogOverlay',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 2000,
+});
+
+const AnswerDialogContent = styled(Stack, {
+  name: 'AnswerDialogContent',
+  backgroundColor: '#ffffff',
+  borderRadius: 16,
+  width: '85%',
+  maxWidth: 400,
+  padding: 20,
+  margin: 20,
 });
 
 // ============================================================================
@@ -456,28 +483,20 @@ export default function PrayerCardDetailScreen() {
       </ScrollView>
 
       {/* Answer Dialog */}
-      <Dialog
-        open={showAnswerDialog}
-        onOpenChange={setShowAnswerDialog}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay
-            key="overlay"
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }}
-          />
-          <Dialog.Content
-            key="contents"
-            backgroundColor="#ffffff"
-            borderRadius={16}
-            padding={20}
-            margin={20}
-            zIndex={100}
-          >
+      {showAnswerDialog && (
+        <AnswerDialogOverlay
+          testID="answer-dialog-overlay"
+          onStartShouldSetResponder={() => true}
+        >
+          <AnswerDialogContent>
             <YStack gap={16}>
               <YStack gap={4}>
-                <TamaguiText fontSize={18} fontWeight="700" color="#11181C">
+                <TamaguiText
+                  testID="answer-dialog-title"
+                  fontSize={18}
+                  fontWeight="700"
+                  color="#11181C"
+                >
                   {t('prayer.mark_answered_dialog_title')}
                 </TamaguiText>
                 <TamaguiText fontSize={14} color="#687076">
@@ -505,6 +524,7 @@ export default function PrayerCardDetailScreen() {
                     setShowAnswerDialog(false);
                     setResponseContent('');
                   }}
+                  testID="cancel-answer-button"
                 >
                   <TamaguiText color="#11181C" fontWeight="600">
                     {t('prayer.cancel_button')}
@@ -523,9 +543,9 @@ export default function PrayerCardDetailScreen() {
                 </Button>
               </XStack>
             </YStack>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+          </AnswerDialogContent>
+        </AnswerDialogOverlay>
+      )}
     </Stack>
   );
 }
