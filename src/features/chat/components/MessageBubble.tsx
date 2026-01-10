@@ -220,7 +220,7 @@ function BubbleTail({ isOwnMessage }: { isOwnMessage: boolean }) {
 export function MessageBubble({
   message,
   isOwnMessage,
-  conversationType,
+  conversationType: _conversationType,
   onPress,
   onSenderPress,
   showThreadIndicator = true,
@@ -244,10 +244,9 @@ export function MessageBubble({
 
   const bubbleBackgroundColor = getBubbleBackgroundColor(isOwnMessage);
   const textColor = getTextColor(isOwnMessage);
-  const isDirectMessage = conversationType === 'direct';
 
-  // Show sender info (profile + name) for group chats when not own message
-  const showSenderInfo = !isOwnMessage && !isDirectMessage;
+  // Show sender info (profile + name) for all messages from others
+  const showSenderInfo = !isOwnMessage;
 
   // Get sender avatar URL or generate initials
   const senderName = message.sender?.user?.display_name || 'Unknown';
