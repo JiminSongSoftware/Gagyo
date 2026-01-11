@@ -12,7 +12,7 @@
  * - Copy text: Copy to clipboard with toast
  */
 
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Stack } from 'tamagui';
@@ -22,6 +22,14 @@ import { useChatStore } from '../store/chatStore';
 import { MessageList } from '../components/MessageList';
 import { MessageActionSheet } from '../components/MessageActionSheet';
 import type { MessageWithSender, ConversationType } from '@/types/database';
+import type { MessageListHandle } from '../components/MessageList';
+
+/**
+ * Chat screen handle - exposes MessageList methods
+ */
+export interface ChatScreenHandle {
+  scrollToMessage: (messageId: string) => void;
+}
 
 export interface ChatScreenProps {
   /**
@@ -94,23 +102,40 @@ const SYSTEM_SENDER_ID = 'system';
 /**
  * Chat screen with action menu integration.
  */
-export function ChatScreen({
-  messages,
-  highlightedMessageId,
-  loading,
-  loadingMore,
-  hasMore,
-  error,
-  conversationType,
-  currentUserId,
-  onLoadMore,
-  onSenderPress,
-  showThreadIndicators,
-  testID,
-}: ChatScreenProps) {
+export const ChatScreen = forwardRef<ChatScreenHandle, ChatScreenProps>(function ChatScreen(
+  {
+    messages,
+    highlightedMessageId,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    conversationType,
+    currentUserId,
+    onLoadMore,
+    onSenderPress,
+    showThreadIndicators,
+    testID,
+  }: ChatScreenProps,
+  ref
+) {
   const router = useRouter();
   const { t } = useTranslation();
   const { selectedMessage, setSelectedMessage, setQuoteAttachment } = useChatStore();
+
+  // Internal ref for MessageList
+  const messageListRef = useRef<MessageListHandle | null>(null);
+
+  // Expose MessageList methods through ChatScreen handle
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToMessage: (messageId: string) => {
+        messageListRef.current?.scrollToMessage(messageId);
+      },
+    }),
+    []
+  );
 
   // Toast state for declarative API
   const [showToast, setShowToast] = useState(false);
@@ -179,6 +204,7 @@ export function ChatScreen({
     <Stack flex={1}>
       {/* Message List */}
       <MessageList
+        ref={messageListRef}
         messages={messages}
         highlightedMessageId={highlightedMessageId}
         loading={loading}
@@ -215,4 +241,4 @@ export function ChatScreen({
       />
     </Stack>
   );
-}
+});
