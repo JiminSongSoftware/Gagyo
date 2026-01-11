@@ -13,6 +13,12 @@ export interface SendMessageOptions {
   content: string;
   contentType?: MessageContentType;
   excludedMembershipIds?: string[]; // For Event Chat
+  quoteAttachment?: {
+    messageId: string;
+    senderName: string;
+    senderAvatar?: string | null;
+    content: string;
+  } | null;
 }
 
 export interface SendMessageState {
@@ -20,9 +26,7 @@ export interface SendMessageState {
     content: string,
     contentType?: MessageContentType
   ) => Promise<MessageWithSender | null>;
-  sendMessageWithOptions: (
-    options: SendMessageOptions
-  ) => Promise<MessageWithSender | null>;
+  sendMessageWithOptions: (options: SendMessageOptions) => Promise<MessageWithSender | null>;
   sending: boolean;
   error: Error | null;
 }
@@ -78,9 +82,7 @@ export function useSendMessage(
   const [error, setError] = useState<Error | null>(null);
 
   const sendMessageWithOptions = useCallback(
-    async (
-      options: SendMessageOptions
-    ): Promise<MessageWithSender | null> => {
+    async (options: SendMessageOptions): Promise<MessageWithSender | null> => {
       const { content, contentType = 'text', excludedMembershipIds } = options;
 
       if (!conversationId || !tenantId || !senderMembershipId) {
@@ -112,8 +114,7 @@ export function useSendMessage(
       setError(null);
 
       try {
-        const isEventChat =
-          excludedMembershipIds && excludedMembershipIds.length > 0;
+        const isEventChat = excludedMembershipIds && excludedMembershipIds.length > 0;
 
         const { data, error: insertError } = await supabase
           .from('messages')
@@ -168,10 +169,7 @@ export function useSendMessage(
 
           if (exclusionsError) {
             // Log error but don't fail the message send
-            console.error(
-              'Failed to insert event chat exclusions:',
-              exclusionsError
-            );
+            console.error('Failed to insert event chat exclusions:', exclusionsError);
           }
         }
 
@@ -272,12 +270,7 @@ export function useSendReply(
       content: string,
       contentType: MessageContentType = 'text'
     ): Promise<MessageWithSender | null> => {
-      if (
-        !conversationId ||
-        !tenantId ||
-        !senderMembershipId ||
-        !parentMessageId
-      ) {
+      if (!conversationId || !tenantId || !senderMembershipId || !parentMessageId) {
         setError(new Error('Missing required parameters'));
         return null;
       }

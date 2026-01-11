@@ -55,6 +55,9 @@
       "copied": "클립보드에 복사됨",
       "nothingToCopy": "복사할 텍스트 없음"
     },
+    "quote_preview": {
+      "remove_quote": "인용 제거"
+    },
     "thread": {
       "title": "스레드",
       "inputPlaceholder": "스레드에 답장...",

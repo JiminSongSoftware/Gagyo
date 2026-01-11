@@ -55,6 +55,9 @@
       "copied": "Copied to clipboard",
       "nothingToCopy": "Nothing to copy"
     },
+    "quote_preview": {
+      "remove_quote": "Remove quote"
+    },
     "thread": {
       "title": "Thread",
       "inputPlaceholder": "Reply in thread...",

@@ -30,6 +30,8 @@ import { useImageUpload } from '../hooks/useImageUpload';
 import type { SendMessageOptions } from '../hooks/useSendMessage';
 import { EmojiPicker } from './EmojiPicker';
 import { EventChatSelector } from './EventChatSelector';
+import { QuotePreview } from './QuotePreview';
+import { useChatStore } from '../store/chatStore';
 
 // Import icon assets from assets folder (PNG files)
 const PLUS_ICON = require('../../../../assets/plus-circle.png') as number;
@@ -49,12 +51,21 @@ export interface MessageInputProps {
   /**
    * Callback when send is pressed.
    * @param content - The message content to send
+   * @param quoteAttachment - Optional quote attachment data
    */
-  onSend: (content: string) => Promise<void>;
+  onSend: (
+    content: string,
+    quoteAttachment?: {
+      messageId: string;
+      senderName: string;
+      senderAvatar?: string | null;
+      content: string;
+    } | null
+  ) => Promise<void>;
 
   /**
    * Callback when Event Chat message is sent.
-   * @param options - Message options including excluded user IDs
+   * @param options - Message options including excluded user IDs and quote attachment
    */
   onSendEventChat?: (options: SendMessageOptions) => Promise<void>;
 
@@ -142,6 +153,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { quoteAttachment, clearQuoteAttachment } = useChatStore();
 
   const [inputText, setInputText] = useState('');
   const [_inputHeight, setInputHeight] = useState(40);
@@ -191,14 +203,19 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
     setInputHeight(40);
     setShowEmojiPicker(false);
 
+    // Capture quote attachment before clearing
+    const currentQuoteAttachment = quoteAttachment;
+    clearQuoteAttachment();
+
     try {
       if (isEventChatMode && onSendEventChat && excludedMembershipIds.length > 0) {
         await onSendEventChat({
           content: trimmed,
           excludedMembershipIds,
+          quoteAttachment: currentQuoteAttachment,
         });
       } else {
-        await onSend(trimmed);
+        await onSend(trimmed, currentQuoteAttachment);
       }
 
       setIsEventChatMode(false);
@@ -206,7 +223,16 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
     } catch {
       setInputText(trimmed);
     }
-  }, [inputText, sending, onSend, isEventChatMode, onSendEventChat, excludedMembershipIds]);
+  }, [
+    inputText,
+    sending,
+    onSend,
+    isEventChatMode,
+    onSendEventChat,
+    excludedMembershipIds,
+    quoteAttachment,
+    clearQuoteAttachment,
+  ]);
 
   const handleEventChatSelectorConfirm = useCallback((selectedIds: string[]) => {
     setExcludedMembershipIds(selectedIds);
@@ -280,6 +306,16 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
         borderTopWidth={1}
         borderTopColor="$borderLight"
       >
+        {/* Quote preview */}
+        {quoteAttachment && (
+          <QuotePreview
+            senderName={quoteAttachment.senderName}
+            senderAvatar={quoteAttachment.senderAvatar}
+            content={quoteAttachment.content}
+            onRemove={clearQuoteAttachment}
+          />
+        )}
+
         {/* Error display */}
         {error && (
           <Stack
