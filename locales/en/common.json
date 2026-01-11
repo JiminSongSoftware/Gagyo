@@ -46,6 +46,22 @@
     "settings": "Settings",
     "more": "More"
   },
+  "chat": {
+    "message": {
+      "replyInThread": "Reply in thread",
+      "replyInThreadWithCount": "Reply in thread ({{count}})",
+      "quoteInReply": "Quote in reply",
+      "copyText": "Copy text",
+      "copied": "Copied to clipboard",
+      "nothingToCopy": "Nothing to copy"
+    },
+    "thread": {
+      "title": "Thread",
+      "inputPlaceholder": "Reply in thread...",
+      "noReplies": "No replies yet. Be the first!",
+      "loadingReplies": "Loading replies..."
+    }
+  },
   "home_screen": {
     "welcome": "Welcome to {{churchName}}",
     "dashboard_title": "Dashboard",
