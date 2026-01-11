@@ -103,5 +103,8 @@
     "inputPlaceholder": "스레드에 답장...",
     "noReplies": "아직 답장이 없습니다. 첫 번째로 답장하세요!",
     "loadingReplies": "답장 불러오는 중..."
+  },
+  "quote_preview": {
+    "remove_quote": "인용 제거"
   }
 }

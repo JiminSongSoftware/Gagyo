@@ -103,5 +103,8 @@
     "inputPlaceholder": "Reply in thread...",
     "noReplies": "No replies yet. Be the first!",
     "loadingReplies": "Loading replies..."
+  },
+  "quote_preview": {
+    "remove_quote": "Remove quote"
   }
 }

@@ -38,8 +38,10 @@ import {
   removeMessage,
   useMediaUpload,
 } from '@/features/chat/hooks';
-import { MessageList, MessageInput } from '@/features/chat/components';
-import type { MessageInputHandle, MessageListHandle } from '@/features/chat/components';
+import { MessageInput } from '@/features/chat/components';
+import { ChatScreen } from '@/features/chat/screens';
+import type { ChatScreenHandle } from '@/features/chat/screens';
+import type { MessageInputHandle } from '@/features/chat/components';
 import { getRoomBackgroundColor } from '@/features/chat/utils/getRoomBackgroundColor';
 import { supabase } from '@/lib/supabase';
 import type { ConversationType, MessageWithSender } from '@/types/database';
@@ -450,8 +452,8 @@ export default function ChatDetailScreen() {
   // Ref to access MessageInput methods
   const messageInputRef = useRef<MessageInputHandle | null>(null);
 
-  // Ref to access MessageList methods
-  const messageListRef = useRef<MessageListHandle | null>(null);
+  // Ref to access ChatScreen methods (for search scroll)
+  const chatScreenRef = useRef<ChatScreenHandle | null>(null);
 
   // Search state
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -491,10 +493,12 @@ export default function ChatDetailScreen() {
     const results = displayMessages
       .map((msg, index) => ({ msg, index }))
       .filter(({ msg }) => {
-        if (msg.content?.toLowerCase().includes(query)) {
+        const content = msg.content;
+        if (content && content.toLowerCase().includes(query)) {
           return true;
         }
-        if (msg.sender?.user?.display_name?.toLowerCase().includes(query)) {
+        const displayName = msg.sender?.user?.display_name;
+        if (displayName && displayName.toLowerCase().includes(query)) {
           return true;
         }
         return false;
@@ -516,7 +520,7 @@ export default function ChatDetailScreen() {
       setHighlightedMessageId(messageId);
       // Scroll to the message with a small delay to ensure layout is ready
       setTimeout(() => {
-        messageListRef.current?.scrollToMessage(messageId);
+        chatScreenRef.current?.scrollToMessage?.(messageId);
       }, 100);
     } else {
       setHighlightedMessageId(null);
@@ -676,10 +680,25 @@ export default function ChatDetailScreen() {
   }, [conversationId, membershipId, displayMessages.length]);
 
   const handleSend = useCallback(
-    async (content: string) => {
-      await sendMessage(content);
+    async (
+      content: string,
+      quoteAttachment?: {
+        messageId: string;
+        senderName: string;
+        senderAvatar?: string | null;
+        content: string;
+      } | null
+    ) => {
+      if (quoteAttachment) {
+        await sendMessageWithOptions({
+          content,
+          quoteAttachment,
+        });
+      } else {
+        await sendMessage(content);
+      }
     },
-    [sendMessage]
+    [sendMessage, sendMessageWithOptions]
   );
 
   const handleSendEventChat = useCallback(
@@ -692,17 +711,6 @@ export default function ChatDetailScreen() {
   const handleBack = useCallback(() => {
     router.push('/chat');
   }, [router]);
-
-  const handleMessagePress = useCallback(
-    (message: MessageWithSender) => {
-      // Navigate to thread view if message has replies or is a top-level message
-      // Only top-level messages can have threads (parent_id is null)
-      if (!message.parent_id) {
-        router.push(`/chat/thread/${message.id}`);
-      }
-    },
-    [router]
-  );
 
   const handleSearch = useCallback(() => {
     setSearchExpanded(true);
@@ -831,9 +839,9 @@ export default function ChatDetailScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 44 : 0}
           >
-            {/* Message list */}
-            <MessageList
-              ref={messageListRef}
+            {/* Message list with action menu */}
+            <ChatScreen
+              ref={chatScreenRef}
               messages={displayMessages}
               highlightedMessageId={highlightedMessageId}
               loading={loading}
@@ -843,7 +851,8 @@ export default function ChatDetailScreen() {
               conversationType={conversationType}
               currentUserId={membershipId || ''}
               onLoadMore={() => void loadMore()}
-              onMessagePress={handleMessagePress}
+              showThreadIndicators={true}
+              testID="chat-screen"
             />
 
             {/* Message input */}

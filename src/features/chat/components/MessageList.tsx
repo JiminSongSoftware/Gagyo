@@ -17,9 +17,11 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Stack, Text as TamaguiText, Spinner } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { MessageBubble, DateSeparator } from './MessageBubble';
+import { useChatStore } from '../store/chatStore';
 import type { MessageWithSender, ConversationType } from '@/types/database';
 
 export interface MessageListHandle {
@@ -162,6 +164,7 @@ function MessageItem({
   onSenderPress,
   showThreadIndicator,
   highlightedMessageId,
+  selectedMessageId,
 }: {
   item: MessageWithSender;
   previousItem?: MessageWithSender;
@@ -171,22 +174,35 @@ function MessageItem({
   onSenderPress?: (membershipId: string) => void;
   showThreadIndicator: boolean;
   highlightedMessageId?: string | null;
+  selectedMessageId?: string | null;
 }) {
   const isOwnMessage = item.sender_id === currentUserId;
   const isHighlighted = item.id === highlightedMessageId;
+  const isSelected = item.id === selectedMessageId;
+  const isDimmed = selectedMessageId && !isSelected;
+
+  const messageBubble = (
+    <MessageBubble
+      message={item}
+      isOwnMessage={isOwnMessage}
+      conversationType={conversationType}
+      onPress={onMessagePress}
+      onSenderPress={onSenderPress}
+      showThreadIndicator={showThreadIndicator}
+      highlighted={isHighlighted}
+    />
+  );
 
   return (
     <>
       <DateSeparator currentDate={item.created_at} previousDate={previousItem?.created_at} />
-      <MessageBubble
-        message={item}
-        isOwnMessage={isOwnMessage}
-        conversationType={conversationType}
-        onPress={onMessagePress}
-        onSenderPress={onSenderPress}
-        showThreadIndicator={showThreadIndicator}
-        highlighted={isHighlighted}
-      />
+      {isDimmed ? (
+        <BlurView intensity={5} tint="default" style={{ flex: 1 }}>
+          {messageBubble}
+        </BlurView>
+      ) : (
+        messageBubble
+      )}
     </>
   );
 }
@@ -214,6 +230,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     ref
   ) => {
     const { t } = useTranslation();
+    const selectedMessageId = useChatStore((s) => s.selectedMessage?.id);
 
     // Ref for FlatList to control scrolling
     const flatListRef = useRef<FlatList>(null);
@@ -287,6 +304,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
             onSenderPress={onSenderPress}
             showThreadIndicator={showThreadIndicators}
             highlightedMessageId={highlightedMessageId}
+            selectedMessageId={selectedMessageId}
           />
         );
       },
@@ -298,6 +316,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
         onSenderPress,
         showThreadIndicators,
         highlightedMessageId,
+        selectedMessageId,
       ]
     );
 

@@ -21,3 +21,6 @@ export type { MessageListProps, MessageListHandle } from './MessageList';
 
 export { MessageInput } from './MessageInput';
 export type { MessageInputProps, MessageInputHandle } from './MessageInput';
+
+export { QuotePreview } from './QuotePreview';
+export type { QuotePreviewProps } from './QuotePreview';

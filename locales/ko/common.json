@@ -46,6 +46,28 @@
     "settings": "설정",
     "more": "전체"
   },
+  "chat": {
+    "message": {
+      "replyInThread": "스레드에서 답장",
+      "replyInThreadWithCount": "스레드에서 답장 ({{count}})",
+      "quoteInReply": "인용하여 답장",
+      "copyText": "텍스트 복사",
+      "copied": "클립보드에 복사됨",
+      "nothingToCopy": "복사할 텍스트 없음"
+    },
+    "quote_preview": {
+      "remove_quote": "인용 제거"
+    },
+    "thread": {
+      "title": "스레드",
+      "inputPlaceholder": "스레드에 답장...",
+      "noReplies": "아직 답장이 없습니다. 첫 번째로 답장하세요!",
+      "loadingReplies": "답장 불러오는 중...",
+      "invalid_thread": "잘못된 스레드",
+      "errorLoading": "스레드를 불러오지 못했습니다",
+      "sendError": "답장 전송 실패"
+    }
+  },
   "home_screen": {
     "welcome": "{{churchName}}에 오신 것을 환영합니다",
     "dashboard_title": "대시보드",

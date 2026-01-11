@@ -9,10 +9,80 @@ import { useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { MessageContentType, MessageWithSender } from '@/types/database';
 
+/**
+ * Type for the raw data returned from Supabase when inserting a message
+ * with sender and quoted_message relations joined.
+ */
+interface MessageInsertResult {
+  id: string;
+  tenant_id: string;
+  conversation_id: string;
+  sender_id: string;
+  parent_id: string | null;
+  quoted_message_id: string | null;
+  content: string;
+  content_type: string;
+  is_event_chat: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  sender: {
+    id: string;
+    user: {
+      id: string;
+      display_name: string | null;
+      photo_url: string | null;
+    };
+  };
+  quoted_message: {
+    id: string;
+    content: string | null;
+    sender: {
+      id: string;
+      user: {
+        id: string;
+        display_name: string | null;
+      };
+    };
+  } | null;
+}
+
+/**
+ * Type for the raw data returned from Supabase when inserting a reply
+ * with only sender relation joined.
+ */
+interface ReplyInsertResult {
+  id: string;
+  tenant_id: string;
+  conversation_id: string;
+  sender_id: string;
+  parent_id: string | null;
+  content: string;
+  content_type: string;
+  is_event_chat: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  sender: {
+    id: string;
+    user: {
+      id: string;
+      display_name: string | null;
+      photo_url: string | null;
+    };
+  };
+}
+
 export interface SendMessageOptions {
   content: string;
   contentType?: MessageContentType;
   excludedMembershipIds?: string[]; // For Event Chat
+  quoteAttachment?: {
+    messageId: string;
+    senderName: string;
+    senderAvatar?: string | null;
+    content: string;
+  } | null;
 }
 
 export interface SendMessageState {
@@ -20,9 +90,7 @@ export interface SendMessageState {
     content: string,
     contentType?: MessageContentType
   ) => Promise<MessageWithSender | null>;
-  sendMessageWithOptions: (
-    options: SendMessageOptions
-  ) => Promise<MessageWithSender | null>;
+  sendMessageWithOptions: (options: SendMessageOptions) => Promise<MessageWithSender | null>;
   sending: boolean;
   error: Error | null;
 }
@@ -78,10 +146,8 @@ export function useSendMessage(
   const [error, setError] = useState<Error | null>(null);
 
   const sendMessageWithOptions = useCallback(
-    async (
-      options: SendMessageOptions
-    ): Promise<MessageWithSender | null> => {
-      const { content, contentType = 'text', excludedMembershipIds } = options;
+    async (options: SendMessageOptions): Promise<MessageWithSender | null> => {
+      const { content, contentType = 'text', excludedMembershipIds, quoteAttachment } = options;
 
       if (!conversationId || !tenantId || !senderMembershipId) {
         setError(new Error('Missing required parameters'));
@@ -112,8 +178,7 @@ export function useSendMessage(
       setError(null);
 
       try {
-        const isEventChat =
-          excludedMembershipIds && excludedMembershipIds.length > 0;
+        const isEventChat = excludedMembershipIds && excludedMembershipIds.length > 0;
 
         const { data, error: insertError } = await supabase
           .from('messages')
@@ -124,6 +189,7 @@ export function useSendMessage(
             content: content.trim(),
             content_type: contentType,
             is_event_chat: isEventChat,
+            quoted_message_id: quoteAttachment?.messageId || null,
           })
           .select(
             `
@@ -132,6 +198,7 @@ export function useSendMessage(
             conversation_id,
             sender_id,
             parent_id,
+            quoted_message_id,
             content,
             content_type,
             is_event_chat,
@@ -145,10 +212,21 @@ export function useSendMessage(
                 display_name,
                 photo_url
               )
+            ),
+            quoted_message:messages!messages_quoted_message_id_fkey (
+              id,
+              content,
+              sender:memberships!messages_sender_id_fkey (
+                id,
+                user:users!memberships_user_id_fkey (
+                  id,
+                  display_name
+                )
+              )
             )
           `
           )
-          .single();
+          .single<MessageInsertResult>();
 
         if (insertError) {
           throw insertError;
@@ -168,10 +246,7 @@ export function useSendMessage(
 
           if (exclusionsError) {
             // Log error but don't fail the message send
-            console.error(
-              'Failed to insert event chat exclusions:',
-              exclusionsError
-            );
+            console.error('Failed to insert event chat exclusions:', exclusionsError);
           }
         }
 
@@ -183,17 +258,13 @@ export function useSendMessage(
 
         // Transform data to match MessageWithSender type
         if (data) {
-          const sender = data.sender as {
-            id: string;
-            user: { id: string; display_name: string | null; photo_url: string | null };
-          };
-
           return {
             id: data.id,
             tenant_id: data.tenant_id,
             conversation_id: data.conversation_id,
             sender_id: data.sender_id,
             parent_id: data.parent_id,
+            quoted_message_id: data.quoted_message_id,
             content: data.content,
             content_type: data.content_type as MessageContentType,
             is_event_chat: data.is_event_chat,
@@ -201,13 +272,23 @@ export function useSendMessage(
             updated_at: data.updated_at,
             deleted_at: data.deleted_at,
             sender: {
-              id: sender?.id ?? '',
+              id: data.sender?.id ?? '',
               user: {
-                id: sender?.user?.id ?? '',
-                display_name: sender?.user?.display_name ?? null,
-                photo_url: sender?.user?.photo_url ?? null,
+                id: data.sender?.user?.id ?? '',
+                display_name: data.sender?.user?.display_name ?? null,
+                photo_url: data.sender?.user?.photo_url ?? null,
               },
             },
+            quoted_message: data.quoted_message
+              ? {
+                  id: data.quoted_message.id,
+                  content: data.quoted_message.content,
+                  sender: {
+                    id: data.quoted_message.sender.id,
+                    display_name: data.quoted_message.sender.user?.display_name ?? null,
+                  },
+                }
+              : null,
           } as MessageWithSender;
         }
 
@@ -272,12 +353,7 @@ export function useSendReply(
       content: string,
       contentType: MessageContentType = 'text'
     ): Promise<MessageWithSender | null> => {
-      if (
-        !conversationId ||
-        !tenantId ||
-        !senderMembershipId ||
-        !parentMessageId
-      ) {
+      if (!conversationId || !tenantId || !senderMembershipId || !parentMessageId) {
         setError(new Error('Missing required parameters'));
         return null;
       }
@@ -340,7 +416,7 @@ export function useSendReply(
             )
           `
           )
-          .single();
+          .single<ReplyInsertResult>();
 
         if (insertError) {
           throw insertError;
@@ -348,11 +424,6 @@ export function useSendReply(
 
         // Transform data to match MessageWithSender type
         if (data) {
-          const sender = data.sender as {
-            id: string;
-            user: { id: string; display_name: string | null; photo_url: string | null };
-          };
-
           return {
             id: data.id,
             tenant_id: data.tenant_id,
@@ -366,11 +437,11 @@ export function useSendReply(
             updated_at: data.updated_at,
             deleted_at: data.deleted_at,
             sender: {
-              id: sender?.id ?? '',
+              id: data.sender?.id ?? '',
               user: {
-                id: sender?.user?.id ?? '',
-                display_name: sender?.user?.display_name ?? null,
-                photo_url: sender?.user?.photo_url ?? null,
+                id: data.sender?.user?.id ?? '',
+                display_name: data.sender?.user?.display_name ?? null,
+                photo_url: data.sender?.user?.photo_url ?? null,
               },
             },
           } as MessageWithSender;
