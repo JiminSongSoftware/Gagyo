@@ -94,8 +94,8 @@ export default function ThreadViewScreen() {
   }, [router]);
 
   const handleSendReply = useCallback(
-    (content: string) => {
-      void sendReply(content);
+    async (content: string) => {
+      await sendReply(content);
     },
     [sendReply]
   );
