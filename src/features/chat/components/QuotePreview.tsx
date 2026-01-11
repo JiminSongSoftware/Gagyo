@@ -12,6 +12,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { Stack, Text as TamaguiText, XStack, YStack, Image } from 'tamagui';
 import { X } from '@phosphor-icons/react';
 import { PistosLogo } from './MessageBubble';
+import { useTranslation } from 'react-i18next';
 
 export interface QuotePreviewProps {
   /**
@@ -52,6 +53,8 @@ function truncateContent(content: string): string {
  */
 export const QuotePreview = memo(
   ({ senderName, senderAvatar, content, onRemove }: QuotePreviewProps) => {
+    const { t } = useTranslation();
+
     const handleRemove = useCallback(() => {
       onRemove();
     }, [onRemove]);
@@ -103,7 +106,7 @@ export const QuotePreview = memo(
             onPress={handleRemove}
             style={styles.closeButton}
             hitSlop={4}
-            accessibilityLabel="Remove quote"
+            accessibilityLabel={t('chat.quote_preview.remove_quote')}
             accessibilityRole="button"
           >
             <X size={20} color="$color3" />
