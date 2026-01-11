@@ -181,31 +181,27 @@ function MessageItem({
   const isSelected = item.id === selectedMessageId;
   const isDimmed = selectedMessageId && !isSelected;
 
+  const messageBubble = (
+    <MessageBubble
+      message={item}
+      isOwnMessage={isOwnMessage}
+      conversationType={conversationType}
+      onPress={onMessagePress}
+      onSenderPress={onSenderPress}
+      showThreadIndicator={showThreadIndicator}
+      highlighted={isHighlighted}
+    />
+  );
+
   return (
     <>
       <DateSeparator currentDate={item.created_at} previousDate={previousItem?.created_at} />
       {isDimmed ? (
         <BlurView intensity={5} tint="default" style={{ flex: 1 }}>
-          <MessageBubble
-            message={item}
-            isOwnMessage={isOwnMessage}
-            conversationType={conversationType}
-            onPress={onMessagePress}
-            onSenderPress={onSenderPress}
-            showThreadIndicator={showThreadIndicator}
-            highlighted={isHighlighted}
-          />
+          {messageBubble}
         </BlurView>
       ) : (
-        <MessageBubble
-          message={item}
-          isOwnMessage={isOwnMessage}
-          conversationType={conversationType}
-          onPress={onMessagePress}
-          onSenderPress={onSenderPress}
-          showThreadIndicator={showThreadIndicator}
-          highlighted={isHighlighted}
-        />
+        messageBubble
       )}
     </>
   );
@@ -234,7 +230,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     ref
   ) => {
     const { t } = useTranslation();
-    const { selectedMessage } = useChatStore();
+    const selectedMessageId = useChatStore((s) => s.selectedMessage?.id);
 
     // Ref for FlatList to control scrolling
     const flatListRef = useRef<FlatList>(null);
@@ -308,7 +304,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
             onSenderPress={onSenderPress}
             showThreadIndicator={showThreadIndicators}
             highlightedMessageId={highlightedMessageId}
-            selectedMessageId={selectedMessage?.id}
+            selectedMessageId={selectedMessageId}
           />
         );
       },
@@ -320,7 +316,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
         onSenderPress,
         showThreadIndicators,
         highlightedMessageId,
-        selectedMessage,
+        selectedMessageId,
       ]
     );
 
