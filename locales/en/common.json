@@ -119,5 +119,19 @@
       "volunteers": "Volunteers",
       "gagyo_team": "Gagyo Team"
     }
+  },
+  "chat": {
+    "replyInThread": "Reply in thread",
+    "replyInThreadWithCount": "Reply in thread ({count})",
+    "quoteInReply": "Quote in reply",
+    "copyText": "Copy text",
+    "copied": "Copied",
+    "nothingToCopy": "Nothing to copy",
+    "thread": {
+      "title": "Thread",
+      "inputPlaceholder": "Reply in thread...",
+      "noReplies": "No replies yet. Start the conversation!",
+      "loadingReplies": "Loading replies..."
+    }
   }
 }

@@ -119,5 +119,19 @@
       "volunteers": "봉사",
       "gagyo_team": "가교팀"
     }
+  },
+  "chat": {
+    "replyInThread": "스레드에서 답장",
+    "replyInThreadWithCount": "스레드에서 답장 ({count})",
+    "quoteInReply": "답장에 인용",
+    "copyText": "텍스트 복사",
+    "copied": "복사됨",
+    "nothingToCopy": "복사할 텍스트가 없습니다",
+    "thread": {
+      "title": "스레드",
+      "inputPlaceholder": "스레드에 답장...",
+      "noReplies": "아직 답장이 없습니다. 대화를 시작하세요!",
+      "loadingReplies": "답장 불러오는 중..."
+    }
   }
 }
