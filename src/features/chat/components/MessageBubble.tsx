@@ -306,8 +306,8 @@ export function MessageBubble({
   const showSenderInfo = !isOwnMessage;
 
   // Get sender avatar URL
-  const senderName = message.sender?.user?.display_name || 'Unknown';
-  const senderAvatar = message.sender?.user?.photo_url;
+  const senderName = message.sender?.display_name || 'Unknown';
+  const senderAvatar = message.sender?.photo_url;
 
   // Highlight styles for search results
   const highlightStyle = highlighted

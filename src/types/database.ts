@@ -787,11 +787,8 @@ export type EventChatExclusion = Database['public']['Tables']['event_chat_exclus
 export type MessageWithSender = Message & {
   sender: {
     id: string;
-    user: {
-      id: string;
-      display_name: string | null;
-      photo_url: string | null;
-    };
+    display_name: string | null;
+    photo_url: string | null;
   };
   reply_count?: number;
 };
@@ -808,10 +805,7 @@ export type ConversationWithLastMessage = Conversation & {
     created_at: string;
     sender: {
       id: string;
-      user: {
-        id: string;
-        display_name: string | null;
-      };
+      display_name: string | null;
     };
   } | null;
   unread_count: number;
@@ -846,7 +840,8 @@ export type PastoralJournal = Database['public']['Tables']['pastoral_journals'][
 /**
  * Pastoral journal comment type.
  */
-export type PastoralJournalComment = Database['public']['Tables']['pastoral_journal_comments']['Row'];
+export type PastoralJournalComment =
+  Database['public']['Tables']['pastoral_journal_comments']['Row'];
 
 /**
  * Small group type.
@@ -875,11 +870,8 @@ export type PrayerCardRecipientScope = PrayerCard['recipient_scope'];
 export interface PrayerCardWithAuthor extends PrayerCard {
   author: {
     id: string;
-    user: {
-      id: string;
-      display_name: string | null;
-      photo_url: string | null;
-    };
+    display_name: string | null;
+    photo_url: string | null;
   };
 }
 

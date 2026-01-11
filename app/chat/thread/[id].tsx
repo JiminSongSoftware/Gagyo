@@ -148,11 +148,8 @@ export default function ThreadViewScreen() {
               deleted_at,
               sender:memberships!messages_sender_id_fkey (
                 id,
-                user:users!memberships_user_id_fkey (
-                  id,
-                  display_name,
-                  photo_url
-                )
+                display_name,
+                photo_url
               )
             `
               )
@@ -162,7 +159,8 @@ export default function ThreadViewScreen() {
             if (data) {
               const sender = data.sender as {
                 id: string;
-                user: { id: string; display_name: string | null; photo_url: string | null };
+                display_name: string | null;
+                photo_url: string | null;
               };
 
               const newMessage: MessageWithSender = {
@@ -180,11 +178,8 @@ export default function ThreadViewScreen() {
                 deleted_at: data.deleted_at,
                 sender: {
                   id: sender?.id ?? '',
-                  user: {
-                    id: sender?.user?.id ?? '',
-                    display_name: sender?.user?.display_name ?? null,
-                    photo_url: sender?.user?.photo_url ?? null,
-                  },
+                  display_name: sender?.display_name ?? null,
+                  photo_url: sender?.photo_url ?? null,
                 },
                 reply_count: 0,
               };
@@ -223,11 +218,8 @@ export default function ThreadViewScreen() {
               deleted_at,
               sender:memberships!messages_sender_id_fkey (
                 id,
-                user:users!memberships_user_id_fkey (
-                  id,
-                  display_name,
-                  photo_url
-                )
+                display_name,
+                photo_url
               )
             `
               )
@@ -237,7 +229,8 @@ export default function ThreadViewScreen() {
             if (data) {
               const sender = data.sender as {
                 id: string;
-                user: { id: string; display_name: string | null; photo_url: string | null };
+                display_name: string | null;
+                photo_url: string | null;
               };
 
               const updatedMessage: MessageWithSender = {
@@ -255,11 +248,8 @@ export default function ThreadViewScreen() {
                 deleted_at: data.deleted_at,
                 sender: {
                   id: sender?.id ?? '',
-                  user: {
-                    id: sender?.user?.id ?? '',
-                    display_name: sender?.user?.display_name ?? null,
-                    photo_url: sender?.user?.photo_url ?? null,
-                  },
+                  display_name: sender?.display_name ?? null,
+                  photo_url: sender?.photo_url ?? null,
                 },
                 reply_count: 0,
               };

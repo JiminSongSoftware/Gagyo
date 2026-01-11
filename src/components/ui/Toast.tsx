@@ -3,7 +3,15 @@
  *
  * Simple toast notification for showing brief messages.
  *
- * @example
+ * Supports both declarative and imperative APIs:
+ *
+ * @example Declarative API (preferred for components)
+ * ```tsx
+ * const [showToast, setShowToast] = useState(false);
+ * <Toast visible={showToast} message="Copied!" onDismiss={() => setShowToast(false)} />
+ * ```
+ *
+ * @example Imperative API (for quick calls)
  * ```tsx
  * Toast.show('Message copied', 'success');
  * Toast.show('Error occurred', 'error');
@@ -22,6 +30,28 @@ interface ToastState {
   type: ToastType;
 }
 
+interface ToastProps {
+  /**
+   * Whether the toast is visible.
+   */
+  visible: boolean;
+
+  /**
+   * The message to display.
+   */
+  message: string;
+
+  /**
+   * Toast type (affects background color).
+   */
+  type?: ToastType;
+
+  /**
+   * Callback when toast is dismissed.
+   */
+  onDismiss?: () => void;
+}
+
 let toastState: ToastState = {
   visible: false,
   message: '',
@@ -31,9 +61,37 @@ let toastState: ToastState = {
 let updateToast: ((state: ToastState) => void) | null = null;
 
 // ============================================================================
-// TOAST COMPONENT
+// DECLARATIVE TOAST COMPONENT (Preferred API)
 // ============================================================================
 
+export function Toast({ visible, message, type = 'info', onDismiss: _onDismiss }: ToastProps) {
+  // Note: Auto-hide is NOT handled here to allow parent components control
+  // The parent component (e.g., ChatScreen) should manage auto-hide with useEffect
+  // If you want auto-hide, use Toast.show() imperative API instead
+
+  if (!visible) return null;
+
+  const backgroundColor = type === 'error' ? '#EF4444' : type === 'success' ? '#10B981' : '#374151';
+
+  return (
+    <Modal transparent visible={visible} animationType="fade">
+      <View style={styles.container}>
+        <View style={[styles.toast, { backgroundColor }]}>
+          <Text style={styles.message}>{message}</Text>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ============================================================================
+// IMPERATIVE API (Legacy support)
+// ============================================================================
+
+/**
+ * ToastContainer is a singleton component that enables the imperative API.
+ * Place it at the root of your app (e.g., in _layout.tsx).
+ */
 export function ToastContainer() {
   const [state, setState] = React.useState<ToastState>(toastState);
 
@@ -58,40 +116,36 @@ export function ToastContainer() {
       </View>
     </Modal>
   );
+
+  // Note: Auto-hide is handled by the show() method's setTimeout
 }
 
-// ============================================================================
-// PUBLIC API
-// ============================================================================
+Toast.show = (message: string, type: ToastType = 'info') => {
+  toastState = {
+    visible: true,
+    message,
+    type,
+  };
 
-export const Toast = {
-  show: (message: string, type: ToastType = 'info') => {
-    toastState = {
-      visible: true,
-      message,
-      type,
-    };
+  if (updateToast) {
+    updateToast(toastState);
+  }
 
-    if (updateToast) {
-      updateToast(toastState);
-    }
+  // Auto hide after 3 seconds
+  setTimeout(() => {
+    Toast.hide();
+  }, 3000);
+};
 
-    // Auto hide after 3 seconds
-    setTimeout(() => {
-      Toast.hide();
-    }, 3000);
-  },
+Toast.hide = () => {
+  toastState = {
+    ...toastState,
+    visible: false,
+  };
 
-  hide: () => {
-    toastState = {
-      ...toastState,
-      visible: false,
-    };
-
-    if (updateToast) {
-      updateToast(toastState);
-    }
-  },
+  if (updateToast) {
+    updateToast(toastState);
+  }
 };
 
 // ============================================================================

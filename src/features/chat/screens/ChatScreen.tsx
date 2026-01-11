@@ -12,36 +12,89 @@
  * - Copy text: Copy to clipboard with toast
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Clipboard } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Stack } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { Toast } from '@/components/ui/Toast';
 import { useChatStore } from '../store/chatStore';
 import { MessageList } from '../components/MessageList';
 import { MessageActionSheet } from '../components/MessageActionSheet';
-import type { MessageListProps } from '../components/MessageList';
-import type { MessageWithSender } from '@/types/database';
+import type { MessageWithSender, ConversationType } from '@/types/database';
 
-export interface ChatScreenProps extends Omit<MessageListProps, 'onMessagePress'> {
+export interface ChatScreenProps {
   /**
-   * The conversation/channel ID for navigation.
+   * List of messages to display.
    */
-  conversationId: string;
+  messages: MessageWithSender[];
 
   /**
-   * The conversation name for thread view title.
+   * ID of the message to highlight (for search results).
    */
-  conversationName: string;
+  highlightedMessageId?: string | null;
+
+  /**
+   * Whether messages are currently loading.
+   */
+  loading: boolean;
+
+  /**
+   * Whether more messages are being loaded (pagination).
+   */
+  loadingMore?: boolean;
+
+  /**
+   * Whether there are more messages to load.
+   */
+  hasMore?: boolean;
+
+  /**
+   * Error to display, if any.
+   */
+  error: Error | null;
+
+  /**
+   * The conversation type.
+   */
+  conversationType: ConversationType;
+
+  /**
+   * The current user's membership ID.
+   */
+  currentUserId: string;
+
+  /**
+   * Callback to load more messages (pagination).
+   */
+  onLoadMore?: () => void;
+
+  /**
+   * Callback when sender avatar is pressed.
+   */
+  onSenderPress?: (membershipId: string) => void;
+
+  /**
+   * Whether to show thread indicators on messages.
+   */
+  showThreadIndicators?: boolean;
+
+  /**
+   * Test ID for E2E testing.
+   */
+  testID?: string;
 }
+
+/**
+ * System sender ID constant.
+ * Messages from this sender should not show the action menu.
+ */
+const SYSTEM_SENDER_ID = 'system';
 
 /**
  * Chat screen with action menu integration.
  */
 export function ChatScreen({
-  conversationId: _conversationId, // Reserved for future use (e.g., analytics, context passing)
-  conversationName,
   messages,
   highlightedMessageId,
   loading,
@@ -59,11 +112,22 @@ export function ChatScreen({
   const { t } = useTranslation();
   const { selectedMessage, setSelectedMessage, setQuoteAttachment } = useChatStore();
 
+  // Toast state for declarative API
+  const [showToast, setShowToast] = useState(false);
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => setShowToast(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
   // Handle message press - show action menu
   const handleMessagePress = useCallback(
     (message: MessageWithSender) => {
       // Don't show action menu for system messages
-      if (message.content_type === 'system') {
+      if (message.sender_id === SYSTEM_SENDER_ID) {
         return;
       }
       setSelectedMessage(message);
@@ -74,42 +138,30 @@ export function ChatScreen({
   // Handle reply in thread - navigate to thread view
   const handleReplyInThread = useCallback(
     (message: MessageWithSender) => {
-      void router.push(
-        `/chat/thread/${message.id}?channelName=${encodeURIComponent(conversationName)}`
-      );
+      void router.push(`/chat/thread/${message.id}`);
     },
-    [router, conversationName]
+    [router]
   );
 
   // Handle quote in reply - set quote attachment
   const handleQuoteInReply = useCallback(
     (message: MessageWithSender) => {
-      if (message.sender?.user) {
-        setQuoteAttachment({
-          messageId: message.id,
-          senderName: message.sender.user.display_name || 'Unknown',
-          senderAvatar: message.sender.user.photo_url,
-          content: message.content || '',
-        });
-      }
+      setQuoteAttachment({
+        messageId: message.id,
+        senderName: message.sender?.display_name || t('chat.unknown_sender'),
+        senderAvatar: message.sender?.photo_url,
+        content: message.content || '',
+      });
     },
-    [setQuoteAttachment]
+    [setQuoteAttachment, t]
   );
 
   // Handle copy text - copy to clipboard with toast
-  const handleCopyText = useCallback(
-    (message: MessageWithSender) => {
-      const text = message.content || '';
-      if (!text) {
-        Toast.show(t('chat.message.nothingToCopy'), 'info');
-        return;
-      }
-
-      Clipboard.setString(text);
-      Toast.show(t('chat.message.copied'), 'success');
-    },
-    [t]
-  );
+  const handleCopyText = useCallback((message: MessageWithSender) => {
+    const text = message.content || '';
+    void Clipboard.setStringAsync(text);
+    setShowToast(true);
+  }, []);
 
   // Handle action sheet dismiss
   const handleDismissActionSheet = useCallback(() => {
@@ -147,6 +199,13 @@ export function ChatScreen({
           replyCount={selectedMessage.reply_count}
         />
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        visible={showToast}
+        message={t('chat.message.copied')}
+        onDismiss={() => setShowToast(false)}
+      />
     </Stack>
   );
 }
