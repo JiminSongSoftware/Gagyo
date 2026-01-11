@@ -907,3 +907,37 @@ export interface ImageAttachment {
     };
   };
 }
+
+/**
+ * File attachment type enum for grouping
+ */
+export type FileExtension =
+  | 'pdf'
+  | 'doc'
+  | 'docx'
+  | 'ppt'
+  | 'pptx'
+  | 'xls'
+  | 'xlsx'
+  | 'txt'
+  | 'zip'
+  | 'unknown';
+
+/**
+ * File attachment with message and conversation context.
+ * Used for displaying document files in the files view.
+ */
+export interface FileAttachment {
+  id: string;
+  uri: string;
+  fileName: string;
+  extension: FileExtension;
+  mimeType: string;
+  fileSize: number;
+  createdAt: string;
+  conversationId: string;
+  conversationName: string | null;
+  conversationType: ConversationType;
+  senderId?: string;
+  senderName?: string;
+}

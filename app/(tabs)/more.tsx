@@ -16,7 +16,6 @@ import { FlatList, Pressable, StyleSheet, Dimensions, View, Image } from 'react-
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { YStack, XStack, Text as TamaguiText } from 'tamagui';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useTranslation } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
@@ -170,7 +169,6 @@ export default function MoreScreen() {
   const { t } = useTranslation();
   useRequireAuth();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { membership } = useCurrentMembership();
 
@@ -253,6 +251,12 @@ export default function MoreScreen() {
       icon: 'sparkles-outline',
       label: t('more.services.gagyo_team'),
       route: '/screens/gagyo-team',
+    },
+    {
+      id: 'files',
+      icon: 'document-outline',
+      label: t('more.services.files'),
+      route: '/screens/files',
     },
   ], [t]);
 
