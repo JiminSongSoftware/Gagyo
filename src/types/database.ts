@@ -248,6 +248,7 @@ export interface Database {
           sender_id: string;
           parent_id: string | null;
           thread_id: string | null;
+          quoted_message_id: string | null;
           content: string | null;
           content_type: 'text' | 'image' | 'video' | 'file' | 'prayer_card' | 'system';
           is_event_chat: boolean;
@@ -262,6 +263,7 @@ export interface Database {
           sender_id: string;
           parent_id?: string | null;
           thread_id?: string | null;
+          quoted_message_id?: string | null;
           content?: string | null;
           content_type?: 'text' | 'image' | 'video' | 'file' | 'prayer_card' | 'system';
           is_event_chat?: boolean;
@@ -272,6 +274,7 @@ export interface Database {
         Update: {
           parent_id?: string | null;
           thread_id?: string | null;
+          quoted_message_id?: string | null;
           content?: string | null;
           content_type?: 'text' | 'image' | 'video' | 'file' | 'prayer_card' | 'system';
           is_event_chat?: boolean;
@@ -303,6 +306,13 @@ export interface Database {
           {
             foreignKeyName: 'messages_parent_id_fkey';
             columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_quoted_message_id_fkey';
+            columns: ['quoted_message_id'];
             isOneToOne: false;
             referencedRelation: 'messages';
             referencedColumns: ['id'];
@@ -790,6 +800,14 @@ export type MessageWithSender = Message & {
     display_name: string | null;
     photo_url: string | null;
   };
+  quoted_message?: {
+    id: string;
+    content: string | null;
+    sender: {
+      id: string;
+      display_name: string | null;
+    };
+  } | null;
   reply_count?: number;
 };
 

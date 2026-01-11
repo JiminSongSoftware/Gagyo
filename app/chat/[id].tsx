@@ -493,10 +493,12 @@ export default function ChatDetailScreen() {
     const results = displayMessages
       .map((msg, index) => ({ msg, index }))
       .filter(({ msg }) => {
-        if (msg.content?.toLowerCase().includes(query)) {
+        const content = msg.content;
+        if (content && content.toLowerCase().includes(query)) {
           return true;
         }
-        if (msg.sender?.user?.display_name?.toLowerCase().includes(query)) {
+        const displayName = msg.sender?.user?.display_name;
+        if (displayName && displayName.toLowerCase().includes(query)) {
           return true;
         }
         return false;
@@ -518,7 +520,7 @@ export default function ChatDetailScreen() {
       setHighlightedMessageId(messageId);
       // Scroll to the message with a small delay to ensure layout is ready
       setTimeout(() => {
-        chatScreenRef.current?.scrollToMessage(messageId);
+        chatScreenRef.current?.scrollToMessage?.(messageId);
       }, 100);
     } else {
       setHighlightedMessageId(null);
@@ -678,10 +680,25 @@ export default function ChatDetailScreen() {
   }, [conversationId, membershipId, displayMessages.length]);
 
   const handleSend = useCallback(
-    async (content: string) => {
-      await sendMessage(content);
+    async (
+      content: string,
+      quoteAttachment?: {
+        messageId: string;
+        senderName: string;
+        senderAvatar?: string | null;
+        content: string;
+      } | null
+    ) => {
+      if (quoteAttachment) {
+        await sendMessageWithOptions({
+          content,
+          quoteAttachment,
+        });
+      } else {
+        await sendMessage(content);
+      }
     },
-    [sendMessage]
+    [sendMessage, sendMessageWithOptions]
   );
 
   const handleSendEventChat = useCallback(
