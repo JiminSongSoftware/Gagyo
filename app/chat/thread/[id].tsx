@@ -12,7 +12,7 @@
  * Route: /chat/thread/[id]?channelName=...
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -78,16 +78,18 @@ export default function ThreadViewScreen() {
     loadMore,
   } = useThreadMessages(id || null, tenantId);
 
-  // Get conversation details from parent message
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  // Derive conversation ID directly from parent message
+  const conversationId = parentMessage?.conversation_id || null;
 
-  useEffect(() => {
-    if (parentMessage?.conversation_id) {
-      setConversationId(parentMessage.conversation_id);
-    }
-  }, [parentMessage]);
+  const { sendReply, sending } = useSendReply(
+    conversationId || undefined,
+    tenantId,
+    membershipId,
+    id || null
+  );
 
-  const { sendReply, sending } = useSendReply(conversationId, tenantId, membershipId, id || null);
+  // Handle send errors
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -95,9 +97,14 @@ export default function ThreadViewScreen() {
 
   const handleSendReply = useCallback(
     async (content: string) => {
-      await sendReply(content);
+      try {
+        await sendReply(content);
+        setSendError(null);
+      } catch (err) {
+        setSendError(err instanceof Error ? err.message : t('chat.thread.sendError'));
+      }
     },
-    [sendReply]
+    [sendReply, t]
   );
 
   // Thread replies cannot be pressed (no nested threads)
@@ -105,10 +112,55 @@ export default function ThreadViewScreen() {
     // No-op: thread replies cannot have threads
   }, []);
 
+  // Extract MessageInput to memoized component
+  const replyInput = useMemo(
+    () => (
+      <MessageInput
+        conversationId={conversationId || undefined}
+        placeholder={t('chat.thread.inputPlaceholder')}
+        onSend={handleSendReply}
+        sending={sending}
+        error={sendError}
+        testID="thread-reply-input"
+      />
+    ),
+    [conversationId, handleSendReply, sending, sendError, t]
+  );
+
+  // Validate thread ID (after all hooks)
+  if (!id) {
+    return (
+      <TamaguiStack flex={1} alignItems="center" justifyContent="center">
+        <TamaguiText>{t('chat.thread.invalid_thread')}</TamaguiText>
+      </TamaguiStack>
+    );
+  }
+
   if (!parentMessage && loading) {
     return (
       <TamaguiStack flex={1} alignItems="center" justifyContent="center">
         <TamaguiText>{t('chat.thread.loadingReplies')}</TamaguiText>
+      </TamaguiStack>
+    );
+  }
+
+  // Show error state
+  if (error && !parentMessage) {
+    return (
+      <TamaguiStack flex={1} alignItems="center" justifyContent="center" padding="$4">
+        <TamaguiText fontSize={48}>⚠️</TamaguiText>
+        <TamaguiText
+          fontSize="$lg"
+          fontWeight="600"
+          color="$danger"
+          textAlign="center"
+          marginBottom="$2"
+        >
+          {t('error')}
+        </TamaguiText>
+        <TamaguiText fontSize="$md" color="$color2" textAlign="center">
+          {error.message || t('chat.thread.errorLoading')}
+        </TamaguiText>
       </TamaguiStack>
     );
   }
@@ -131,14 +183,7 @@ export default function ThreadViewScreen() {
             {t('chat.thread.noReplies')}
           </TamaguiText>
         </YStack>
-        <MessageInput
-          conversationId={conversationId || undefined}
-          placeholder={t('chat.thread.inputPlaceholder')}
-          onSend={handleSendReply}
-          sending={sending}
-          error={null}
-          testID="thread-reply-input"
-        />
+        {replyInput}
       </YStack>
     );
   }
@@ -190,14 +235,7 @@ export default function ThreadViewScreen() {
         />
 
         {/* Message input */}
-        <MessageInput
-          conversationId={conversationId || undefined}
-          placeholder={t('chat.thread.inputPlaceholder')}
-          onSend={handleSendReply}
-          sending={sending}
-          error={null}
-          testID="thread-reply-input"
-        />
+        {replyInput}
       </YStack>
     </>
   );

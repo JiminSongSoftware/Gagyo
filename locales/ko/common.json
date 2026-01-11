@@ -59,7 +59,10 @@
       "title": "스레드",
       "inputPlaceholder": "스레드에 답장...",
       "noReplies": "아직 답장이 없습니다. 첫 번째로 답장하세요!",
-      "loadingReplies": "답장 불러오는 중..."
+      "loadingReplies": "답장 불러오는 중...",
+      "invalid_thread": "잘못된 스레드",
+      "errorLoading": "스레드를 불러오지 못했습니다",
+      "sendError": "답장 전송 실패"
     }
   },
   "home_screen": {

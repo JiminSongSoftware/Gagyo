@@ -59,7 +59,10 @@
       "title": "Thread",
       "inputPlaceholder": "Reply in thread...",
       "noReplies": "No replies yet. Be the first!",
-      "loadingReplies": "Loading replies..."
+      "loadingReplies": "Loading replies...",
+      "invalid_thread": "Invalid thread",
+      "errorLoading": "Failed to load thread",
+      "sendError": "Failed to send reply"
     }
   },
   "home_screen": {
