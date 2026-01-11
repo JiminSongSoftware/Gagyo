@@ -9,7 +9,7 @@
 import { create } from 'zustand';
 import type { MessageWithSender } from '@/types/database';
 
-interface QuoteAttachment {
+export interface QuoteAttachment {
   messageId: string;
   senderName: string;
   senderAvatar?: string | null;
