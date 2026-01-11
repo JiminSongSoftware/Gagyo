@@ -159,8 +159,15 @@ export function ChatScreen({
   // Handle copy text - copy to clipboard with toast
   const handleCopyText = useCallback((message: MessageWithSender) => {
     const text = message.content || '';
-    void Clipboard.setStringAsync(text);
-    setShowToast(true);
+    Clipboard.setStringAsync(text)
+      .then(() => {
+        setShowToast(true);
+      })
+      .catch((error) => {
+        console.error('Failed to copy text:', error);
+        // Optionally show error toast here in the future
+        // For now, silent failure is acceptable per requirements
+      });
   }, []);
 
   // Handle action sheet dismiss

@@ -60,6 +60,12 @@ let toastState: ToastState = {
 
 let updateToast: ((state: ToastState) => void) | null = null;
 
+/**
+ * Timer reference for auto-hide functionality.
+ * Must be cleaned up to prevent memory leaks and state updates on unmounted components.
+ */
+let toastTimer: NodeJS.Timeout | null = null;
+
 // ============================================================================
 // DECLARATIVE TOAST COMPONENT (Preferred API)
 // ============================================================================
@@ -121,6 +127,12 @@ export function ToastContainer() {
 }
 
 Toast.show = (message: string, type: ToastType = 'info') => {
+  // Clear any existing timer to prevent memory leaks
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+
   toastState = {
     visible: true,
     message,
@@ -132,12 +144,20 @@ Toast.show = (message: string, type: ToastType = 'info') => {
   }
 
   // Auto hide after 3 seconds
-  setTimeout(() => {
+  // Store timer reference for cleanup
+  toastTimer = setTimeout(() => {
     Toast.hide();
+    toastTimer = null;
   }, 3000);
 };
 
 Toast.hide = () => {
+  // Clear timer if it exists to prevent memory leaks
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+
   toastState = {
     ...toastState,
     visible: false,
