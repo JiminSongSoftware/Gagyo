@@ -75,7 +75,10 @@ function getConversationDisplayName(conversation: ConversationWithLastMessage): 
 /**
  * Get last message preview text.
  */
-function getLastMessagePreview(conversation: ConversationWithLastMessage, t: (key: string) => string): string | null {
+function getLastMessagePreview(
+  conversation: ConversationWithLastMessage,
+  t: (key: string) => string
+): string | null {
   if (!conversation.last_message) {
     return null;
   }
@@ -131,7 +134,7 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
     <Pressable
       onPress={handlePress}
       testID={itemTestID}
-      accessibilityRole={isMock ? undefined : "button"}
+      accessibilityRole={isMock ? undefined : 'button'}
       accessibilityLabel={`${displayName} conversation`}
       style={{ opacity: isMock ? 0.5 : 1 }}
     >
@@ -198,7 +201,7 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
               {hasUnread && (
                 <Stack
                   testID="unread-badge"
-                  backgroundColor="$primary"
+                  backgroundColor="$danger"
                   borderRadius={12}
                   minWidth={24}
                   height={24}
