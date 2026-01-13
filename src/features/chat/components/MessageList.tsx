@@ -275,7 +275,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
 
         // Check if near top (for pagination)
         const nearTop = contentOffset.y <= paddingToTop;
-        setIsNearTop(nearTop);
 
         // Load more messages when near top, but skip if this is a programmatic scroll
         // (e.g., tab minimization scroll that should not trigger pagination)

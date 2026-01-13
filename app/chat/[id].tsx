@@ -114,9 +114,10 @@ function AttachmentActionSheet({
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
         {/* Action sheet content - positioned at bottom */}
         <Pressable style={styles.attachmentSheetContainer} onPress={(e) => e.stopPropagation()}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type */}
           <YStack
-            backgroundColor={colors.background as any}
+            backgroundColor={
+              /* eslint-disable-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type */ colors.background as any
+            }
             borderRadius={20}
             padding="$2"
             paddingBottom="$4"
@@ -951,7 +952,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 16,
+    marginBottom: Platform.OS === 'ios' ? 70 : 0,
   },
   attachmentOption: {
     width: '100%',
