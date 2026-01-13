@@ -11,7 +11,7 @@ import type { MessageContentType, MessageWithSender } from '@/types/database';
 
 /**
  * Type for the raw data returned from Supabase when inserting a message
- * with sender and quoted_message relations joined.
+ * with sender relation joined.
  */
 interface MessageInsertResult {
   id: string;
@@ -34,17 +34,6 @@ interface MessageInsertResult {
       photo_url: string | null;
     };
   };
-  quoted_message: {
-    id: string;
-    content: string | null;
-    sender: {
-      id: string;
-      user: {
-        id: string;
-        display_name: string | null;
-      };
-    };
-  } | null;
 }
 
 /**
@@ -212,17 +201,6 @@ export function useSendMessage(
                 display_name,
                 photo_url
               )
-            ),
-            quoted_message:messages!messages_quoted_message_id_fkey (
-              id,
-              content,
-              sender:memberships!messages_sender_id_fkey (
-                id,
-                user:users!memberships_user_id_fkey (
-                  id,
-                  display_name
-                )
-              )
             )
           `
           )
@@ -277,13 +255,14 @@ export function useSendMessage(
               display_name: data.sender?.user?.display_name ?? null,
               photo_url: data.sender?.user?.photo_url ?? null,
             },
-            quoted_message: data.quoted_message
+            // Use quoteAttachment data instead of joining quoted_message table
+            quoted_message: quoteAttachment
               ? {
-                  id: data.quoted_message.id,
-                  content: data.quoted_message.content,
+                  id: quoteAttachment.messageId,
+                  content: quoteAttachment.content,
                   sender: {
-                    id: data.quoted_message.sender.id,
-                    display_name: data.quoted_message.sender.user?.display_name ?? null,
+                    id: '', // Not available in quoteAttachment
+                    display_name: quoteAttachment.senderName,
                   },
                 }
               : null,
