@@ -20,8 +20,21 @@
               "icon": "lucide-file",
               "title": "plan-v1-:-backend-foundation:-supabase-schema,-rls-&-auth-setup"
             }
+          },
+          {
+            "id": "67bfb9b73edcce47",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.11.4"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.11.4"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -191,8 +204,11 @@
       "copilot:Open Copilot Chat": false
     }
   },
-  "active": "b151ef1db14a04a6",
+  "active": "67bfb9b73edcce47",
   "lastOpenFiles": [
+    "ios/Pods/resources-to-copy-Gagyo.txt",
+    "src/features/chat/components/__tests__/MessageList.test.tsx",
+    "src/features/chat/components/__tests__",
     "app/(tabs)/images.tsx",
     "app/(tabs)/chat.tsx",
     "app/prayer/compose.tsx",
@@ -201,9 +217,6 @@
     "app/(tabs)/prayer.tsx",
     "ios/Pods/Headers/Public/ExpoLocalization",
     "ios/Pods/Headers/Public/ExpoLinking",
-    "ios/Pods/Headers/Public/ExpoLinearGradient",
-    "ios/Pods/Headers/Public/ExpoKeepAwake",
-    "ios/Pods/Headers/Public/ExpoImagePicker",
     "assets/fainted-three-dots.png",
     "assets/chat-not-filled.png",
     "assets/chat-icon.png",

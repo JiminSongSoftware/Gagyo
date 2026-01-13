@@ -12,10 +12,42 @@
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { XStack, YStack } from 'tamagui';
+import { XStack, Stack } from 'tamagui';
+
+/**
+ * Get picker colors based on conversation type to match input bar.
+ */
+function getPickerColors(conversationType?: string): {
+  background: string;
+  buttonBackground: string;
+  iconTint: string;
+} {
+  switch (conversationType) {
+    case 'small_group':
+      return {
+        background: 'rgba(230, 240, 220, 0.93)',
+        buttonBackground: 'rgba(215, 228, 200, 0.6)',
+        iconTint: '#5a6b4a',
+      };
+    case 'ministry':
+    case 'church_wide':
+      return {
+        background: 'rgba(235, 237, 245, 0.93)',
+        buttonBackground: 'rgba(218, 222, 238, 0.6)',
+        iconTint: '#5a5f6b',
+      };
+    default:
+      return {
+        background: 'rgba(235, 235, 240, 0.93)',
+        buttonBackground: 'rgba(220, 220, 228, 0.6)',
+        iconTint: '#8e8e93',
+      };
+  }
+}
 
 // First set of emoji icons - using PNG files
 // Path from src/features/chat/components/ -> assets/ = ../../../../assets/
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- React Native require() returns any for images */
 const EMOJI_SET_1 = [
   { id: 'happy', source: require('../../../../assets/happy.png'), name: 'happy' },
   { id: 'laugh', source: require('../../../../assets/laugh.png'), name: 'laugh' },
@@ -30,12 +62,25 @@ const EMOJI_SET_1 = [
 const EMOJI_SET_2 = [
   { id: 'emoji-heart', source: require('../../../../assets/emjoi-heart.png'), name: 'heart' },
   { id: 'emoji-prayer', source: require('../../../../assets/emoji-prayer.png'), name: 'prayer' },
-  { id: 'emoji-thumbsup', source: require('../../../../assets/emoji-thumbsup.png'), name: 'thumbsup' },
-  { id: 'emoji-with-heart-eyes', source: require('../../../../assets/emoji-with-heart-eyes.png'), name: 'heart-eyes' },
-  { id: 'emoji-with-upset', source: require('../../../../assets/emoji-with-upset.png'), name: 'upset' },
+  {
+    id: 'emoji-thumbsup',
+    source: require('../../../../assets/emoji-thumbsup.png'),
+    name: 'thumbsup',
+  },
+  {
+    id: 'emoji-with-heart-eyes',
+    source: require('../../../../assets/emoji-with-heart-eyes.png'),
+    name: 'heart-eyes',
+  },
+  {
+    id: 'emoji-with-upset',
+    source: require('../../../../assets/emoji-with-upset.png'),
+    name: 'upset',
+  },
   { id: 'emoji-rofl', source: require('../../../../assets/emoji-rofl.png'), name: 'rofl' },
   { id: 'emoji-crying', source: require('../../../../assets/emoji-crying.png'), name: 'crying' },
 ];
+/* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
 export interface EmojiPickerProps {
   /**
@@ -43,6 +88,11 @@ export interface EmojiPickerProps {
    * @param emoji - The emoji identifier or character to insert
    */
   onEmojiSelect: (emoji: string) => void;
+
+  /**
+   * Conversation type for styling to match input bar.
+   */
+  conversationType?: 'direct' | 'small_group' | 'ministry' | 'church_wide';
 
   /**
    * Test ID for E2E testing.
@@ -90,11 +140,7 @@ function EmojiIcon({
         justifyContent: 'center',
       })}
     >
-      <Image
-        source={source}
-        style={{ width: size, height: size }}
-        resizeMode="contain"
-      />
+      <Image source={source} style={{ width: size, height: size }} resizeMode="contain" />
     </Pressable>
   );
 }
@@ -102,13 +148,14 @@ function EmojiIcon({
 /**
  * EmojiPicker component.
  */
-export function EmojiPicker({ onEmojiSelect, testID }: EmojiPickerProps) {
+export function EmojiPicker({ onEmojiSelect, conversationType, testID }: EmojiPickerProps) {
   const [currentSet, setCurrentSet] = useState(1);
+  const colors = getPickerColors(conversationType);
 
   const currentEmojis = currentSet === 1 ? EMOJI_SET_1 : EMOJI_SET_2;
 
   const handleEmojiPress = useCallback(
-    (emoji: typeof EMOJI_SET_1[number]) => {
+    (emoji: (typeof EMOJI_SET_1)[number]) => {
       onEmojiSelect(':' + emoji.name + ':');
     },
     [onEmojiSelect]
@@ -119,11 +166,11 @@ export function EmojiPicker({ onEmojiSelect, testID }: EmojiPickerProps) {
   }, []);
 
   return (
-    <YStack
+    <Stack
       testID={testID ?? 'emoji-picker'}
-      backgroundColor="$background"
-      borderTopWidth={1}
-      borderTopColor="$borderLight"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type
+      backgroundColor={colors.background as any}
+      borderRadius={20}
       paddingVertical="$3"
     >
       <XStack alignItems="center" gap="$2">
@@ -135,14 +182,14 @@ export function EmojiPicker({ onEmojiSelect, testID }: EmojiPickerProps) {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: '#f5f5f5',
+            backgroundColor: colors.buttonBackground,
             alignItems: 'center',
             justifyContent: 'center',
             marginLeft: 12,
             opacity: pressed ? 0.6 : 1,
           })}
         >
-          <ArrowRightIcon size={20} color="#8e8e93" />
+          <ArrowRightIcon size={20} color={colors.iconTint} />
         </Pressable>
 
         {/* Horizontal scrollable emoji list */}
@@ -161,7 +208,7 @@ export function EmojiPicker({ onEmojiSelect, testID }: EmojiPickerProps) {
           ))}
         </ScrollView>
       </XStack>
-    </YStack>
+    </Stack>
   );
 }
 

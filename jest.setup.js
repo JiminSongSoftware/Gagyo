@@ -79,4 +79,5 @@ global.console = {
 };
 
 // Mock react-native Animated
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+// Note: This path doesn't exist in newer React Native versions
+// jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');

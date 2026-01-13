@@ -14,8 +14,8 @@
 
 import { useCallback, useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useRouter } from 'expo-router';
+import { View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Stack } from 'tamagui';
 import { useTranslation } from '@/i18n';
 import { Toast } from '@/components/ui/Toast';
 import { useChatStore } from '../store/chatStore';
@@ -208,24 +208,26 @@ export const ChatScreen = forwardRef<ChatScreenHandle, ChatScreenProps>(function
   }, [setSelectedMessage]);
 
   return (
-    <Stack flex={1}>
-      {/* Message List */}
-      <MessageList
-        ref={messageListRef}
-        messages={messages}
-        highlightedMessageId={highlightedMessageId}
-        loading={loading}
-        loadingMore={loadingMore}
-        hasMore={hasMore}
-        error={error}
-        conversationType={conversationType}
-        currentUserId={currentUserId}
-        onLoadMore={onLoadMore}
-        onMessagePress={handleMessagePress}
-        onSenderPress={onSenderPress}
-        showThreadIndicators={showThreadIndicators}
-        testID={testID}
-      />
+    <>
+      {/* Message List - wrapped in View with flex: 1 to establish flex context */}
+      <View style={{ flex: 1 }}>
+        <MessageList
+          ref={messageListRef}
+          messages={messages}
+          highlightedMessageId={highlightedMessageId}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          error={error}
+          conversationType={conversationType}
+          currentUserId={currentUserId}
+          onLoadMore={onLoadMore}
+          onMessagePress={handleMessagePress}
+          onSenderPress={onSenderPress}
+          showThreadIndicators={showThreadIndicators}
+          testID={testID}
+        />
+      </View>
 
       {/* Message Action Sheet */}
       {selectedMessage && (
@@ -246,6 +248,6 @@ export const ChatScreen = forwardRef<ChatScreenHandle, ChatScreenProps>(function
         message={t('chat.message.copied')}
         onDismiss={() => setShowToast(false)}
       />
-    </Stack>
+    </>
   );
 });

@@ -64,6 +64,34 @@ interface AttachmentActionSheetProps {
   onUploadVideo: () => Promise<void>;
   onUploadFile: () => Promise<void>;
   onOpenCamera: () => Promise<void>;
+  conversationType?: 'direct' | 'small_group' | 'ministry' | 'church_wide';
+}
+
+/**
+ * Get attachment sheet colors based on conversation type to match input bar.
+ */
+function getAttachmentSheetColors(conversationType?: string): {
+  background: string;
+  iconTint: string;
+} {
+  switch (conversationType) {
+    case 'small_group':
+      return {
+        background: 'rgba(230, 240, 220, 0.95)',
+        iconTint: '#5a6b4a',
+      };
+    case 'ministry':
+    case 'church_wide':
+      return {
+        background: 'rgba(235, 237, 245, 0.95)',
+        iconTint: '#5a5f6b',
+      };
+    default:
+      return {
+        background: 'rgba(235, 235, 240, 0.95)',
+        iconTint: '#8e8e93',
+      };
+  }
 }
 
 function AttachmentActionSheet({
@@ -73,8 +101,10 @@ function AttachmentActionSheet({
   onUploadVideo,
   onUploadFile,
   onOpenCamera,
+  conversationType,
 }: AttachmentActionSheetProps) {
   const { t } = useTranslation();
+  const colors = getAttachmentSheetColors(conversationType);
 
   if (!visible) return null;
 
@@ -84,7 +114,13 @@ function AttachmentActionSheet({
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
         {/* Action sheet content - positioned at bottom */}
         <Pressable style={styles.attachmentSheetContainer} onPress={(e) => e.stopPropagation()}>
-          <YStack backgroundColor="$background" borderRadius="$4" padding="$2" paddingBottom="$4">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type */}
+          <YStack
+            backgroundColor={colors.background as any}
+            borderRadius={20}
+            padding="$2"
+            paddingBottom="$4"
+          >
             {/* Photo */}
             <Pressable
               style={styles.attachmentOption}
@@ -94,7 +130,7 @@ function AttachmentActionSheet({
               }}
             >
               <XStack alignItems="center" gap="$3" padding="$3">
-                <Ionicons name="image-outline" size={24} color="#8e8e93" />
+                <Ionicons name="image-outline" size={24} color={colors.iconTint} />
                 <Text fontSize="$md" color="$color">
                   {t('chat.upload_photo')}
                 </Text>
@@ -110,7 +146,7 @@ function AttachmentActionSheet({
               }}
             >
               <XStack alignItems="center" gap="$3" padding="$3">
-                <Ionicons name="videocam-outline" size={24} color="#8e8e93" />
+                <Ionicons name="videocam-outline" size={24} color={colors.iconTint} />
                 <Text fontSize="$md" color="$color">
                   {t('chat.upload_video')}
                 </Text>
@@ -126,7 +162,7 @@ function AttachmentActionSheet({
               }}
             >
               <XStack alignItems="center" gap="$3" padding="$3">
-                <Ionicons name="document-outline" size={24} color="#8e8e93" />
+                <Ionicons name="document-outline" size={24} color={colors.iconTint} />
                 <Text fontSize="$md" color="$color">
                   {t('chat.upload_file')}
                 </Text>
@@ -142,7 +178,7 @@ function AttachmentActionSheet({
               }}
             >
               <XStack alignItems="center" gap="$3" padding="$3">
-                <Ionicons name="camera-outline" size={24} color="#8e8e93" />
+                <Ionicons name="camera-outline" size={24} color={colors.iconTint} />
                 <Text fontSize="$md" color="$color">
                   {t('chat.open_camera')}
                 </Text>
@@ -435,6 +471,7 @@ export default function ChatDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { tenantId } = useRequireAuth();
   const { membershipId } = useCurrentMembership();
+  const insets = useSafeAreaInsets();
 
   const conversationId = params.id;
 
@@ -748,11 +785,16 @@ export default function ChatDetailScreen() {
   const handleKeyboardHeightChange = useCallback(
     (height: number) => {
       if (height > 0) {
-        // Keyboard appeared - scroll to trigger tab minimization
+        // Keyboard appeared - dismiss attachment sheet if open
+        // This prevents the attachment sheet from overlapping with the keyboard
+        if (showAttachmentSheet) {
+          setShowAttachmentSheet(false);
+        }
+        // Scroll to trigger tab minimization
         chatScreenRef.current?.scrollToTop();
       }
     },
-    []
+    [showAttachmentSheet]
   );
 
   const getHeaderTitle = useCallback(() => {
@@ -848,41 +890,47 @@ export default function ChatDetailScreen() {
           />
 
           {/* Content */}
-          <TamaguiStack flex={1} overflow="hidden">
+          <TamaguiStack flex={1}>
             <KeyboardAvoidingView
               style={{ flex: 1 }}
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 44 : 0}
+              keyboardVerticalOffset={0}
             >
-              {/* Message list with action menu */}
-              <ChatScreen
-                ref={chatScreenRef}
-                messages={displayMessages}
-                highlightedMessageId={highlightedMessageId}
-                loading={loading}
-                loadingMore={!loading && sendingMessage}
-                hasMore={hasMore}
-                error={error}
-                conversationType={conversationType}
-                currentUserId={membershipId || ''}
-                onLoadMore={() => void loadMore()}
-                showThreadIndicators={true}
-                testID="chat-screen"
-              />
+              <TamaguiStack
+                flex={1}
+                paddingBottom={Platform.OS === 'ios' ? insets.bottom + 49 : 16}
+              >
+                {/* Message list with action menu */}
+                <ChatScreen
+                  ref={chatScreenRef}
+                  messages={displayMessages}
+                  highlightedMessageId={highlightedMessageId}
+                  loading={loading}
+                  loadingMore={!loading && sendingMessage}
+                  hasMore={hasMore}
+                  error={error}
+                  conversationType={conversationType}
+                  currentUserId={membershipId || ''}
+                  onLoadMore={() => void loadMore()}
+                  showThreadIndicators={true}
+                  testID="chat-screen"
+                />
 
-              {/* Message input - positioned to appear above native tab bar */}
-              <MessageInput
-                ref={messageInputRef}
-                onSend={handleSend}
-                onSendEventChat={handleSendEventChat}
-                sending={sendingMessage}
-                error={sendError}
-                conversationId={conversationId ?? undefined}
-                tenantId={tenantId ?? undefined}
-                currentMembershipId={membershipId ?? undefined}
-                onPlusPress={() => setShowAttachmentSheet(true)}
-                onKeyboardHeightChange={handleKeyboardHeightChange}
-              />
+                {/* Message input - positioned to appear above native tab bar */}
+                <MessageInput
+                  ref={messageInputRef}
+                  onSend={handleSend}
+                  onSendEventChat={handleSendEventChat}
+                  sending={sendingMessage}
+                  error={sendError}
+                  conversationId={conversationId ?? undefined}
+                  tenantId={tenantId ?? undefined}
+                  currentMembershipId={membershipId ?? undefined}
+                  onPlusPress={() => setShowAttachmentSheet(true)}
+                  onKeyboardHeightChange={handleKeyboardHeightChange}
+                  conversationType={conversationType}
+                />
+              </TamaguiStack>
             </KeyboardAvoidingView>
           </TamaguiStack>
         </TamaguiStack>
@@ -915,6 +963,7 @@ export default function ChatDetailScreen() {
           await openCamera();
           // Real-time subscription will automatically add the message
         }}
+        conversationType={conversationType}
       />
     </>
   );

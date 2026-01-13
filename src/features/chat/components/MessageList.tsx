@@ -14,13 +14,8 @@
  * Features like scroll-to-top and minimize-on-scroll aren't supported."
  */
 
-import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
-import {
-  ScrollView,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Platform,
-} from 'react-native';
+import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { ScrollView, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Stack, Text as TamaguiText, Spinner } from 'tamagui';
 import { useTranslation } from '@/i18n';
@@ -246,8 +241,11 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     // Track if we're near bottom to auto-scroll on new messages
     const isNearBottomRef = useRef(true);
 
-    // Track if we're near top for loading more messages
-    const [isNearTop, setIsNearTop] = useState(false);
+    // Track if scroll is programmatic (to prevent pagination during scrollToTop)
+    const isProgrammaticScrollRef = useRef(false);
+
+    // Track current scroll position to preserve during programmatic scrolls
+    const currentScrollYRef = useRef(0);
 
     // Initial scroll to bottom when messages load
     useEffect(() => {
@@ -261,25 +259,32 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     }, [messages.length, loading]);
 
     // Handle scroll events to track position
-    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-      const paddingToBottom = 100;
-      const paddingToTop = 100;
+    const handleScroll = useCallback(
+      (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        const paddingToBottom = 100;
+        const paddingToTop = 100;
 
-      // Check if near bottom
-      const nearBottom =
-        layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-      isNearBottomRef.current = nearBottom;
+        // Track current scroll position
+        currentScrollYRef.current = contentOffset.y;
 
-      // Check if near top (for pagination)
-      const nearTop = contentOffset.y <= paddingToTop;
-      setIsNearTop(nearTop);
+        // Check if near bottom
+        const nearBottom =
+          layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+        isNearBottomRef.current = nearBottom;
 
-      // Load more messages when near top
-      if (nearTop && hasMore && !loadingMore && onLoadMore) {
-        onLoadMore();
-      }
-    }, [hasMore, loadingMore, onLoadMore]);
+        // Check if near top (for pagination)
+        const nearTop = contentOffset.y <= paddingToTop;
+        setIsNearTop(nearTop);
+
+        // Load more messages when near top, but skip if this is a programmatic scroll
+        // (e.g., tab minimization scroll that should not trigger pagination)
+        if (nearTop && hasMore && !loadingMore && onLoadMore && !isProgrammaticScrollRef.current) {
+          onLoadMore();
+        }
+      },
+      [hasMore, loadingMore, onLoadMore]
+    );
 
     // Auto-scroll to bottom when new message arrives and we were at bottom
     const messagesLengthRef = useRef(messages.length);
@@ -312,16 +317,37 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
           }
         },
         scrollToTop: () => {
-          // Trigger native tab minimization by scrolling up
-          // ScrollView with NativeTabs supports minimizeBehavior="onScrollDown"
+          // Trigger native tab minimization by scrolling DOWN from current position
+          // ScrollView with NativeTabs uses minimizeBehavior="onScrollDown"
+          // This means tabs minimize when scrolling DOWN (increasing y position)
           const scrollView = scrollViewRef.current;
           if (!scrollView) return;
 
-          // Scroll up a bit to trigger the minimize behavior
-          scrollView.scrollTo({ y: 10, animated: false });
-          // Then scroll back
+          // Capture the current scroll position to preserve reader's place
+          const originalY = currentScrollYRef.current;
+
+          // Mark as programmatic scroll to prevent pagination
+          isProgrammaticScrollRef.current = true;
+
+          // Apply a small downward scroll (40-60px) from current position
+          // This triggers the minimize behavior without jumping to top
+          // We add the small offset to the current position to scroll down
+          const downwardScrollY = originalY + 50;
+
           requestAnimationFrame(() => {
-            scrollView.scrollTo({ y: 0, animated: false });
+            scrollView.scrollTo({ y: downwardScrollY, animated: false });
+
+            // Return to the original position after the minimization gesture
+            requestAnimationFrame(() => {
+              // Use Math.max to ensure we don't go below 0
+              const returnY = Math.max(originalY, 10); // Keep at least 10px to stay out of pagination zone
+              scrollView.scrollTo({ y: returnY, animated: true });
+
+              // Reset the programmatic flag after scroll completes
+              setTimeout(() => {
+                isProgrammaticScrollRef.current = false;
+              }, 500);
+            });
           });
         },
       }),
@@ -365,10 +391,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
         scrollEventThrottle={400}
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingVertical: 16,
-          // Add extra top padding to ensure scrollability for tab minimization
-          paddingTop: 100,
-          // Add extra bottom padding for last message visibility
+          paddingTop: 16,
           paddingBottom: 16,
         }}
         showsVerticalScrollIndicator={false}

@@ -29,12 +29,8 @@ import {
   Platform,
   Pressable,
   TextInput,
-  StyleSheet,
-  View,
   type KeyboardEvent,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import Svg, { Path } from 'react-native-svg';
 import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
 import { useImageUpload } from '../hooks/useImageUpload';
@@ -56,6 +52,41 @@ function CloseIcon({ size = 24, color = '#8e8e93' }: { size?: number; color?: st
       <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth={2} strokeLinecap="round" />
     </Svg>
   );
+}
+
+/**
+ * Get input bar colors based on conversation type to match room background.
+ * Colors are derived from the room background colors in tamagui.config.ts
+ */
+function getInputBarColors(conversationType?: string): {
+  barBackground: string;
+  buttonBackground: string;
+  iconTint: string;
+} {
+  switch (conversationType) {
+    case 'small_group':
+      // Green room (#99CD69) - lighter tint to match background
+      return {
+        barBackground: 'rgba(230, 240, 220, 0.93)',
+        buttonBackground: 'rgba(215, 228, 200, 0.6)',
+        iconTint: '#5a6b4a',
+      };
+    case 'ministry':
+    case 'church_wide':
+      // Blue/gray room (#B9C2DD) - lighter tint to match background
+      return {
+        barBackground: 'rgba(235, 237, 245, 0.93)',
+        buttonBackground: 'rgba(218, 222, 238, 0.6)',
+        iconTint: '#5a5f6b',
+      };
+    default:
+      // Default/direct - slightly darker gray tint
+      return {
+        barBackground: 'rgba(235, 235, 240, 0.93)',
+        buttonBackground: 'rgba(220, 220, 228, 0.6)',
+        iconTint: '#8e8e93',
+      };
+  }
 }
 
 export interface MessageInputProps {
@@ -140,6 +171,11 @@ export interface MessageInputProps {
    * Used to minimize native tabs when typing.
    */
   onKeyboardHeightChange?: (height: number) => void;
+
+  /**
+   * Conversation type for styling the input bar to match room background.
+   */
+  conversationType?: 'direct' | 'small_group' | 'ministry' | 'church_wide';
 }
 
 export interface MessageInputHandle {
@@ -167,11 +203,14 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
     onImageUploaded,
     onPlusPress,
     onKeyboardHeightChange,
+    conversationType,
   } = props;
   const { t } = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const { quoteAttachment, clearQuoteAttachment } = useChatStore();
+
+  // Get dynamic colors based on conversation type
+  const inputBarColors = getInputBarColors(conversationType);
 
   const [inputText, setInputText] = useState('');
   const [_inputHeight, setInputHeight] = useState(40);
@@ -200,17 +239,15 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
   // Emoji picker state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  // Liquid Glass availability state
-  const [liquidGlassAvailable, setLiquidGlassAvailable] = useState(false);
-
-  useEffect(() => {
-    setLiquidGlassAvailable(isLiquidGlassAvailable());
-  }, []);
-
   // Handle keyboard appearance to minimize native tabs
   useEffect(() => {
     const keyboardWillShow = (e: KeyboardEvent) => {
-      onKeyboardHeightChange?.(e.endCoordinates.height);
+      // Add a small delay to ensure the keyboard animation has started
+      // This allows the scroll trigger to coordinate better with the keyboard animation
+      // iOS keyboard animation duration is typically 250ms
+      requestAnimationFrame(() => {
+        onKeyboardHeightChange?.(e.endCoordinates.height);
+      });
     };
     const keyboardWillHide = () => {
       onKeyboardHeightChange?.(0);
@@ -346,58 +383,31 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
   const nearLimit = charCount > maxLength * 0.9;
   const hasEventChatSupport = onSendEventChat && conversationId && tenantId && currentMembershipId;
 
-  /**
-   * Glass container wrapper for the input bar.
-   * Adds Liquid Glass effect on iOS 26+.
-   */
-  function GlassInputContainer({ children }: { children: React.ReactNode }) {
-    if (Platform.OS === 'ios' && liquidGlassAvailable) {
-      return (
-        <Stack style={{ position: 'relative' }}>
-          <GlassView
-            style={StyleSheet.absoluteFill}
-            glassEffectStyle="regular"
-            tintColor="#F5F5F780"
-            isInteractive={false}
-          />
-          <View style={StyleSheet.absoluteFill} zIndex={1}>
-            {children}
-          </View>
-        </Stack>
-      );
-    }
-    return <>{children}</>;
-  }
-
   return (
     <>
-      <Stack
-        testID={testID ?? 'message-input'}
-        backgroundColor="$background"
-        borderTopWidth={1}
-        borderTopColor="$borderLight"
-        zIndex={10000}
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-        pointerEvents="box-none"
-      >
-        <View style={{ flex: 1, backgroundColor: '$background' }}>
-        {/* Quote preview */}
+      <Stack testID={testID ?? 'message-input'} backgroundColor="transparent">
+        {/* Quote preview - styled with margins to match input bar */}
         {quoteAttachment && (
-          <QuotePreview
-            senderName={quoteAttachment.senderName}
-            senderAvatar={quoteAttachment.senderAvatar}
-            content={quoteAttachment.content}
-            onRemove={clearQuoteAttachment}
-          />
+          <Stack marginHorizontal={16} marginBottom={4}>
+            <QuotePreview
+              senderName={quoteAttachment.senderName}
+              senderAvatar={quoteAttachment.senderAvatar}
+              content={quoteAttachment.content}
+              onRemove={clearQuoteAttachment}
+            />
+          </Stack>
         )}
 
-        {/* Error display */}
+        {/* Error display - styled with margins and rounded corners */}
         {error && (
           <Stack
             testID="message-input-error"
             backgroundColor="$dangerLight"
             paddingHorizontal="$3"
             paddingVertical="$2"
+            marginHorizontal={16}
+            marginBottom={4}
+            borderRadius={12}
           >
             <TamaguiText fontSize="$xs" color="$danger">
               {error.message}
@@ -405,7 +415,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
           </Stack>
         )}
 
-        {/* Image upload error display */}
+        {/* Image upload error display - styled with margins and rounded corners */}
         {imageError && (
           <XStack
             testID="image-upload-error"
@@ -414,6 +424,9 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             paddingVertical="$2"
             alignItems="center"
             justifyContent="space-between"
+            marginHorizontal={16}
+            marginBottom={4}
+            borderRadius={12}
           >
             <TamaguiText fontSize="$xs" color="$danger" flex={1}>
               {imageError.message}
@@ -426,7 +439,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
           </XStack>
         )}
 
-        {/* Event Chat mode indicator */}
+        {/* Event Chat mode indicator - styled with margins and rounded corners */}
         {isEventChatMode && (
           <XStack
             testID="event-chat-mode-indicator"
@@ -435,6 +448,9 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             paddingVertical="$2"
             alignItems="center"
             gap="$2"
+            marginHorizontal={16}
+            marginBottom={4}
+            borderRadius={12}
           >
             <TamaguiText fontSize="$sm" color="$warning">
               {t('chat.event_chat_mode_active', {
@@ -449,20 +465,29 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
           </XStack>
         )}
 
-        {/* Emoji Picker - rendered above the input bar */}
+        {/* Emoji Picker - rendered above the input bar with matching margins */}
         {showEmojiPicker && (
-          <EmojiPicker onEmojiSelect={handleEmojiSelect} testID="emoji-picker-panel" />
+          <Stack marginHorizontal={16} marginBottom={4}>
+            <EmojiPicker
+              onEmojiSelect={handleEmojiSelect}
+              conversationType={conversationType}
+              testID="emoji-picker-panel"
+            />
+          </Stack>
         )}
 
-        {/* Input bar */}
-        <GlassInputContainer>
-          <XStack
-            alignItems="flex-end"
-            gap="$2"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-            paddingBottom={Platform.OS === 'ios' ? insets.bottom : 1}
-          >
+        {/* Input bar - styled to match native tab bar width and appearance */}
+        <XStack
+          alignItems="flex-end"
+          gap="$2"
+          paddingHorizontal="$3"
+          paddingVertical="$2"
+          marginHorizontal={16}
+          marginBottom={8}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type
+          backgroundColor={inputBarColors.barBackground as any}
+          borderRadius={26}
+        >
           {/* Plus icon button */}
           <Pressable
             testID="plus-menu-button"
@@ -477,7 +502,8 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
               width={40}
               height={40}
               borderRadius={20}
-              backgroundColor="$backgroundTertiary"
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type
+              backgroundColor={inputBarColors.buttonBackground as any}
               alignItems="center"
               justifyContent="center"
               pointerEvents="none"
@@ -486,19 +512,18 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
                 source={PLUS_ICON}
                 style={{ width: 24, height: 24 }}
                 resizeMode="contain"
-                tintColor="#8e8e93"
+                tintColor={inputBarColors.iconTint}
               />
             </Stack>
           </Pressable>
 
-          {/* Text input - circular/pill-shaped to match native tab buttons */}
+          {/* Text input */}
           <Stack
             flex={1}
-            backgroundColor="$backgroundTertiary"
-            borderRadius={22}
-            height={44}
+            backgroundColor="transparent"
+            borderRadius="$2"
+            minHeight={40}
             justifyContent="center"
-            overflow="hidden"
           >
             <TextInput
               ref={textInputRef}
@@ -511,16 +536,14 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
               multiline
               maxLength={maxLength}
               style={{
-                paddingHorizontal: 16,
+                paddingHorizontal: 12,
                 paddingVertical: Platform.select({
-                  ios: 10,
-                  android: 10,
+                  ios: 8,
+                  android: 8,
                 }),
                 fontSize: 16,
-                lineHeight: 22,
                 color: theme.color1?.val as string,
-                minHeight: 44,
-                maxHeight: 100,
+                minHeight: 40,
               }}
               returnKeyType="send"
               onSubmitEditing={canSend ? () => void handleSend() : undefined}
@@ -546,7 +569,10 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
               width={40}
               height={40}
               borderRadius={20}
-              backgroundColor={showEmojiPicker ? '$primary' : '$backgroundTertiary'}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tamagui expects specific token type
+              backgroundColor={
+                (showEmojiPicker ? '$primary' : inputBarColors.buttonBackground) as any
+              }
               alignItems="center"
               justifyContent="center"
               pointerEvents="none"
@@ -554,7 +580,12 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
               {showEmojiPicker ? (
                 <CloseIcon size={20} color="white" />
               ) : (
-                <Image source={SMILE_ICON} style={{ width: 24, height: 24 }} resizeMode="contain" />
+                <Image
+                  source={SMILE_ICON}
+                  style={{ width: 24, height: 24 }}
+                  resizeMode="contain"
+                  tintColor={inputBarColors.iconTint}
+                />
               )}
             </Stack>
           </Pressable>
@@ -591,11 +622,10 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             </Pressable>
           )}
         </XStack>
-        </GlassInputContainer>
 
-        {/* Character count */}
+        {/* Character count - positioned with matching margins */}
         {nearLimit && (
-          <Stack alignItems="flex-end" paddingHorizontal="$3" paddingBottom="$2">
+          <Stack alignItems="flex-end" marginHorizontal={20} marginTop={-4}>
             <TamaguiText
               testID="character-count"
               fontSize="$xs"
@@ -605,7 +635,6 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             </TamaguiText>
           </Stack>
         )}
-        </View>
       </Stack>
 
       {/* Event Chat Selector Modal */}
