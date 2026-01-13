@@ -1,15 +1,16 @@
 /**
  * ContactCategoryHeader component.
  *
- * Displays simple section headers for categorized contact lists:
+ * Simple text-only section headers for categorized contact lists:
  * - 목장 (Small Groups)
  * - 초원 (Zones/Prairies)
  * - 그룹/팀 (Groups/Teams)
  * - 멤버 (Members)
+ *
+ * Figma specs: 12px font, #8E8E93 color, no icons.
  */
 
-import { YStack } from 'tamagui';
-import { Text as TamaguiText } from 'tamagui';
+import { Stack, Text as TamaguiText, XStack } from 'tamagui';
 import type { ContactCategory } from '../types';
 import koTranslations from '@/i18n/locales/ko/common.json';
 import enTranslations from '@/i18n/locales/en/common.json';
@@ -38,7 +39,8 @@ function getCategoryName(
 }
 
 /**
- * Simple category header - just text with spacing, no heavy styling.
+ * Simple category header with text only (no icon).
+ * Figma specs: 12px font, #8E8E93 color.
  */
 export function ContactCategoryHeader({
   category,
@@ -48,14 +50,29 @@ export function ContactCategoryHeader({
   const categoryName = getCategoryName(category, locale);
 
   return (
-    <YStack paddingTop="$4" paddingBottom="$2" paddingHorizontal="$4" testID={testID ?? `contact-category-header-${category}`}>
+    <XStack
+      paddingTop={8}
+      paddingBottom={4}
+      paddingHorizontal={16}
+      alignItems="center"
+      testID={testID ?? `contact-category-header-${category}`}
+      style={styles.container}
+    >
+      {/* Category name only - no icon */}
       <TamaguiText
-        fontSize={14}
-        fontWeight="500"
-        color="#6d6d73"
+        fontSize={12}
+        fontWeight="700"
+        color="#8E8E93"
       >
         {categoryName}
       </TamaguiText>
-    </YStack>
+    </XStack>
   );
 }
+
+const styles = {
+  container: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#D1D1D6',
+  } as const,
+};

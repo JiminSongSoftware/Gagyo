@@ -14,16 +14,46 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet, View, KeyboardAvoidingView, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { YStack, Stack as TamaguiStack, Text as TamaguiText, XStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
+import { SafeScreen } from '@/components/SafeScreen';
 import { MessageList } from '@/features/chat/components/MessageList';
 import { MessageInput } from '@/features/chat/components/MessageInput';
 import { useThreadMessages } from '@/features/chat/hooks/useThreadMessages';
 import { useSendReply } from '@/features/chat/hooks/useSendMessage';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useCurrentMembership } from '@/hooks/useCurrentMembership';
+
+// ============================================================================
+// STYLES
+// ============================================================================
+
+const styles = StyleSheet.create({
+  header: {
+    height: 44,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholder: {
+    width: 44,
+  },
+  headerSeparator: {
+    height: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+  },
+});
+
+// ============================================================================
+// COMPONENTS
+// ============================================================================
 
 /**
  * Parent message display component (sticky at top).
@@ -76,6 +106,7 @@ export default function ThreadViewScreen() {
     error,
     hasMore,
     loadMore,
+    refetch,
   } = useThreadMessages(id || null, tenantId);
 
   // Derive conversation ID directly from parent message
@@ -100,11 +131,13 @@ export default function ThreadViewScreen() {
       try {
         await sendReply(content);
         setSendError(null);
+        // Refetch thread messages after sending to show the new reply
+        await refetch();
       } catch (err) {
         setSendError(err instanceof Error ? err.message : t('chat.thread.sendError'));
       }
     },
-    [sendReply, t]
+    [sendReply, t, refetch]
   );
 
   // Thread replies cannot be pressed (no nested threads)
@@ -130,113 +163,186 @@ export default function ThreadViewScreen() {
   // Validate thread ID (after all hooks)
   if (!id) {
     return (
-      <TamaguiStack flex={1} alignItems="center" justifyContent="center">
-        <TamaguiText>{t('chat.thread.invalid_thread')}</TamaguiText>
-      </TamaguiStack>
+      <SafeScreen>
+        <YStack flex={1} backgroundColor="$background">
+          <XStack style={styles.header} alignItems="center" justifyContent="space-between">
+            <Pressable onPress={handleBack} hitSlop={16} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#000000" />
+            </Pressable>
+            <TamaguiText fontSize={17} fontWeight="600" color="#000000">
+              {t('chat.thread.title')}
+            </TamaguiText>
+            <View style={styles.placeholder} />
+          </XStack>
+          <View style={styles.headerSeparator} />
+          <TamaguiStack flex={1} alignItems="center" justifyContent="center">
+            <TamaguiText>{t('chat.thread.invalid_thread')}</TamaguiText>
+          </TamaguiStack>
+        </YStack>
+      </SafeScreen>
     );
   }
 
   if (!parentMessage && loading) {
     return (
-      <TamaguiStack flex={1} alignItems="center" justifyContent="center">
-        <TamaguiText>{t('chat.thread.loadingReplies')}</TamaguiText>
-      </TamaguiStack>
+      <SafeScreen>
+        <YStack flex={1} backgroundColor="$background">
+          <XStack style={styles.header} alignItems="center" justifyContent="space-between">
+            <Pressable onPress={handleBack} hitSlop={16} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#000000" />
+            </Pressable>
+            <TamaguiText fontSize={17} fontWeight="600" color="#000000">
+              {t('chat.thread.title')}
+            </TamaguiText>
+            <View style={styles.placeholder} />
+          </XStack>
+          <View style={styles.headerSeparator} />
+          <TamaguiStack flex={1} alignItems="center" justifyContent="center">
+            <TamaguiText>{t('chat.thread.loadingReplies')}</TamaguiText>
+          </TamaguiStack>
+        </YStack>
+      </SafeScreen>
     );
   }
 
   // Show error state
   if (error && !parentMessage) {
     return (
-      <TamaguiStack flex={1} alignItems="center" justifyContent="center" padding="$4">
-        <TamaguiText fontSize={48}>⚠️</TamaguiText>
-        <TamaguiText
-          fontSize="$lg"
-          fontWeight="600"
-          color="$danger"
-          textAlign="center"
-          marginBottom="$2"
-        >
-          {t('error')}
-        </TamaguiText>
-        <TamaguiText fontSize="$md" color="$color2" textAlign="center">
-          {error.message || t('chat.thread.errorLoading')}
-        </TamaguiText>
-      </TamaguiStack>
+      <SafeScreen>
+        <YStack flex={1} backgroundColor="$background">
+          <XStack style={styles.header} alignItems="center" justifyContent="space-between">
+            <Pressable onPress={handleBack} hitSlop={16} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#000000" />
+            </Pressable>
+            <TamaguiText fontSize={17} fontWeight="600" color="#000000">
+              {t('chat.thread.title')}
+            </TamaguiText>
+            <View style={styles.placeholder} />
+          </XStack>
+          <View style={styles.headerSeparator} />
+          <TamaguiStack flex={1} alignItems="center" justifyContent="center" padding="$4">
+            <TamaguiText fontSize={48}>⚠️</TamaguiText>
+            <TamaguiText
+              fontSize="$lg"
+              fontWeight="600"
+              color="$danger"
+              textAlign="center"
+              marginBottom="$2"
+            >
+              {t('error')}
+            </TamaguiText>
+            <TamaguiText fontSize="$md" color="$color2" textAlign="center">
+              {error.message || t('chat.thread.errorLoading')}
+            </TamaguiText>
+          </TamaguiStack>
+        </YStack>
+      </SafeScreen>
     );
   }
 
   // Show empty state when no replies
   if (!loading && parentMessage && replies.length === 0) {
     return (
-      <YStack flex={1} backgroundColor="$background">
-        <ParentMessage
-          senderName={parentMessage.sender?.display_name || 'Unknown'}
-          content={parentMessage.content || ''}
-          timestamp={new Date(parentMessage.created_at).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        />
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
-          <TamaguiText fontSize={48}>💬</TamaguiText>
-          <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
-            {t('chat.thread.noReplies')}
-          </TamaguiText>
-        </YStack>
-        {replyInput}
-      </YStack>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
+          <SafeScreen>
+            <YStack flex={1} backgroundColor="$background">
+              {/* Custom Header */}
+              <XStack style={styles.header} alignItems="center" justifyContent="space-between">
+                <Pressable onPress={handleBack} hitSlop={16} style={styles.backButton}>
+                  <Ionicons name="chevron-back" size={24} color="#000000" />
+                </Pressable>
+                <TamaguiText fontSize={17} fontWeight="600" color="#000000">
+                  {t('chat.thread.title')}
+                </TamaguiText>
+                <View style={styles.placeholder} />
+              </XStack>
+              <View style={styles.headerSeparator} />
+
+              <ParentMessage
+                senderName={parentMessage.sender?.display_name || 'Unknown'}
+                content={parentMessage.content || ''}
+                timestamp={new Date(parentMessage.created_at).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              />
+              <YStack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
+                <TamaguiText fontSize={48}>💬</TamaguiText>
+                <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">
+                  {t('chat.thread.noReplies')}
+                </TamaguiText>
+              </YStack>
+              {replyInput}
+            </YStack>
+          </SafeScreen>
+        </KeyboardAvoidingView>
+      </>
     );
   }
 
   return (
     <>
-      {/* Header */}
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: t('chat.thread.title'),
-          headerLeft: () => (
-            <Pressable onPress={handleBack} hitSlop={16}>
-              <XStack paddingHorizontal="$3" paddingVertical="$2">
-                <Ionicons name="chevron-back" size={24} color="$color1" />
-              </XStack>
-            </Pressable>
-          ),
-        }}
-      />
+      {/* Hide default header - we use custom header below */}
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Content */}
-      <YStack flex={1} backgroundColor="$background">
-        {/* Parent message (sticky) */}
-        {parentMessage && (
-          <ParentMessage
-            senderName={parentMessage.sender?.display_name || 'Unknown'}
-            content={parentMessage.content || ''}
-            timestamp={new Date(parentMessage.created_at).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          />
-        )}
+      {/* Content with keyboard avoidance - tabs hide when typing */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <SafeScreen>
+          <YStack flex={1} backgroundColor="$background">
+            {/* Custom Header */}
+            <XStack style={styles.header} alignItems="center" justifyContent="space-between">
+              <Pressable onPress={handleBack} hitSlop={16} style={styles.backButton}>
+                <Ionicons name="chevron-back" size={24} color="#000000" />
+              </Pressable>
+              <TamaguiText fontSize={17} fontWeight="600" color="#000000">
+                {t('chat.thread.title')}
+              </TamaguiText>
+              <View style={styles.placeholder} />
+            </XStack>
+            <View style={styles.headerSeparator} />
 
-        {/* Thread replies */}
-        <MessageList
-          messages={replies}
-          loading={loading && replies.length === 0}
-          loadingMore={false}
-          hasMore={hasMore}
-          error={error}
-          conversationType="small_group"
-          currentUserId={membershipId || ''}
-          onLoadMore={() => void loadMore()}
-          onMessagePress={handleMessagePress}
-          showThreadIndicators={false} // Replies don't show thread indicators
-          testID="thread-replies-list"
-        />
+            {/* Parent message (sticky) */}
+            {parentMessage && (
+              <ParentMessage
+                senderName={parentMessage.sender?.display_name || 'Unknown'}
+                content={parentMessage.content || ''}
+                timestamp={new Date(parentMessage.created_at).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              />
+            )}
 
-        {/* Message input */}
-        {replyInput}
-      </YStack>
+            {/* Thread replies */}
+            <MessageList
+              messages={replies}
+              loading={loading && replies.length === 0}
+              loadingMore={false}
+              hasMore={hasMore}
+              error={error}
+              conversationType="small_group"
+              currentUserId={membershipId || ''}
+              onLoadMore={() => void loadMore()}
+              onMessagePress={handleMessagePress}
+              showThreadIndicators={false} // Replies don't show thread indicators
+              testID="thread-replies-list"
+            />
+
+            {/* Message input */}
+            {replyInput}
+          </YStack>
+        </SafeScreen>
+      </KeyboardAvoidingView>
     </>
   );
 }

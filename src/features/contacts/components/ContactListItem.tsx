@@ -2,14 +2,16 @@
  * ContactListItem component.
  *
  * Displays a single contact in the contacts list with:
- * - Soft gray circular avatar (decorative, no initials)
- * - Group/member name
- * - Member count on right (for groups)
+ * - Soft gray circular avatar (48px, decorative)
+ * - Group/member name (16px semibold, #40434D)
+ * - Member count inline with name (12px, #8E8E93, for groups)
+ *
+ * Figma specs: 48px avatar, 16px semibold name, reduced padding.
  */
 
 import { useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { XStack, YStack } from 'tamagui';
+import { XStack } from 'tamagui';
 import { Text as TamaguiText } from 'tamagui';
 import type { ContactListItemProps } from '../types';
 
@@ -27,38 +29,36 @@ export function ContactListItem({ contact, onPress, testID }: ContactListItemPro
     <Pressable onPress={handlePress} testID={itemTestID} accessibilityRole="button">
       <XStack
         alignItems="center"
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        gap="$3"
+        paddingHorizontal={16}
+        paddingVertical={8}
+        gap={12}
         style={styles.item}
       >
-        {/* Soft gray circular avatar (decorative) */}
-        <View
-          style={styles.avatar}
-        />
+        {/* Soft gray circular avatar (48px) */}
+        <View style={styles.avatar} />
 
-        {/* Name */}
-        <YStack flex={1}>
+        {/* Name and member count */}
+        <XStack flex={1} alignItems="center" gap={6}>
           <TamaguiText
-            fontSize={16}
-            fontWeight="400"
-            color="$color1"
+            fontSize={18}
+            fontWeight="700"
+            color="#40434D"
             numberOfLines={1}
           >
             {contact.name}
           </TamaguiText>
-        </YStack>
 
-        {/* Member count (for groups) */}
-        {contact.memberCount && contact.category !== 'member' && (
-          <TamaguiText
-            fontSize={14}
-            fontWeight="400"
-            color="#6d6d73"
-          >
-            {contact.memberCount}
-          </TamaguiText>
-        )}
+          {/* Member count inline with name (for groups) */}
+          {contact.memberCount && contact.category !== 'member' && (
+            <TamaguiText
+              fontSize={16}
+              fontWeight="700"
+              color="#8E8E93"
+            >
+              {contact.memberCount}
+            </TamaguiText>
+          )}
+        </XStack>
       </XStack>
     </Pressable>
   );
@@ -66,13 +66,13 @@ export function ContactListItem({ contact, onPress, testID }: ContactListItemPro
 
 const styles = StyleSheet.create({
   item: {
-    minHeight: 56,
-    backgroundColor: '#ffffff',
+    minHeight: 64,
+    backgroundColor: 'transparent',
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#DFE2E8',
   },
 });

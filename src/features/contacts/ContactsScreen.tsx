@@ -10,12 +10,15 @@
  * https://www.figma.com/design/6gW1h8DfD1WYH29AmJqaeW/Gagyo?node-id=128-1255
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View, Platform, Keyboard, KeyboardEvent } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
-import { XStack, YStack } from 'tamagui';
+import { XStack, YStack, Stack } from 'tamagui';
 import { Text as TamaguiText } from 'tamagui';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { BlurView } from 'expo-blur';
 import { useTenantContext } from '@/hooks/useTenantContext';
+import { SafeScreen } from '@/components/SafeScreen';
 import { ContactCategoryHeader } from './components/ContactCategoryHeader';
 import { ContactListItem } from './components/ContactListItem';
 import { FilterTabs } from './components/FilterTabs';
@@ -23,7 +26,7 @@ import type { Contact, ContactSection, ContactCategory, ContactFilterType } from
 
 // Mock data for development - replace with actual data from Supabase
 const MOCK_CONTACTS: Contact[] = [
-  // Small Groups (목장)
+  // Small Groups (목장) - only 모로코 목장
   {
     id: 'sg-1',
     category: 'small_group',
@@ -31,27 +34,13 @@ const MOCK_CONTACTS: Contact[] = [
     smallGroupId: 'sg-1',
     memberCount: 7,
   },
-  {
-    id: 'sg-2',
-    category: 'small_group',
-    name: '알래스카 목장',
-    smallGroupId: 'sg-2',
-    memberCount: 6,
-  },
-  // Zones (초원)
+  // Zones (초원) - only 캐스트로 초원
   {
     id: 'zone-1',
     category: 'zone',
     name: '캐스트로 초원',
     zoneId: 'zone-1',
     memberCount: 9,
-  },
-  {
-    id: 'zone-2',
-    category: 'zone',
-    name: '요하네스 초원',
-    zoneId: 'zone-2',
-    memberCount: 8,
   },
   // Groups/Teams (그룹/팀)
   {
@@ -94,6 +83,16 @@ const MOCK_CONTACTS: Contact[] = [
     userId: 'user-2',
     displayName: 'SAEHONG PARK',
     role: '성도',
+    smallGroupName: '모로코 목장',
+  },
+  {
+    id: 'member-3',
+    category: 'member',
+    name: '이지훈 목자',
+    membershipId: 'member-3',
+    userId: 'user-3',
+    displayName: '이지훈 목자',
+    role: '목자',
     smallGroupName: '모로코 목장',
   },
 ];
@@ -166,13 +165,57 @@ function filterContacts(
 
 /**
  * Search icon component.
+ * Matches the native tab bar search icon.
  */
-function SearchIcon() {
-  return (
-    <TamaguiText style={{ fontSize: 20, color: '#40434d' }}>
-      🔍
-    </TamaguiText>
-  );
+function SearchIcon({ color = '#40434d', size = 20 }: { color?: string; size?: number }) {
+  return Platform.select({
+    ios: (
+      <View style={[styles.searchIcon, { width: size, height: size }]}>
+        {/* SF Symbol magnifyingglass */}
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M21 21L15.5 15.5M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+    ),
+    android: <Ionicons name="search" size={size} color={color} />,
+  });
+}
+
+/**
+ * Clear button (X) icon for search input.
+ */
+function ClearIcon({ onPress }: { onPress: () => void }) {
+  return Platform.select({
+    ios: (
+      <Pressable
+        onPress={onPress}
+        hitSlop={8}
+        style={({ pressed }) => [styles.clearButton, pressed && styles.clearButtonPressed]}
+      >
+        <View style={styles.clearButtonCircle}>
+          <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
+            <Path
+              d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5"
+              stroke="#8E8E93"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </Svg>
+        </View>
+      </Pressable>
+    ),
+    android: (
+      <Pressable onPress={onPress} hitSlop={8}>
+        <Ionicons name="close-circle" size={20} color="#8E8E93" />
+      </Pressable>
+    ),
+  });
 }
 
 /**
@@ -200,10 +243,13 @@ function ChurchIcon() {
  */
 export function ContactsScreen({ testID, communityName }: ContactsScreenProps) {
   const { activeTenantName } = useTenantContext();
+  const searchInputRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<ContactFilterType>('all');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Filter and group contacts
   const filteredContacts = useMemo(
@@ -243,136 +289,211 @@ export function ContactsScreen({ testID, communityName }: ContactsScreenProps) {
   const handleSearchCollapse = useCallback(() => {
     setIsSearchExpanded(false);
     setSearchQuery('');
+    Keyboard.dismiss();
   }, []);
 
-  // Use provided community name, tenant name, or default
-  const displayName = communityName || activeTenantName || 'Pistos Church';
+  const handleClearInput = useCallback(() => {
+    setSearchQuery('');
+  }, []);
+
+  // Focus input when search expands
+  useEffect(() => {
+    if (isSearchExpanded) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchExpanded]);
+
+  // Handle keyboard appearance to minimize tabs
+  useEffect(() => {
+    const keyboardWillShow = (e: KeyboardEvent) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      // Scroll to top when keyboard appears to help trigger tab minimization
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    };
+
+    const keyboardWillHide = () => {
+      setKeyboardHeight(0);
+    };
+
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      keyboardWillShow
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      keyboardWillHide
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  // Collapse search when keyboard dismisses without text
+  useEffect(() => {
+    if (keyboardHeight === 0 && !searchQuery && isSearchExpanded) {
+      setIsSearchExpanded(false);
+    }
+  }, [keyboardHeight, searchQuery, isSearchExpanded]);
+
+  // Map English names to Korean
+  const nameMap: Record<string, string> = {
+    'Pistos Church': '피스토스 교회',
+  };
+
+  // Use provided community name, tenant name (mapped), or default
+  const displayName = communityName || (activeTenantName ? nameMap[activeTenantName] || activeTenantName : null) || '피스토스 교회';
 
   return (
-    <YStack flex={1} backgroundColor="#ffffff" testID={testID ?? 'contacts-screen'}>
-      {/* Header with community name and search icon */}
-      <XStack
-        paddingHorizontal="$4"
-        paddingTop="$1"
-        paddingBottom="$4"
-        alignItems="center"
-        justifyContent="space-between"
-      >
-        {/* Church icon and Community name */}
-        <XStack alignItems="center" gap="$3">
-          <ChurchIcon />
-          <TamaguiText
-            fontSize={28}
-            fontWeight="700"
-            color="$color1"
-          >
-            {displayName}
-          </TamaguiText>
-        </XStack>
-
-        {/* Search icon button */}
-        <Pressable
-          onPress={handleSearchPress}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          testID="search-expand-button"
-        >
-          <SearchIcon />
-        </Pressable>
-      </XStack>
-
-      {/* Search field (appears below header when expanded) */}
-      {isSearchExpanded && (
+    <SafeScreen backgroundColor="#F5F5F7">
+      <YStack flex={1} testID={testID ?? 'contacts-screen'}>
+        {/* Header with community name and search icon */}
         <XStack
           paddingHorizontal="$4"
-          paddingBottom="$3"
+          paddingTop="$1"
+          paddingBottom="$2"
           alignItems="center"
-          gap="$2"
+          justifyContent="space-between"
         >
+          {/* Church icon and Community name */}
+          <XStack alignItems="center" gap="$3">
+            <ChurchIcon />
+            <TamaguiText
+              fontSize={24}
+              fontWeight="700"
+              color="$color1"
+            >
+              {displayName}
+            </TamaguiText>
+          </XStack>
+
+          {/* Search icon button */}
+          <Pressable
+            onPress={handleSearchPress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            testID="search-expand-button"
+          >
+            <SearchIcon />
+          </Pressable>
+        </XStack>
+
+        {/* Search field (liquid glass style, appears below header when expanded) */}
+        {isSearchExpanded && (
           <XStack
-            flex={1}
-            backgroundColor="$backgroundSecondary"
-            borderRadius="$2"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
+            paddingHorizontal="$4"
+            paddingBottom="$3"
             alignItems="center"
             gap="$2"
           >
-            <SearchIcon />
-            <TextInputWithStyle
-              style={styles.searchInput}
-              placeholder="검색"
-              placeholderTextColor="#8e8e93"
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-              autoFocus
-              testID="contacts-search-input"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={handleSearchCollapse} hitSlop={8}>
-                <TamaguiText style={{ fontSize: 16, color: '#8e8e93' }}>✕</TamaguiText>
-              </Pressable>
-            )}
-          </XStack>
-
-          {/* Cancel button */}
-          <Pressable onPress={handleSearchCollapse} style={{ paddingHorizontal: 8 }}>
-            <TamaguiText fontSize={14} color="$color1">
-              취소
-            </TamaguiText>
-          </Pressable>
-        </XStack>
-      )}
-
-      {/* Top divider line (thicker) */}
-      <View style={styles.topDivider} />
-
-      {/* Filter Tabs */}
-      <FilterTabs
-        selectedFilter={selectedFilter}
-        onFilterChange={handleFilterChange}
-        testID="contacts-filter-tabs"
-      />
-
-      {/* Contact List */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>
-        {groupedSections.length === 0 ? (
-          // Empty state
-          <YStack flex={1} alignItems="center" justifyContent="center" padding="$8" marginTop="$8">
-            <TamaguiText fontSize={16} color="$color3">
-              {searchQuery ? '검색 결과가 없습니다' : '연락처가 없습니다'}
-            </TamaguiText>
-          </YStack>
-        ) : (
-          // Grouped contacts
-          groupedSections.map((section) => (
-            <YStack key={section.category}>
-              <ContactCategoryHeader
-                category={section.category}
-                testID={`category-header-${section.category}`}
+            {/* Liquid glass search container */}
+            <XStack
+              flex={1}
+              height={44}
+              backgroundColor="rgba(255, 255, 255, 0.8)"
+              borderRadius={12}
+              overflow="hidden"
+            >
+              {/* Blur effect for liquid glass */}
+              <BlurView
+                intensity={20}
+                tint="light"
+                style={StyleSheet.absoluteFill}
               />
-              <View style={styles.divider} />
 
-              {section.data.map((contact) => (
-                <ContactListItem
-                  key={contact.id}
-                  contact={contact}
-                  onPress={handleContactPress}
-                  testID={`contact-${contact.id}`}
+              {/* Content overlay */}
+              <XStack
+                flex={1}
+                paddingHorizontal="$3"
+                alignItems="center"
+                gap="$2"
+                zIndex={1}
+              >
+                <SearchIcon color="#8E8E93" size={18} />
+
+                <TextInput
+                  ref={searchInputRef}
+                  style={styles.searchInput}
+                  placeholder="검색"
+                  placeholderTextColor="#8E8E93"
+                  value={searchQuery}
+                  onChangeText={handleSearchChange}
+                  autoFocus={false}
+                  returnKeyType="search"
+                  selectTextOnFocus={false}
+                  clearButtonMode="never"
+                  importantForAutofill="no"
+                  testID="contacts-search-input"
                 />
-              ))}
-            </YStack>
-          ))
-        )}
-      </ScrollView>
-    </YStack>
-  );
-}
 
-/**
- * TextInput wrapper to avoid StyledString error.
- */
-function TextInputWithStyle(props: React.ComponentProps<typeof TextInput>) {
-  return <TextInput {...props} />;
+                {searchQuery.length > 0 && <ClearIcon onPress={handleClearInput} />}
+              </XStack>
+            </XStack>
+
+            {/* Cancel button */}
+            <Pressable
+              onPress={handleSearchCollapse}
+              hitSlop={8}
+              style={({ pressed }) => pressed && styles.cancelButtonPressed}
+            >
+              <TamaguiText fontSize={15} fontWeight="600" color="$color1" paddingHorizontal={4}>
+                취소
+              </TamaguiText>
+            </Pressable>
+          </XStack>
+        )}
+
+        {/* Top divider line (thicker) */}
+        <View style={styles.topDivider} />
+
+        {/* Filter Tabs */}
+        <FilterTabs
+          selectedFilter={selectedFilter}
+          onFilterChange={handleFilterChange}
+          testID="contacts-filter-tabs"
+        />
+
+        {/* Contact List */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {groupedSections.length === 0 ? (
+            // Empty state
+            <YStack flex={1} alignItems="center" justifyContent="center" padding="$8" marginTop="$8">
+              <TamaguiText fontSize={16} color="$color3">
+                {searchQuery ? '검색 결과가 없습니다' : '연락처가 없습니다'}
+              </TamaguiText>
+            </YStack>
+          ) : (
+            // Grouped contacts - reduced gaps between categories
+            groupedSections.map((section, index) => (
+              <YStack key={section.category} marginBottom={index === groupedSections.length - 1 ? 16 : 8}>
+                <ContactCategoryHeader
+                  category={section.category}
+                  testID={`category-header-${section.category}`}
+                />
+
+                {section.data.map((contact) => (
+                  <ContactListItem
+                    key={contact.id}
+                    contact={contact}
+                    onPress={handleContactPress}
+                    testID={`contact-${contact.id}`}
+                  />
+                ))}
+              </YStack>
+            ))
+          )}
+        </ScrollView>
+      </YStack>
+    </SafeScreen>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -381,11 +502,33 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    lineHeight: 20,
-    color: '#363b4b',
+    fontSize: 17,
+    lineHeight: 22,
+    color: '#000000',
     padding: 0,
     margin: 0,
+    minHeight: 22,
+  },
+  searchIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearButton: {
+    marginLeft: 4,
+  },
+  clearButtonPressed: {
+    opacity: 0.6,
+  },
+  clearButtonCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#E5E5E5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonPressed: {
+    opacity: 0.5,
   },
   churchIcon: {
     width: 40,
@@ -394,10 +537,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e5e5',
   },
   topDivider: {
     height: 2,

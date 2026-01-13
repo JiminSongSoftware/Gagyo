@@ -118,13 +118,11 @@ export function useThreadMessages(
           created_at: data.created_at,
           updated_at: data.updated_at,
           deleted_at: data.deleted_at,
+          // Flatten user data into sender object to match MessageWithSender type
           sender: {
             id: sender?.id ?? '',
-            user: {
-              id: sender?.user?.id ?? '',
-              display_name: sender?.user?.display_name ?? null,
-              photo_url: sender?.user?.photo_url ?? null,
-            },
+            display_name: sender?.user?.display_name ?? null,
+            photo_url: sender?.user?.photo_url ?? null,
           },
         } as MessageWithSender);
       }
@@ -207,13 +205,11 @@ export function useThreadMessages(
             created_at: msg.created_at,
             updated_at: msg.updated_at,
             deleted_at: msg.deleted_at,
+            // Flatten user data into sender object to match MessageWithSender type
             sender: {
               id: sender?.id ?? '',
-              user: {
-                id: sender?.user?.id ?? '',
-                display_name: sender?.user?.display_name ?? null,
-                photo_url: sender?.user?.photo_url ?? null,
-              },
+              display_name: sender?.user?.display_name ?? null,
+              photo_url: sender?.user?.photo_url ?? null,
             },
             // Thread replies don't have reply_count (no nested threads)
             reply_count: 0,

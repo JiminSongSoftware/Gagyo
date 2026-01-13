@@ -135,10 +135,10 @@ function AuthGuard() {
   }, [user, activeTenantId, segments, authLoading, tenantLoading, router]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <View style={{ flex: 1, backgroundColor: '#F5F5F7' }}>
       <StatusBarWrapper />
       <Slot />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -222,5 +222,10 @@ function StatusBarWrapper() {
 
   const isDark = themeName === 'dark' || colorScheme === 'dark';
 
-  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+  return (
+    <StatusBar
+      style={isDark ? 'light' : 'dark'}
+      backgroundColor="#F5F5F7"
+    />
+  );
 }

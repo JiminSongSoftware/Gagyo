@@ -9,10 +9,13 @@
  * - Bubble tail pointing toward sender
  * - Thread reply count indicator
  * - Highlight support for search results
+ * - Liquid Glass effect on iOS 26+ for enhanced visual depth
  */
 
-import { useCallback } from 'react';
-import { Pressable, View, StyleSheet, Image as RNImage } from 'react-native';
+import { useCallback, useState, useEffect } from 'react';
+import { Pressable, View, StyleSheet, Image as RNImage, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import Svg, { G, Path } from 'react-native-svg';
 import { Stack, Text as TamaguiText, Image, XStack, YStack } from 'tamagui';
 import { useTranslation } from '@/i18n';
@@ -22,7 +25,7 @@ import type { MessageWithSender } from '@/types/database';
  * Pistos logo component for avatar fallback.
  * Derived from assets/pistos-logo.svg
  */
-function PistosLogo({ width = 32, height = 32 }: { width?: number; height?: number }) {
+export function PistosLogo({ width = 32, height = 32 }: { width?: number; height?: number }) {
   return (
     <Svg width={width} height={height} viewBox="0 0 24 24" fill="none">
       <G clipPath="url(#clip0_38_822)">
@@ -152,7 +155,7 @@ function ImageMessage({ content, onPress }: { content: string | null; onPress?: 
   return (
     <Pressable onPress={onPress}>
       <Stack
-        borderRadius="$2"
+        borderRadius={16}
         overflow="hidden"
         maxWidth={200}
         maxHeight={200}
@@ -272,6 +275,60 @@ function BubbleTail({ isOwnMessage }: { isOwnMessage: boolean }) {
 }
 
 /**
+ * Hook to detect if Liquid Glass effect is available on iOS 26+.
+ */
+function useLiquidGlassAvailable(): boolean {
+  const [available, setAvailable] = useState(false);
+
+  useEffect(() => {
+    setAvailable(isLiquidGlassAvailable());
+  }, []);
+
+  return Platform.OS === 'ios' && available;
+}
+
+/**
+ * Glass bubble wrapper for Liquid Glass effect on iOS 26+.
+ * The wrapper is a transparent container that positions the GlassView
+ * behind the bubble content using absolute positioning.
+ */
+function GlassBubbleWrapper({
+  children,
+  isOwnMessage,
+  contentType,
+}: {
+  children: React.ReactNode;
+  isOwnMessage: boolean;
+  contentType?: string;
+}) {
+  const liquidGlassAvailable = useLiquidGlassAvailable();
+
+  // Media types should not have glass overlay
+  const isMediaMessage =
+    contentType === 'image' || contentType === 'video' || contentType === 'file';
+
+  // On iOS 26+ with Liquid Glass, add glass effect overlay
+  // Skip for media messages to avoid visual artifacts
+  if (liquidGlassAvailable && !isMediaMessage) {
+    return (
+      <>
+        <GlassView
+          style={bubbleStyles.glassOverlay}
+          glassEffectStyle="regular"
+          tintColor={isOwnMessage ? '#FFD70080' : '#FFFFFF80'}
+          isInteractive={false}
+          pointerEvents="none"
+        />
+        {children}
+      </>
+    );
+  }
+
+  // Fallback - just return children without glass effect
+  return <>{children}</>;
+}
+
+/**
  * MessageBubble component with KakaoTalk-style design.
  */
 export function MessageBubble({
@@ -365,30 +422,64 @@ export function MessageBubble({
 
         {/* Message bubble */}
         <Pressable onPress={handlePress}>
-          <View style={bubbleStyles.bubbleWrapper}>
-            <Stack
-              borderRadius={16}
-              borderTopRightRadius={4}
-              padding="$2.5"
-              paddingHorizontal="$3"
-              backgroundColor={bubbleBackgroundColor}
-              maxWidth={260}
-              shadowColor="$shadowColor"
-              shadowOffset={{ width: 0, height: 1 }}
-              shadowOpacity={0.1}
-              shadowRadius={2}
-              elevation={1}
-            >
-              <MessageContentView
-                contentType={message.content_type}
-                content={message.content}
-                isOwnMessage={isOwnMessage}
-                textColor={textColor}
-                handlePress={handlePress}
-              />
-            </Stack>
-            <BubbleTail isOwnMessage={true} />
-          </View>
+          <XStack>
+            <GlassBubbleWrapper isOwnMessage={true} contentType={message.content_type}>
+              <Stack
+                borderRadius={
+                  message.content_type === 'image' ||
+                  message.content_type === 'video' ||
+                  message.content_type === 'file'
+                    ? 16
+                    : 16
+                }
+                borderTopRightRadius={
+                  message.content_type === 'image' ||
+                  message.content_type === 'video' ||
+                  message.content_type === 'file'
+                    ? 16
+                    : 4
+                }
+                padding={
+                  message.content_type === 'image' ||
+                  message.content_type === 'video' ||
+                  message.content_type === 'file'
+                    ? 0
+                    : '$2.5'
+                }
+                paddingHorizontal={
+                  message.content_type === 'image' ||
+                  message.content_type === 'video' ||
+                  message.content_type === 'file'
+                    ? 0
+                    : '$3'
+                }
+                backgroundColor={
+                  message.content_type === 'image' ||
+                  message.content_type === 'video' ||
+                  message.content_type === 'file'
+                    ? 'transparent'
+                    : bubbleBackgroundColor
+                }
+                maxWidth={260}
+                shadowColor="$shadowColor"
+                shadowOffset={{ width: 0, height: 1 }}
+                shadowOpacity={0.1}
+                shadowRadius={2}
+                elevation={1}
+              >
+                <MessageContentView
+                  contentType={message.content_type}
+                  content={message.content}
+                  isOwnMessage={isOwnMessage}
+                  textColor={textColor}
+                  handlePress={handlePress}
+                />
+              </Stack>
+            </GlassBubbleWrapper>
+            {message.content_type !== 'image' &&
+             message.content_type !== 'video' &&
+             message.content_type !== 'file' && <BubbleTail isOwnMessage={true} />}
+          </XStack>
         </Pressable>
       </XStack>
     );
@@ -462,30 +553,64 @@ export function MessageBubble({
         <XStack alignItems="flex-end">
           {/* Message bubble */}
           <Pressable onPress={handlePress}>
-            <View style={bubbleStyles.bubbleWrapper}>
-              <BubbleTail isOwnMessage={false} />
-              <Stack
-                borderRadius={16}
-                borderTopLeftRadius={4}
-                padding="$2.5"
-                paddingHorizontal="$3"
-                backgroundColor={bubbleBackgroundColor}
-                maxWidth={260}
-                shadowColor="$shadowColor"
-                shadowOffset={{ width: 0, height: 1 }}
-                shadowOpacity={0.1}
-                shadowRadius={2}
-                elevation={1}
-              >
-                <MessageContentView
-                  contentType={message.content_type}
-                  content={message.content}
-                  isOwnMessage={isOwnMessage}
-                  textColor={textColor}
-                  handlePress={handlePress}
-                />
-              </Stack>
-            </View>
+            <XStack>
+              {message.content_type !== 'image' &&
+               message.content_type !== 'video' &&
+               message.content_type !== 'file' && <BubbleTail isOwnMessage={false} />}
+              <GlassBubbleWrapper isOwnMessage={false} contentType={message.content_type}>
+                <Stack
+                  borderRadius={
+                    message.content_type === 'image' ||
+                    message.content_type === 'video' ||
+                    message.content_type === 'file'
+                      ? 16
+                      : 16
+                  }
+                  borderTopLeftRadius={
+                    message.content_type === 'image' ||
+                    message.content_type === 'video' ||
+                    message.content_type === 'file'
+                      ? 16
+                      : 4
+                  }
+                  padding={
+                    message.content_type === 'image' ||
+                    message.content_type === 'video' ||
+                    message.content_type === 'file'
+                      ? 0
+                      : '$2.5'
+                  }
+                  paddingHorizontal={
+                    message.content_type === 'image' ||
+                    message.content_type === 'video' ||
+                    message.content_type === 'file'
+                      ? 0
+                      : '$3'
+                  }
+                  backgroundColor={
+                    message.content_type === 'image' ||
+                    message.content_type === 'video' ||
+                    message.content_type === 'file'
+                      ? 'transparent'
+                      : bubbleBackgroundColor
+                  }
+                  maxWidth={260}
+                  shadowColor="$shadowColor"
+                  shadowOffset={{ width: 0, height: 1 }}
+                  shadowOpacity={0.1}
+                  shadowRadius={2}
+                  elevation={1}
+                >
+                  <MessageContentView
+                    contentType={message.content_type}
+                    content={message.content}
+                    isOwnMessage={isOwnMessage}
+                    textColor={textColor}
+                    handlePress={handlePress}
+                  />
+                </Stack>
+              </GlassBubbleWrapper>
+            </XStack>
           </Pressable>
 
           {/* Timestamp and metadata on right of bubble */}
@@ -519,11 +644,17 @@ export function MessageBubble({
 }
 
 /**
- * Styles for bubble tail.
+ * Styles for bubble tail and glass overlay.
  */
 const bubbleStyles = StyleSheet.create({
-  bubbleWrapper: {
-    position: 'relative',
+  glassOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+    pointerEvents: 'none',
   },
   tail: {
     position: 'absolute',

@@ -15,6 +15,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PastoralJournalDetail } from '@/features/pastoral/components/PastoralJournalDetail';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
+import { SafeScreen } from '@/components/SafeScreen';
 
 export default function PastoralJournalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,13 +33,15 @@ export default function PastoralJournalDetailScreen() {
   }
 
   return (
-    <View testID="journal-detail-screen" style={{ flex: 1 }}>
-      <PastoralJournalDetail
-        journalId={id}
-        tenantId={tenantId}
-        membership={membership}
-        onBack={handleBack}
-      />
-    </View>
+    <SafeScreen>
+      <View testID="journal-detail-screen" style={{ flex: 1 }}>
+        <PastoralJournalDetail
+          journalId={id}
+          tenantId={tenantId}
+          membership={membership}
+          onBack={handleBack}
+        />
+      </View>
+    </SafeScreen>
   );
 }

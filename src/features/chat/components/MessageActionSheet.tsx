@@ -6,16 +6,18 @@
  *
  * Features:
  * - Blur overlay on background
- * - Three action items with Phosphor icons
+ * - Liquid Glass effect on iOS 26+
+ * - Three action items with Ionicons
  * - Dismissible via tap outside or drag down
  */
 
-import { useCallback, memo } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, memo, useState, useEffect } from 'react';
+import { Modal, Pressable, StyleSheet, View, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Text as TamaguiText, YStack, XStack, useTheme } from 'tamagui';
 import { useTranslation } from '@/i18n';
-import { ChatCircle, ArrowUUpLeft, Copy } from '@phosphor-icons/react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MessageWithSender } from '@/types/database';
 
 export interface MessageActionSheetProps {
@@ -62,11 +64,11 @@ const ACTION_ITEM_HEIGHT = 56;
  */
 const ActionItem = memo(
   ({
-    icon: Icon,
+    iconName,
     label,
     onPress,
   }: {
-    icon: React.ElementType;
+    iconName: keyof typeof Ionicons.glyphMap;
     label: string;
     onPress: () => void;
   }) => (
@@ -77,7 +79,7 @@ const ActionItem = memo(
       accessibilityRole="button"
     >
       <XStack alignItems="center" flex={1} gap="$3">
-        <Icon size={24} color="$color1" />
+        <Ionicons name={iconName} size={24} color="$color1" />
         <TamaguiText fontSize="$4" color="$color1">
           {label}
         </TamaguiText>
@@ -103,6 +105,11 @@ export const MessageActionSheet = memo(
   }: MessageActionSheetProps) => {
     const { t } = useTranslation();
     const theme = useTheme();
+    const [liquidGlassAvailable, setLiquidGlassAvailable] = useState(false);
+
+    useEffect(() => {
+      setLiquidGlassAvailable(isLiquidGlassAvailable());
+    }, []);
 
     const handleReplyInThread = useCallback(() => {
       onReplyInThread(message);
@@ -137,9 +144,18 @@ export const MessageActionSheet = memo(
         onRequestClose={onDismiss}
         statusBarTranslucent
       >
-        {/* Backdrop with blur */}
+        {/* Backdrop with blur / Liquid Glass */}
         <Pressable style={styles.backdrop} onPress={handleBackdropPress}>
-          <BlurView intensity={20} tint="dark" style={styles.backdropBlur} />
+          {Platform.OS === 'ios' && liquidGlassAvailable ? (
+            <GlassView
+              style={styles.backdropBlur}
+              glassEffectStyle="regular"
+              tintColor="#00000030"
+              isInteractive={false}
+            />
+          ) : (
+            <BlurView intensity={20} tint="dark" style={styles.backdropBlur} />
+          )}
         </Pressable>
 
         {/* Bottom sheet */}
@@ -149,24 +165,34 @@ export const MessageActionSheet = memo(
             backgroundColor={theme.background.get()}
             pb="$safe-area-bottom"
           >
+            {/* Glass effect overlay for sheet */}
+            {Platform.OS === 'ios' && liquidGlassAvailable && (
+              <GlassView
+                style={StyleSheet.absoluteFill}
+                glassEffectStyle="regular"
+                tintColor="#FFFFFF40"
+                isInteractive={false}
+              />
+            )}
+
             {/* Drag handle */}
-            <XStack justifyContent="center" pt="$3" pb="$2">
+            <XStack justifyContent="center" pt="$3" pb="$2" zIndex={1}>
               <View style={styles.dragHandle} />
             </XStack>
 
             {/* Action items */}
-            <YStack>
+            <YStack zIndex={1}>
               <ActionItem
-                icon={ChatCircle}
+                iconName="chatbubbles"
                 label={replyInThreadLabel}
                 onPress={handleReplyInThread}
               />
               <ActionItem
-                icon={ArrowUUpLeft}
+                iconName="arrow-undo"
                 label={t('chat.message.quoteInReply')}
                 onPress={handleQuoteInReply}
               />
-              <ActionItem icon={Copy} label={t('chat.message.copyText')} onPress={handleCopyText} />
+              <ActionItem iconName="copy" label={t('chat.message.copyText')} onPress={handleCopyText} />
             </YStack>
           </YStack>
         </Pressable>

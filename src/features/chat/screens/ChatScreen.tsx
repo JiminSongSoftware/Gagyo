@@ -29,6 +29,10 @@ import type { MessageListHandle } from '../components/MessageList';
  */
 export interface ChatScreenHandle {
   scrollToMessage: (messageId: string) => void;
+  /**
+   * Scroll to top to trigger native tab minimization when keyboard appears.
+   */
+  scrollToTop: () => void;
 }
 
 export interface ChatScreenProps {
@@ -132,6 +136,9 @@ export const ChatScreen = forwardRef<ChatScreenHandle, ChatScreenProps>(function
     () => ({
       scrollToMessage: (messageId: string) => {
         messageListRef.current?.scrollToMessage(messageId);
+      },
+      scrollToTop: () => {
+        messageListRef.current?.scrollToTop();
       },
     }),
     []

@@ -17,6 +17,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { XStack, YStack, Text as TamaguiText, Stack, Button, styled } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from '@/i18n';
+import { SafeScreen } from '@/components/SafeScreen';
 import { usePrayerCardStore } from '@/stores/prayerCardStore';
 import type { PrayerCardWithDetails } from '@/types/prayer';
 
@@ -311,30 +312,33 @@ export default function PrayerCardDetailScreen() {
 
   if (!prayer) {
     return (
-      <Stack flex={1} backgroundColor="#ffffff" alignItems="center" justifyContent="center">
-        <TamaguiText fontSize={16} color="#687076">
-          {t('prayer.detail_not_found')}
-        </TamaguiText>
-      </Stack>
+      <SafeScreen backgroundColor="#ffffff">
+        <Stack flex={1} alignItems="center" justifyContent="center">
+          <TamaguiText fontSize={16} color="#687076">
+            {t('prayer.detail_not_found')}
+          </TamaguiText>
+        </Stack>
+      </SafeScreen>
     );
   }
 
   const initial = prayer.author.user.display_name?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <Stack testID="prayer-detail-screen" flex={1} backgroundColor="#ffffff">
-      {/* Header */}
-      <Stack style={styles.header}>
-        <Pressable style={styles.backButton} testID="back-button" onPress={handleBack}>
-          <Ionicons name="chevron-back" size={24} color="#11181C" />
-        </Pressable>
-        <XStack flex={1} alignItems="center" justifyContent="center">
-          <TamaguiText fontSize={16} fontWeight="600" color="#11181C">
-            {t('prayer.detail_title')}
-          </TamaguiText>
-        </XStack>
-        <Stack style={{ width: 40 }} />
-      </Stack>
+    <SafeScreen backgroundColor="#ffffff">
+      <Stack testID="prayer-detail-screen" flex={1}>
+        {/* Header */}
+        <Stack style={styles.header}>
+          <Pressable style={styles.backButton} testID="back-button" onPress={handleBack}>
+            <Ionicons name="chevron-back" size={24} color="#11181C" />
+          </Pressable>
+          <XStack flex={1} alignItems="center" justifyContent="center">
+            <TamaguiText fontSize={16} fontWeight="600" color="#11181C">
+              {t('prayer.detail_title')}
+            </TamaguiText>
+          </XStack>
+          <Stack style={{ width: 40 }} />
+        </Stack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Author Info */}
@@ -546,6 +550,7 @@ export default function PrayerCardDetailScreen() {
           </AnswerDialogContent>
         </AnswerDialogOverlay>
       )}
-    </Stack>
+      </Stack>
+    </SafeScreen>
   );
 }

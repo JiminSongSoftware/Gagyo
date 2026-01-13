@@ -5,14 +5,16 @@
  * Shows sender avatar, name, and truncated message content with a close button.
  *
  * Used when user selects "Quote in reply" from message action menu.
+ * Uses GlassCard for Liquid Glass effect on iOS 26+.
  */
 
 import { useCallback, memo } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Platform } from 'react-native';
 import { Stack, Text as TamaguiText, XStack, YStack, Image } from 'tamagui';
-import { X } from '@phosphor-icons/react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { PistosLogo } from './MessageBubble';
-import { useTranslation } from 'react-i18next';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { useTranslation } from '@/i18n';
 
 export interface QuotePreviewProps {
   /**
@@ -49,7 +51,7 @@ function truncateContent(content: string): string {
 }
 
 /**
- * Quote preview component.
+ * Quote preview component with GlassCard on iOS 26+.
  */
 export const QuotePreview = memo(
   ({ senderName, senderAvatar, content, onRemove }: QuotePreviewProps) => {
@@ -61,15 +63,21 @@ export const QuotePreview = memo(
 
     const truncatedContent = truncateContent(content);
 
+    // Use GlassCard on iOS for Liquid Glass effect, fallback to regular Stack
+    const CardWrapper = Platform.OS === 'ios' ? GlassCard : Stack;
+
     return (
-      <Stack
+      <CardWrapper
         style={styles.container}
-        backgroundColor="$backgroundTertiary"
+        variant={Platform.OS === 'ios' ? 'glass' : undefined}
+        backgroundColor={Platform.OS === 'ios' ? undefined : '$backgroundTertiary'}
         borderRadius="$2"
         padding="$2"
         marginBottom="$2"
+        intensity={10}
+        tint="default"
       >
-        <XStack alignItems="center" gap="$2" flex={1}>
+        <XStack alignItems="center" gap="$2" flex={1} zIndex={1}>
           {/* Sender avatar */}
           <Stack
             width={28}
@@ -109,10 +117,10 @@ export const QuotePreview = memo(
             accessibilityLabel={t('chat.quote_preview.remove_quote')}
             accessibilityRole="button"
           >
-            <X size={20} color="$color3" />
+            <Ionicons name="close" size={20} color="$color3" />
           </Pressable>
         </XStack>
-      </Stack>
+      </CardWrapper>
     );
   }
 );

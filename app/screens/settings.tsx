@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { signOut } from '@/lib/auth';
+import { SafeScreen } from '@/components/SafeScreen';
 import {
   ProfileSection,
   LocaleSelector,
@@ -130,28 +131,33 @@ export default function SettingsScreen() {
 
   if (loading) {
     return (
-      <Container testID="settings-screen" padded flex={1}>
-        <YStack flex={1} alignItems="center" justifyContent="center">
-          <Spinner size="large" color="$primary" />
-          <Text i18nKey="common.loading" marginTop="$4" color="muted" />
-        </YStack>
-      </Container>
+      <SafeScreen>
+        <Container testID="settings-screen" padded flex={1}>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <Spinner size="large" color="$primary" />
+            <Text i18nKey="common.loading" marginTop="$4" color="muted" />
+          </YStack>
+        </Container>
+      </SafeScreen>
     );
   }
 
   if (!profile || !user) {
     return (
-      <Container testID="settings-screen" padded flex={1}>
-        <YStack flex={1} alignItems="center" justifyContent="center">
-          <Text i18nKey="common.error" color="danger" />
-        </YStack>
-      </Container>
+      <SafeScreen>
+        <Container testID="settings-screen" padded flex={1}>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <Text i18nKey="common.error" color="danger" />
+          </YStack>
+        </Container>
+      </SafeScreen>
     );
   }
 
   return (
-    <ScrollView testID="settings-screen" style={{ flex: 1 }}>
-      <Container padded>
+    <SafeScreen>
+      <ScrollView testID="settings-screen" style={{ flex: 1 }}>
+        <Container padded>
         <YStack gap="$4" width="100%">
           {/* Header */}
           <Heading level="h1" i18nKey="common.nav.settings" />
@@ -209,5 +215,6 @@ export default function SettingsScreen() {
         </YStack>
       </Container>
     </ScrollView>
+    </SafeScreen>
   );
 }

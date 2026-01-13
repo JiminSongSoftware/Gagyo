@@ -271,13 +271,11 @@ export function useSendMessage(
             created_at: data.created_at,
             updated_at: data.updated_at,
             deleted_at: data.deleted_at,
+            // Flatten user data into sender object to match MessageWithSender type
             sender: {
               id: data.sender?.id ?? '',
-              user: {
-                id: data.sender?.user?.id ?? '',
-                display_name: data.sender?.user?.display_name ?? null,
-                photo_url: data.sender?.user?.photo_url ?? null,
-              },
+              display_name: data.sender?.user?.display_name ?? null,
+              photo_url: data.sender?.user?.photo_url ?? null,
             },
             quoted_message: data.quoted_message
               ? {
@@ -436,13 +434,11 @@ export function useSendReply(
             created_at: data.created_at,
             updated_at: data.updated_at,
             deleted_at: data.deleted_at,
+            // Flatten user data into sender object to match MessageWithSender type
             sender: {
               id: data.sender?.id ?? '',
-              user: {
-                id: data.sender?.user?.id ?? '',
-                display_name: data.sender?.user?.display_name ?? null,
-                photo_url: data.sender?.user?.photo_url ?? null,
-              },
+              display_name: data.sender?.user?.display_name ?? null,
+              photo_url: data.sender?.user?.photo_url ?? null,
             },
           } as MessageWithSender;
         }

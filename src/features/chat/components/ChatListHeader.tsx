@@ -1,15 +1,18 @@
 /**
  * Chat list header component.
  *
- * KakaoTalk-style header with:
- * - "대화방/Chats" title on the left
- * - Expandable search field on the right
- * - New chat button with options (regular chat, team chat, open chat)
+ * Centered header with "Chat" title:
+ * - "Chat/대화" title centered
+ * - Search icon on the left (or right when search expands)
+ * - New chat button on the right
+ * - Symmetric icon layout
  */
 
 import { useTranslation } from '@/i18n';
-import { useState } from 'react';
-import { LayoutChangeEvent, Modal, Pressable, TextInput as RNTextInput } from 'react-native';
+import { useState, useEffect } from 'react';
+import { LayoutChangeEvent, Modal, Pressable, TextInput as RNTextInput, Platform, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Circle, Path, Svg } from 'react-native-svg';
 import { Stack, Text as TamaguiText, XStack, useTheme } from 'tamagui';
 
@@ -23,9 +26,14 @@ export interface ChatListHeaderProps {
    * Callback when new chat is requested.
    */
   onNewChat?: (type: 'regular' | 'team' | 'open') => void;
+
+  /**
+   * Whether to hide the new chat button in the header.
+   * Use this when showing a FAB instead.
+   */
+  hideNewChatButton?: boolean;
 }
 
-// Force recompile
 /**
  * Search icon component.
  */
@@ -111,7 +119,7 @@ function XIcon({ size = 20, color = '#40434D' }: { size?: number; color?: string
 }
 
 /**
- * New chat menu overlay.
+ * New chat menu overlay with Liquid Glass effect.
  */
 function NewChatMenu({
   visible,
@@ -123,6 +131,11 @@ function NewChatMenu({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const [liquidGlassAvailable, setLiquidGlassAvailable] = useState(false);
+
+  useEffect(() => {
+    setLiquidGlassAvailable(isLiquidGlassAvailable());
+  }, []);
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -139,7 +152,18 @@ function NewChatMenu({
           shadowOpacity={0.15}
           shadowRadius={8}
           width={180}
+          overflow="hidden"
         >
+          {/* Liquid Glass overlay on iOS 26+ */}
+          {Platform.OS === 'ios' && liquidGlassAvailable && (
+            <GlassView
+              style={StyleSheet.absoluteFill}
+              glassEffectStyle="regular"
+              tintColor="#FFFFFF80"
+              isInteractive={false}
+            />
+          )}
+
           <Pressable
             onPress={() => {
               onNewChat('regular');
@@ -154,6 +178,7 @@ function NewChatMenu({
               alignItems="center"
               flexDirection="row"
               gap="$3"
+              zIndex={1}
             >
               <TamaguiText fontSize="$lg">💬</TamaguiText>
               <TamaguiText fontSize="$md" color="$color1">
@@ -176,6 +201,7 @@ function NewChatMenu({
               alignItems="center"
               flexDirection="row"
               gap="$3"
+              zIndex={1}
             >
               <TamaguiText fontSize="$lg">👥</TamaguiText>
               <TamaguiText fontSize="$md" color="$color1">
@@ -196,6 +222,7 @@ function NewChatMenu({
               alignItems="center"
               flexDirection="row"
               gap="$3"
+              zIndex={1}
             >
               <TamaguiText fontSize="$lg">🌐</TamaguiText>
               <TamaguiText fontSize="$md" color="$color1">
@@ -210,9 +237,9 @@ function NewChatMenu({
 }
 
 /**
- * ChatListHeader component.
+ * ChatListHeader component with centered title and symmetric icon layout.
  */
-export function ChatListHeader({ onSearchChange, onNewChat }: ChatListHeaderProps) {
+export function ChatListHeader({ onSearchChange, onNewChat, hideNewChatButton }: ChatListHeaderProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -243,7 +270,7 @@ export function ChatListHeader({ onSearchChange, onNewChat }: ChatListHeaderProp
     <>
       <Stack
         onLayout={handleLayout}
-        backgroundColor="#F5F5F5"
+        backgroundColor="#F5F5F7"
         borderBottomWidth={1}
         borderBottomColor="#E0E0E0"
       >
@@ -254,19 +281,26 @@ export function ChatListHeader({ onSearchChange, onNewChat }: ChatListHeaderProp
           height={56}
           justifyContent="space-between"
         >
-          {/* Title on the left */}
-          <TamaguiText
-            fontSize="$xl"
-            fontWeight="700"
-            color="$color1"
-            flex={searchExpanded ? 0 : 1}
-          >
-            {t('chat.chats')}
-          </TamaguiText>
+          {/* Left side: Search button */}
+          <XStack alignItems="center" width={36}>
+            {!searchExpanded && (
+              <Pressable onPress={handleSearchToggle} hitSlop={8}>
+                <Stack
+                  width={36}
+                  height={36}
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius={18}
+                  backgroundColor="$backgroundTertiary"
+                >
+                  <SearchIcon size={18} />
+                </Stack>
+              </Pressable>
+            )}
+          </XStack>
 
-          {/* Right side: Search and New Chat buttons */}
-          <XStack alignItems="center" gap="$3">
-            {/* Search field / icon */}
+          {/* Centered title */}
+          <XStack flex={1} alignItems="center" justifyContent="center">
             {searchExpanded ? (
               <XStack
                 alignItems="center"
@@ -302,38 +336,36 @@ export function ChatListHeader({ onSearchChange, onNewChat }: ChatListHeaderProp
                 </Pressable>
               </XStack>
             ) : (
-              <Pressable onPress={handleSearchToggle} hitSlop={8}>
+              <TamaguiText
+                fontSize={20}
+                fontWeight="700"
+                color="$color1"
+                textAlign="center"
+              >
+                {t('chat.chat')}
+              </TamaguiText>
+            )}
+          </XStack>
+
+          {/* Right side: New chat button */}
+          <XStack alignItems="center" width={36} justifyContent="flex-end">
+            {!searchExpanded && !hideNewChatButton && (
+              <Pressable
+                onPress={() => setShowNewChatMenu(true)}
+                hitSlop={8}
+              >
                 <Stack
                   width={36}
                   height={36}
                   alignItems="center"
                   justifyContent="center"
                   borderRadius={18}
-                  backgroundColor="$backgroundTertiary"
+                  backgroundColor="$primary"
                 >
-                  <SearchIcon size={18} />
+                  <PlusIcon size={20} color="white" />
                 </Stack>
               </Pressable>
             )}
-
-            {/* New chat button */}
-            <Pressable
-              onPress={() => setShowNewChatMenu(true)}
-              hitSlop={8}
-              disabled={searchExpanded}
-              style={{ opacity: searchExpanded ? 0.3 : 1 }}
-            >
-              <Stack
-                width={36}
-                height={36}
-                alignItems="center"
-                justifyContent="center"
-                borderRadius={18}
-                backgroundColor="$primary"
-              >
-                <PlusIcon size={20} color="white" />
-              </Stack>
-            </Pressable>
           </XStack>
         </XStack>
       </Stack>

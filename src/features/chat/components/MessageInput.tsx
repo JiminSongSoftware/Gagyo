@@ -22,8 +22,19 @@
 
 import { useTranslation } from '@/i18n';
 import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, TextInput } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+  TextInput,
+  StyleSheet,
+  View,
+  type KeyboardEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import Svg, { Path } from 'react-native-svg';
 import { Stack, Text as TamaguiText, useTheme, XStack } from 'tamagui';
 import { useImageUpload } from '../hooks/useImageUpload';
@@ -123,6 +134,12 @@ export interface MessageInputProps {
    * Callback when plus icon is pressed (opens attachment menu).
    */
   onPlusPress?: () => void;
+
+  /**
+   * Callback when keyboard appears/disappears with height.
+   * Used to minimize native tabs when typing.
+   */
+  onKeyboardHeightChange?: (height: number) => void;
 }
 
 export interface MessageInputHandle {
@@ -149,6 +166,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
     showImageUpload = true,
     onImageUploaded,
     onPlusPress,
+    onKeyboardHeightChange,
   } = props;
   const { t } = useTranslation();
   const theme = useTheme();
@@ -181,6 +199,36 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
 
   // Emoji picker state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // Liquid Glass availability state
+  const [liquidGlassAvailable, setLiquidGlassAvailable] = useState(false);
+
+  useEffect(() => {
+    setLiquidGlassAvailable(isLiquidGlassAvailable());
+  }, []);
+
+  // Handle keyboard appearance to minimize native tabs
+  useEffect(() => {
+    const keyboardWillShow = (e: KeyboardEvent) => {
+      onKeyboardHeightChange?.(e.endCoordinates.height);
+    };
+    const keyboardWillHide = () => {
+      onKeyboardHeightChange?.(0);
+    };
+
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      keyboardWillShow
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      keyboardWillHide
+    );
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [onKeyboardHeightChange]);
 
   // Image upload hook
   const {
@@ -298,6 +346,29 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
   const nearLimit = charCount > maxLength * 0.9;
   const hasEventChatSupport = onSendEventChat && conversationId && tenantId && currentMembershipId;
 
+  /**
+   * Glass container wrapper for the input bar.
+   * Adds Liquid Glass effect on iOS 26+.
+   */
+  function GlassInputContainer({ children }: { children: React.ReactNode }) {
+    if (Platform.OS === 'ios' && liquidGlassAvailable) {
+      return (
+        <Stack style={{ position: 'relative' }}>
+          <GlassView
+            style={StyleSheet.absoluteFill}
+            glassEffectStyle="regular"
+            tintColor="#F5F5F780"
+            isInteractive={false}
+          />
+          <View style={StyleSheet.absoluteFill} zIndex={1}>
+            {children}
+          </View>
+        </Stack>
+      );
+    }
+    return <>{children}</>;
+  }
+
   return (
     <>
       <Stack
@@ -305,7 +376,11 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
         backgroundColor="$background"
         borderTopWidth={1}
         borderTopColor="$borderLight"
+        zIndex={10000}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+        pointerEvents="box-none"
       >
+        <View style={{ flex: 1, backgroundColor: '$background' }}>
         {/* Quote preview */}
         {quoteAttachment && (
           <QuotePreview
@@ -380,13 +455,14 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
         )}
 
         {/* Input bar */}
-        <XStack
-          alignItems="flex-end"
-          gap="$2"
-          paddingHorizontal="$3"
-          paddingVertical="$2"
-          paddingBottom={Platform.OS === 'ios' ? insets.bottom : 1}
-        >
+        <GlassInputContainer>
+          <XStack
+            alignItems="flex-end"
+            gap="$2"
+            paddingHorizontal="$3"
+            paddingVertical="$2"
+            paddingBottom={Platform.OS === 'ios' ? insets.bottom : 1}
+          >
           {/* Plus icon button */}
           <Pressable
             testID="plus-menu-button"
@@ -415,13 +491,14 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             </Stack>
           </Pressable>
 
-          {/* Text input */}
+          {/* Text input - circular/pill-shaped to match native tab buttons */}
           <Stack
             flex={1}
             backgroundColor="$backgroundTertiary"
-            borderRadius="$2"
-            minHeight={40}
+            borderRadius={22}
+            height={44}
             justifyContent="center"
+            overflow="hidden"
           >
             <TextInput
               ref={textInputRef}
@@ -434,14 +511,15 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
               multiline
               maxLength={maxLength}
               style={{
-                paddingHorizontal: 12,
+                paddingHorizontal: 16,
                 paddingVertical: Platform.select({
-                  ios: 8,
-                  android: 8,
+                  ios: 10,
+                  android: 10,
                 }),
                 fontSize: 16,
+                lineHeight: 22,
                 color: theme.color1?.val as string,
-                minHeight: 40,
+                minHeight: 44,
                 maxHeight: 100,
               }}
               returnKeyType="send"
@@ -449,6 +527,8 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
               blurOnSubmit={false}
               editable={!sending}
               enablesReturnKeyAutomatically={false}
+              selectTextOnFocus={false}
+              importantForAutofill="no"
             />
           </Stack>
 
@@ -511,6 +591,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             </Pressable>
           )}
         </XStack>
+        </GlassInputContainer>
 
         {/* Character count */}
         {nearLimit && (
@@ -524,6 +605,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>((p
             </TamaguiText>
           </Stack>
         )}
+        </View>
       </Stack>
 
       {/* Event Chat Selector Modal */}

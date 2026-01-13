@@ -39,12 +39,13 @@
   "character_count": "{{current}} / {{max}}",
   "nav": {
     "home": "홈",
-    "chat": "채팅",
-    "prayer": "기도카드",
-    "pastoral": "목회일기",
+    "chat": "대화",
+    "prayer": "기도",
+    "pastoral": "목회일지",
     "images": "이미지",
+    "files": "파일",
     "settings": "설정",
-    "more": "전체"
+    "more": "더보기"
   },
   "chat": {
     "message": {
@@ -81,7 +82,7 @@
     "write_journal": "일지 작성"
   },
   "more": {
-    "title": "전체",
+    "title": "더보기",
     "edit_profile": "프로필 편집",
     "services_title": "서비스",
     "roles": {
@@ -129,10 +130,10 @@
     },
     "services": {
       "pastoral": "목회일지",
-      "prayer": "기도카드",
+      "prayer": "기도",
       "settings": "설정",
       "profile_edit": "프로필 편집",
-      "chat_rooms": "채팅방",
+      "chat_rooms": "대화방",
       "members": "멤버",
       "calendar": "달력",
       "giving": "헌금",

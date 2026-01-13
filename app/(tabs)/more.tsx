@@ -20,6 +20,7 @@ import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useTranslation } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentMembership } from '@/hooks/useCurrentMembership';
+import { SafeScreen } from '@/components/SafeScreen';
 import type { Role } from '@/types/database';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -258,6 +259,12 @@ export default function MoreScreen() {
       label: t('more.services.files'),
       route: '/screens/files',
     },
+    {
+      id: 'images',
+      icon: 'images-outline',
+      label: t('nav.images'),
+      route: '/screens/images',
+    },
   ], [t]);
 
   const handleServicePress = useCallback(
@@ -329,7 +336,8 @@ export default function MoreScreen() {
   const keyExtractor = useCallback((item: ServiceItem) => item.id, []);
 
   return (
-    <YStack testID="more-screen" flex={1} backgroundColor="#FFFFFF">
+    <SafeScreen>
+      <YStack testID="more-screen" flex={1} backgroundColor="#FFFFFF">
       {/* Header Bar - safe area only, no extra padding */}
       <XStack
         style={[
@@ -409,7 +417,8 @@ export default function MoreScreen() {
         columnWrapperStyle={styles.columnWrapper}
         scrollIndicatorInsets={{ right: 0 }}
       />
-    </YStack>
+      </YStack>
+    </SafeScreen>
   );
 }
 

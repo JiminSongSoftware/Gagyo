@@ -383,7 +383,8 @@ export function useFiles(tenantId: string | null, options: UseFilesOptions = {})
     setHasMore(true);
     setUsingMockData(false);
     void fetchFiles(0, false);
-  }, [fetchFiles]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId, conversationId, extension, limit]);
 
   /**
    * Load more files for pagination

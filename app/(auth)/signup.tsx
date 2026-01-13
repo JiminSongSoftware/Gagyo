@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/Input';
 import { Text } from '@/components/ui/Text';
 import { useTranslation } from '@/i18n';
 import { signUp, getAuthErrorMessage } from '@/lib/auth';
+import { SafeScreen } from '@/components/SafeScreen';
 
 export default function SignupScreen() {
   const { t } = useTranslation();
@@ -85,14 +86,14 @@ export default function SignupScreen() {
   const isFormValid = email.length > 0 && password.length >= 8 && confirmPassword.length > 0;
 
   return (
-    <YStack
-      testID="signup-screen"
-      flex={1}
-      padding="$4"
-      justifyContent="center"
-      backgroundColor="$background"
-      gap="$4"
-    >
+    <SafeScreen backgroundColor="$background">
+      <YStack
+        testID="signup-screen"
+        flex={1}
+        padding="$4"
+        justifyContent="center"
+        gap="$4"
+      >
       <Heading i18nKey="auth.create_account" level="h1" textAlign="center" />
 
       <YStack gap="$3">
@@ -151,5 +152,6 @@ export default function SignupScreen() {
         />
       </XStack>
     </YStack>
+    </SafeScreen>
   );
 }

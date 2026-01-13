@@ -14,23 +14,23 @@
     "nav": {
       "home": "홈",
       "chat": "대화",
-      "prayer": "기도카드",
-      "pastoral": "목회일기",
+      "prayer": "기도",
+      "pastoral": "목회일지",
       "images": "이미지",
-      "settings": "세팅",
-      "more": "전체"
+      "settings": "설정",
+      "more": "더보기"
     }
   },
   "more": {
-    "title": "전체",
+    "title": "더보기",
     "edit_profile": "프로필 편집",
     "services_title": "서비스",
     "services": {
       "pastoral": "목회일지",
-      "prayer": "기도카드",
+      "prayer": "기도",
       "settings": "설정",
       "profile_edit": "프로필 편집",
-      "chat_rooms": "채팅방",
+      "chat_rooms": "대화방",
       "members": "멤버",
       "calendar": "달력",
       "giving": "헌금",
@@ -41,8 +41,8 @@
     }
   },
   "chat": {
-    "title": "채팅",
-    "chat": "채팅",
+    "title": "대화",
+    "chat": "대화",
     "empty_state": "대화가 없습니다",
     "empty_state_description": "대화를 시작하려면 누군가에게 메시지를 보내세요",
     "message_placeholder": "메시지를 입력하세요...",
@@ -67,7 +67,7 @@
       "videos": "비디오",
       "files": "파일",
       "participants": "참여자",
-      "chat_settings": "대화방 설정"
+      "chat_settings": "대화 설정"
     }
   },
   "contacts": {

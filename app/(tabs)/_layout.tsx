@@ -1,75 +1,80 @@
+import { Platform } from 'react-native';
+import { NativeTabs, Icon, Label, VectorIcon } from 'expo-router/unstable-native-tabs';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Tabs } from 'expo-router';
-import { Image } from 'react-native';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useTranslation } from '@/i18n';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const { loading } = useAuthGuard();
   const { t } = useTranslation();
 
   if (loading) return null;
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#000000',
-        tabBarInactiveTintColor: '#C7C7CC',
-        tabBarActiveBackgroundColor: 'transparent',
-        tabBarStyle: {
-          borderTopColor: '#e0e0e0',
-          backgroundColor: '#ffffff',
-        },
-        headerShown: false,
+    <NativeTabs
+      minimizeBehavior="onScrollDown"
+      labelStyle={{
+        color: Platform.select({
+          ios: 'rgba(0, 0, 0, 1)',
+          android: '#000000',
+        }),
       }}
+      tintColor={Platform.select({
+        ios: 'rgba(0, 0, 0, 1)',
+        android: '#000000',
+      })}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('nav.home'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: t('nav.chat'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="prayer"
-        options={{
-          title: t('nav.prayer'),
-          tabBarIcon: ({ color }) => (
-            <Image
-              source={require('../../assets/hands.png')}
-              style={{ width: 24, height: 24, tintColor: color }}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="images"
-        options={{
-          title: t('nav.images'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="images" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: t('nav.more'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="ellipsis-horizontal" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      {/* Home Tab */}
+      <NativeTabs.Trigger name="index">
+        <Label>{t('nav.home')}</Label>
+        {Platform.select({
+          ios: <Icon sf={{ default: 'house', selected: 'house.fill' }} />,
+          android: <Icon src={<VectorIcon family={Ionicons} name="home" />} />,
+        })}
+      </NativeTabs.Trigger>
+
+      {/* Chat Tab */}
+      <NativeTabs.Trigger name="chat">
+        <Label>{t('nav.chat')}</Label>
+        <Icon
+          src={{
+            default: require('../../assets/chat-not-filled.png'),
+            selected: require('../../assets/chat-icon.png'),
+          }}
+        />
+      </NativeTabs.Trigger>
+
+      {/* Prayer Tab - uses custom image */}
+      <NativeTabs.Trigger name="prayer">
+        <Label>{t('nav.prayer')}</Label>
+        <Icon
+          src={{
+            default: require('../../assets/hands-not-filled.png'),
+            selected: require('../../assets/hands.png'),
+          }}
+        />
+      </NativeTabs.Trigger>
+
+      {/* More Tab */}
+      <NativeTabs.Trigger name="more">
+        <Label>{t('nav.more')}</Label>
+        <Icon
+          src={{
+            default: require('../../assets/fainted-three-dots.png'),
+            selected: require('../../assets/three-dots.png'),
+          }}
+        />
+      </NativeTabs.Trigger>
+
+      {/* Search Tab - separate button on iOS 18+ */}
+      <NativeTabs.Trigger name="search" role="search">
+        <Label>{t('common.search')}</Label>
+        {Platform.select({
+          ios: <Icon sf="magnifyingglass" />,
+          android: <Icon src={<VectorIcon family={Ionicons} name="search" />} />,
+        })}
+      </NativeTabs.Trigger>
+
+    </NativeTabs>
   );
 }

@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { XStack, YStack, Text as TamaguiText, Stack } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from '@/i18n';
+import { SafeScreen } from '@/components/SafeScreen';
 import { usePrayerCardStore } from '@/stores/prayerCardStore';
 import type { PrayerCardWithDetails } from '@/types/prayer';
 
@@ -281,15 +282,16 @@ export default function PrayerScreen() {
   ), [handleCardPress]);
 
   return (
-    <Stack testID="prayer-screen" flex={1} backgroundColor="#ffffff">
-      {/* Header */}
-      <Stack paddingHorizontal={16} paddingTop={12} paddingBottom={8}>
-        <XStack alignItems="center" justifyContent="space-between" marginBottom={4}>
-          <TamaguiText fontSize={28} fontWeight="700" color="#11181C">
-            {t('prayer.prayer_cards')}
-          </TamaguiText>
-        </XStack>
-      </Stack>
+    <SafeScreen backgroundColor="#ffffff">
+      <Stack testID="prayer-screen" flex={1}>
+        {/* Header */}
+        <Stack paddingHorizontal={16} paddingTop={12} paddingBottom={8}>
+          <XStack alignItems="center" justifyContent="space-between" marginBottom={4}>
+            <TamaguiText fontSize={28} fontWeight="700" color="#11181C">
+              {t('prayer.prayer_cards')}
+            </TamaguiText>
+          </XStack>
+        </Stack>
 
       {/* Prayer List */}
       <FlatList<PrayerCardWithDetails>
@@ -422,7 +424,8 @@ export default function PrayerScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </Stack>
+      </Stack>
+    </SafeScreen>
   );
 }
 
@@ -478,8 +481,8 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 80,
-    right: 16,
+    bottom: 90,
+    right: 24,
     width: 56,
     height: 56,
     borderRadius: 28,

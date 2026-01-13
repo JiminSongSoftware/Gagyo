@@ -20,6 +20,7 @@ import { useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, styled, Text as TamaguiText } from 'tamagui';
+import { SafeScreen } from '@/components/SafeScreen';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useTranslation } from '@/i18n';
 import { PastoralJournalList } from '@/features/pastoral/components/PastoralJournalList';
@@ -79,30 +80,32 @@ export default function PastoralScreen() {
   }, []);
 
   return (
-    <YStack testID="pastoral-screen" flex={1} backgroundColor="$background">
-      {/* Journal List */}
-      <PastoralJournalList
-        tenantId={tenantId}
-        membershipId={membershipId}
-        membership={membership}
-        onJournalPress={handleJournalPress}
-        filter={filter}
-        onFilterChange={handleFilterChange}
-      />
+    <SafeScreen>
+      <YStack testID="pastoral-screen" flex={1} backgroundColor="$background">
+        {/* Journal List */}
+        <PastoralJournalList
+          tenantId={tenantId}
+          membershipId={membershipId}
+          membership={membership}
+          onJournalPress={handleJournalPress}
+          filter={filter}
+          onFilterChange={handleFilterChange}
+        />
 
-      {/* Create FAB - only for leaders and co-leaders */}
-      {canCreate && (
-        <FAB
-          testID="create-journal-fab"
-          onPress={handleCreatePress}
-          accessibilityRole="button"
-          accessibilityLabel={t('pastoral.create_journal')}
-        >
-          <TamaguiText fontSize={40} color="white" fontWeight="bold">
-            +
-          </TamaguiText>
-        </FAB>
-      )}
-    </YStack>
+        {/* Create FAB - only for leaders and co-leaders */}
+        {canCreate && (
+          <FAB
+            testID="create-journal-fab"
+            onPress={handleCreatePress}
+            accessibilityRole="button"
+            accessibilityLabel={t('pastoral.create_journal')}
+          >
+            <TamaguiText fontSize={40} color="white" fontWeight="bold">
+              +
+            </TamaguiText>
+          </FAB>
+        )}
+      </YStack>
+    </SafeScreen>
   );
 }

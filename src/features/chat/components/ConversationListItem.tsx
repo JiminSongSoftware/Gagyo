@@ -75,7 +75,7 @@ function getConversationDisplayName(conversation: ConversationWithLastMessage): 
 /**
  * Get last message preview text.
  */
-function getLastMessagePreview(conversation: ConversationWithLastMessage, t): string | null {
+function getLastMessagePreview(conversation: ConversationWithLastMessage, t: (key: string) => string): string | null {
   if (!conversation.last_message) {
     return null;
   }
@@ -164,8 +164,8 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
           {/* Header row: name + timestamp */}
           <Stack flexDirection="row" justifyContent="space-between" alignItems="center">
             <TamaguiText
-              fontSize="$md"
-              fontWeight={hasUnread ? '700' : '500'}
+              fontSize={18}
+              fontWeight={hasUnread ? '700' : '600'}
               color="$color1"
               numberOfLines={1}
               flex={1}
@@ -174,7 +174,7 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
             </TamaguiText>
 
             {timestamp && (
-              <TamaguiText fontSize="$sm" color="$color3" marginLeft="$2">
+              <TamaguiText fontSize={14} color="$color3" marginLeft="$2">
                 {timestamp}
               </TamaguiText>
             )}
@@ -185,7 +185,7 @@ export function ConversationListItem({ conversation, onPress, testID }: Conversa
             <Stack flexDirection="row" alignItems="center" gap="$2">
               <TamaguiText
                 testID="last-message-preview"
-                fontSize="$sm"
+                fontSize={15}
                 color={hasUnread ? '$color1' : '$color2'}
                 fontWeight={hasUnread ? '500' : '400'}
                 numberOfLines={1}

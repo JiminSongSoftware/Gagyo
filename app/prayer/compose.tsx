@@ -26,6 +26,7 @@ import {
 } from 'tamagui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from '@/i18n';
+import { SafeScreen } from '@/components/SafeScreen';
 import { usePrayerCardStore } from '@/stores/prayerCardStore';
 
 // ============================================================================
@@ -510,19 +511,20 @@ export default function PrayerCardComposeScreen() {
   const isValid = content.trim().length > 0 && recipientScope !== null;
 
   return (
-    <Stack testID="prayer-compose-screen" flex={1} backgroundColor="#ffffff">
-      {/* Header */}
-      <Stack style={styles.header}>
-        <Pressable style={styles.backButton} testID="back-button" onPress={handleBack}>
-          <Ionicons name="chevron-back" size={24} color="#11181C" />
-        </Pressable>
-        <XStack flex={1} alignItems="center" justifyContent="center">
-          <TamaguiText fontSize={16} fontWeight="600" color="#11181C">
-            {t('prayer.compose_title')}
-          </TamaguiText>
-        </XStack>
-        <Stack style={{ width: 40 }} />
-      </Stack>
+    <SafeScreen backgroundColor="#ffffff">
+      <Stack testID="prayer-compose-screen" flex={1}>
+        {/* Header */}
+        <Stack style={styles.header}>
+          <Pressable style={styles.backButton} testID="back-button" onPress={handleBack}>
+            <Ionicons name="chevron-back" size={24} color="#11181C" />
+          </Pressable>
+          <XStack flex={1} alignItems="center" justifyContent="center">
+            <TamaguiText fontSize={16} fontWeight="600" color="#11181C">
+              {t('prayer.compose_title')}
+            </TamaguiText>
+          </XStack>
+          <Stack style={{ width: 40 }} />
+        </Stack>
 
       {/* Timer with Background Music */}
       <XStack
@@ -755,6 +757,7 @@ export default function PrayerCardComposeScreen() {
         onConfirm={handleRecipientsConfirm}
         onClose={() => setShowRecipientsPicker(false)}
       />
-    </Stack>
+      </Stack>
+    </SafeScreen>
   );
 }

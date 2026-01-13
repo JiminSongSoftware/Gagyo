@@ -1,21 +1,25 @@
 /**
  * Message list component.
  *
- * Displays a paginated list of messages with:
- * - FlatList with newest at bottom (traditional chat view)
+ * Displays a list of messages with:
+ * - ScrollView with newest at bottom (traditional chat view)
  * - Date separators between days
  * - Loading indicator at bottom for pagination
  * - Empty state
  * - Error state
  * - Auto-scroll to bottom on new messages
+ *
+ * Note: Uses ScrollView instead of FlatList for better NativeTabs integration.
+ * Per Expo docs: "FlatList integration with native tabs has limitations.
+ * Features like scroll-to-top and minimize-on-scroll aren't supported."
  */
 
-import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
 import {
-  FlatList,
-  ListRenderItemInfo,
+  ScrollView,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Stack, Text as TamaguiText, Spinner } from 'tamagui';
@@ -26,6 +30,10 @@ import type { MessageWithSender, ConversationType } from '@/types/database';
 
 export interface MessageListHandle {
   scrollToMessage: (messageId: string) => void;
+  /**
+   * Scroll to top to trigger native tab minimization when keyboard appears.
+   */
+  scrollToTop: () => void;
 }
 
 export interface MessageListProps {
@@ -232,18 +240,21 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     const { t } = useTranslation();
     const selectedMessageId = useChatStore((s) => s.selectedMessage?.id);
 
-    // Ref for FlatList to control scrolling
-    const flatListRef = useRef<FlatList>(null);
+    // Ref for ScrollView to control scrolling
+    const scrollViewRef = useRef<ScrollView>(null);
 
     // Track if we're near bottom to auto-scroll on new messages
     const isNearBottomRef = useRef(true);
+
+    // Track if we're near top for loading more messages
+    const [isNearTop, setIsNearTop] = useState(false);
 
     // Initial scroll to bottom when messages load
     useEffect(() => {
       if (messages.length > 0 && !loading) {
         // Scroll to bottom after a short delay to ensure layout is complete
         const timeoutId = setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: false });
+          scrollViewRef.current?.scrollToEnd({ animated: false });
         }, 100);
         return () => clearTimeout(timeoutId);
       }
@@ -253,11 +264,22 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
       const paddingToBottom = 100;
+      const paddingToTop = 100;
 
-      // Check if near bottom (for non-inverted list)
-      isNearBottomRef.current =
+      // Check if near bottom
+      const nearBottom =
         layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-    }, []);
+      isNearBottomRef.current = nearBottom;
+
+      // Check if near top (for pagination)
+      const nearTop = contentOffset.y <= paddingToTop;
+      setIsNearTop(nearTop);
+
+      // Load more messages when near top
+      if (nearTop && hasMore && !loadingMore && onLoadMore) {
+        onLoadMore();
+      }
+    }, [hasMore, loadingMore, onLoadMore]);
 
     // Auto-scroll to bottom when new message arrives and we were at bottom
     const messagesLengthRef = useRef(messages.length);
@@ -267,74 +289,44 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
 
       if (currentLength > prevLength && isNearBottomRef.current) {
         // New message arrived and we were near bottom, scroll to new message
-        flatListRef.current?.scrollToEnd({ animated: true });
+        scrollViewRef.current?.scrollToEnd({ animated: true });
       }
 
       messagesLengthRef.current = currentLength;
     }, [messages.length]);
 
-    // Expose scrollToMessage function via ref
+    // Expose scrollToMessage and scrollToTop functions via ref
     useImperativeHandle(
       ref,
       () => ({
         scrollToMessage: (messageId: string) => {
+          // For ScrollView, we need to find the message and calculate position
+          // This is a simplified version - for precise positioning, you'd need
+          // to measure the actual position of the message element
           const index = messages.findIndex((msg) => msg.id === messageId);
-          if (index !== -1) {
-            flatListRef.current?.scrollToIndex({
-              index,
-              animated: true,
-              viewPosition: 0.5,
-            });
+          if (index !== -1 && scrollViewRef.current) {
+            // Scroll to approximately the right position
+            // Each message is roughly 60px tall on average
+            const approximatePosition = index * 60;
+            scrollViewRef.current.scrollTo({ y: approximatePosition, animated: true });
           }
+        },
+        scrollToTop: () => {
+          // Trigger native tab minimization by scrolling up
+          // ScrollView with NativeTabs supports minimizeBehavior="onScrollDown"
+          const scrollView = scrollViewRef.current;
+          if (!scrollView) return;
+
+          // Scroll up a bit to trigger the minimize behavior
+          scrollView.scrollTo({ y: 10, animated: false });
+          // Then scroll back
+          requestAnimationFrame(() => {
+            scrollView.scrollTo({ y: 0, animated: false });
+          });
         },
       }),
       [messages]
     );
-
-    const renderItem = useCallback(
-      ({ item, index }: ListRenderItemInfo<MessageWithSender>) => {
-        const previousItem = index > 0 ? messages[index - 1] : undefined;
-        return (
-          <MessageItem
-            item={item}
-            previousItem={previousItem}
-            conversationType={conversationType}
-            currentUserId={currentUserId}
-            onMessagePress={onMessagePress}
-            onSenderPress={onSenderPress}
-            showThreadIndicator={showThreadIndicators}
-            highlightedMessageId={highlightedMessageId}
-            selectedMessageId={selectedMessageId}
-          />
-        );
-      },
-      [
-        conversationType,
-        currentUserId,
-        messages,
-        onMessagePress,
-        onSenderPress,
-        showThreadIndicators,
-        highlightedMessageId,
-        selectedMessageId,
-      ]
-    );
-
-    const keyExtractor = useCallback((item: MessageWithSender) => item.id, []);
-
-    const ListFooterComponent = useCallback(() => {
-      if (loadingMore) {
-        return <LoadingMore />;
-      }
-      return null;
-    }, [loadingMore]);
-
-    // Handle reaching end of list (for loading older messages)
-    const handleEndReached = useCallback(() => {
-      if (hasMore && !loadingMore && onLoadMore) {
-        onLoadMore();
-      }
-    }, [hasMore, loadingMore, onLoadMore]);
 
     // Show loading state on initial load
     if (loading && messages.length === 0) {
@@ -366,24 +358,46 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     }
 
     return (
-      <FlatList
-        ref={flatListRef}
+      <ScrollView
+        ref={scrollViewRef}
         testID={testID || 'message-list'}
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        ListFooterComponent={ListFooterComponent}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
         onScroll={handleScroll}
         scrollEventThrottle={400}
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingVertical: 16,
+          // Add extra top padding to ensure scrollability for tab minimization
+          paddingTop: 100,
+          // Add extra bottom padding for last message visibility
+          paddingBottom: 16,
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-      />
+      >
+        {messages.map((item, index) => {
+          const previousItem = index > 0 ? messages[index - 1] : undefined;
+          return (
+            <MessageItem
+              key={item.id}
+              item={item}
+              previousItem={previousItem}
+              conversationType={conversationType}
+              currentUserId={currentUserId}
+              onMessagePress={onMessagePress}
+              onSenderPress={onSenderPress}
+              showThreadIndicator={showThreadIndicators}
+              highlightedMessageId={highlightedMessageId}
+              selectedMessageId={selectedMessageId}
+            />
+          );
+        })}
+
+        {/* Loading indicator at bottom */}
+        {loadingMore && <LoadingMore />}
+
+        {/* Extra space at bottom for scrollability */}
+        <Stack height={100} />
+      </ScrollView>
     );
   }
 );

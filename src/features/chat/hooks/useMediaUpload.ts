@@ -320,13 +320,11 @@ async function createMediaMessage(
       created_at: data.created_at,
       updated_at: data.updated_at,
       deleted_at: data.deleted_at,
+      // Flatten user data into sender object to match MessageWithSender type
       sender: {
         id: sender?.id ?? '',
-        user: {
-          id: sender?.user?.id ?? '',
-          display_name: sender?.user?.display_name ?? null,
-          photo_url: sender?.user?.photo_url ?? null,
-        },
+        display_name: sender?.user?.display_name ?? null,
+        photo_url: sender?.user?.photo_url ?? null,
       },
     } as MessageWithSender;
     /* eslint-enable @typescript-eslint/no-unsafe-assignment */
@@ -511,13 +509,11 @@ export function useMediaUpload(
           created_at: updatedMessage.created_at,
           updated_at: updatedMessage.updated_at,
           deleted_at: updatedMessage.deleted_at,
+          // Flatten user data into sender object to match MessageWithSender type
           sender: {
             id: sender?.id ?? '',
-            user: {
-              id: sender?.user?.id ?? '',
-              display_name: sender?.user?.display_name ?? null,
-              photo_url: sender?.user?.photo_url ?? null,
-            },
+            display_name: sender?.user?.display_name ?? null,
+            photo_url: sender?.user?.photo_url ?? null,
           },
         } as MessageWithSender;
         /* eslint-enable @typescript-eslint/no-unsafe-assignment */

@@ -1,19 +1,18 @@
 /**
- * Images screen.
+ * Images screen (modal/pushed variant).
  *
- * Displays a gallery grid of all images from conversations.
- * Features:
- * - Thumbnail grid with infinite scroll
- * - Full-screen image viewer with swipe navigation
- * - Conversation filter to narrow results
+ * Same content as tab version but with a back button for navigation from More screen.
  *
- * See: claude_docs/17_images_view.md for architecture documentation
+ * Route: /screens/images
  */
 
 import { useCallback, useState, useMemo } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { Stack, Text as TamaguiText, XStack } from 'tamagui';
+import { useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { XStack, Text as TamaguiText, Stack } from 'tamagui';
 import { Container } from '@/components/ui';
+import { SafeScreen } from '@/components/SafeScreen';
 import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useCurrentMembership } from '@/hooks/useCurrentMembership';
 import { useConversations } from '@/features/chat/hooks';
@@ -28,14 +27,16 @@ import { useTranslation } from '@/i18n';
 import type { ImageAttachment } from '@/types/database';
 
 /**
- * Header component with filter button
+ * Header component with back button and filter button
  */
 function Header({
   selectedConversationName,
   onFilterPress,
+  onBack,
 }: {
   selectedConversationName: string | null;
   onFilterPress: () => void;
+  onBack: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -48,10 +49,23 @@ function Header({
       borderBottomWidth={1}
       borderBottomColor="$borderLight"
     >
-      <TamaguiText fontSize="$xl" fontWeight="700" color="$color">
-        {t('images.title')}
-      </TamaguiText>
+      {/* Back button + Title */}
+      <XStack alignItems="center" flex={1}>
+        <Pressable
+          testID="images-back-button"
+          onPress={onBack}
+          style={styles.backButton}
+          accessibilityLabel={t('common.back')}
+          accessibilityRole="button"
+        >
+          <Ionicons name="chevron-back" size={24} color="#11181C" />
+        </Pressable>
+        <TamaguiText fontSize="$xl" fontWeight="700" color="$color" marginLeft="$2">
+          {t('images.title')}
+        </TamaguiText>
+      </XStack>
 
+      {/* Filter button */}
       <Pressable
         testID="images-filter-button"
         accessibilityLabel={t('images.filter_by_conversation')}
@@ -86,6 +100,7 @@ function Header({
 
 export default function ImagesScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { tenantId } = useRequireAuth();
   const { membershipId } = useCurrentMembership();
 
@@ -132,7 +147,6 @@ export default function ImagesScreen() {
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     refresh();
-    // Note: refresh doesn't return a promise, so we set a timeout to hide refreshing
     setTimeout(() => setRefreshing(false), 500);
   }, [refresh]);
 
@@ -151,30 +165,38 @@ export default function ImagesScreen() {
     setViewerVisible(false);
   }, []);
 
+  // Handle back navigation
+  const handleBack = useCallback(() => {
+    router.replace('/more' as any);
+  }, [router]);
+
   return (
     <>
-      <Container testID="images-screen" flex={1}>
-        {/* Header with filter */}
-        <Header
-          selectedConversationName={selectedConversationName}
-          onFilterPress={handleFilterPress}
-        />
-
-        {/* Image grid */}
-        <Stack flex={1}>
-          <ImageGrid
-            images={images}
-            onImagePress={handleImagePress}
-            onLoadMore={loadMore}
-            loading={loading}
-            hasMore={hasMore}
-            error={error}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-            filteredConversationId={selectedConversationId}
+      <SafeScreen>
+        <Container testID="images-screen" flex={1}>
+          {/* Header with back button and filter */}
+          <Header
+            selectedConversationName={selectedConversationName}
+            onFilterPress={handleFilterPress}
+            onBack={handleBack}
           />
-        </Stack>
-      </Container>
+
+          {/* Image grid */}
+          <Stack flex={1}>
+            <ImageGrid
+              images={images}
+              onImagePress={handleImagePress}
+              onLoadMore={loadMore}
+              loading={loading}
+              hasMore={hasMore}
+              error={error}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              filteredConversationId={selectedConversationId}
+            />
+          </Stack>
+        </Container>
+      </SafeScreen>
 
       {/* Image viewer modal - rendered outside Container to avoid SafeArea conflicts */}
       {viewerVisible && (
@@ -200,6 +222,12 @@ export default function ImagesScreen() {
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',

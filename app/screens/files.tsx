@@ -21,6 +21,8 @@ import { useRequireAuth } from '@/hooks/useAuthGuard';
 import { useFiles } from '@/features/files/hooks';
 import type { FileAttachment, FileExtension } from '@/types/database';
 import { useTranslation } from '@/i18n';
+import { SafeScreen } from '@/components/SafeScreen';
+import { Container } from '@/components/ui';
 
 // ============================================================================
 // TYPES
@@ -216,34 +218,28 @@ function Header({
 
   return (
     <XStack style={styles.header} onLayout={onLayout}>
-      {/* Back button */}
-      <Pressable
-        testID="files-back-button"
-        onPress={onBack}
-        style={styles.backButton}
-        accessibilityLabel={t('common.back')}
-        accessibilityRole="button"
-      >
-        <Ionicons name="chevron-back" size={24} color="#11181C" />
-      </Pressable>
-
-      {/* Title - centered when search not expanded */}
-      {!searchExpanded && (
-        <TamaguiText
-          fontSize={17}
-          fontWeight="600"
-          color="#000000"
-          position="absolute"
-          left={0}
-          right={0}
-          textAlign="center"
+      {/* Back button + Title */}
+      <XStack alignItems="center" flex={1}>
+        <Pressable
+          testID="files-back-button"
+          onPress={onBack}
+          style={styles.backButton}
+          accessibilityLabel={t('common.back')}
+          accessibilityRole="button"
         >
-          {t('files.title')}
-        </TamaguiText>
-      )}
-
-      {/* Spacer to push search button to right */}
-      {!searchExpanded && <XStack flex={1} />}
+          <Ionicons name="chevron-back" size={24} color="#11181C" />
+        </Pressable>
+        {!searchExpanded && (
+          <TamaguiText
+            fontSize={17}
+            fontWeight="600"
+            color="#000000"
+            marginLeft="$2"
+          >
+            {t('files.title')}
+          </TamaguiText>
+        )}
+      </XStack>
 
       {/* Search field / icon */}
       {searchExpanded ? (
@@ -499,8 +495,7 @@ export default function FilesScreen() {
 
   // Handlers
   const handleBack = useCallback(() => {
-    // Navigate back to the More tab
-    router.replace('/(tabs)/more');
+    router.replace('/more' as any);
   }, [router]);
 
   const handleSearchToggle = useCallback(() => {
@@ -569,31 +564,35 @@ export default function FilesScreen() {
         : t('files.no_files_for_type');
 
     return (
-      <YStack testID="files-screen" flex={1} backgroundColor="#F5F5F5">
-        <ListHeaderComponent />
-        <EmptyState message={emptyMessage} />
-      </YStack>
+      <SafeScreen>
+        <Container testID="files-screen" flex={1} backgroundColor="#F5F5F5">
+          <ListHeaderComponent />
+          <EmptyState message={emptyMessage} />
+        </Container>
+      </SafeScreen>
     );
   }
 
   return (
-    <YStack testID="files-screen" flex={1} backgroundColor="#F5F5F5">
-      <ListHeaderComponent />
+    <SafeScreen>
+      <Container testID="files-screen" flex={1} backgroundColor="#F5F5F5">
+        <ListHeaderComponent />
 
-      {/* File list - scrollable with calculated row heights */}
-      <ScrollView
-        style={{ flex: 1 }}
-        onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
-      >
-        {displayFiles.map((file) => (
-          <FileRow
-            key={file.id}
-            file={file}
-            onPress={handleFilePress}
-            height={rowHeight}
-          />
-        ))}
-      </ScrollView>
-    </YStack>
+        {/* File list - scrollable with calculated row heights */}
+        <ScrollView
+          style={{ flex: 1 }}
+          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+        >
+          {displayFiles.map((file) => (
+            <FileRow
+              key={file.id}
+              file={file}
+              onPress={handleFilePress}
+              height={rowHeight}
+            />
+          ))}
+        </ScrollView>
+      </Container>
+    </SafeScreen>
   );
 }

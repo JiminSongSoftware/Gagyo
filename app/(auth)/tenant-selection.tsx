@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMemberships } from '@/hooks/useMemberships';
 import { useTenantContext } from '@/hooks/useTenantContext';
 import { signOut } from '@/lib/auth';
+import { SafeScreen } from '@/components/SafeScreen';
 import type { Membership } from '@/types/database';
 
 /**
@@ -26,10 +27,12 @@ import type { Membership } from '@/types/database';
  */
 function LoadingState() {
   return (
-    <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
-      <Spinner size="large" />
-      <Text testID="tenant-loading-spinner" i18nKey="common.loading" />
-    </YStack>
+    <SafeScreen>
+      <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
+        <Spinner size="large" />
+        <Text testID="tenant-loading-spinner" i18nKey="common.loading" />
+      </YStack>
+    </SafeScreen>
   );
 }
 
@@ -38,14 +41,16 @@ function LoadingState() {
  */
 function EmptyState() {
   return (
-    <YStack flex={1} padding="$4" justifyContent="center" alignItems="center" gap="$4">
-      <Text
-        testID="no-tenants-message"
-        i18nKey="auth.no_churches_found"
-        size="lg"
-        textAlign="center"
-      />
-    </YStack>
+    <SafeScreen>
+      <YStack flex={1} padding="$4" justifyContent="center" alignItems="center" gap="$4">
+        <Text
+          testID="no-tenants-message"
+          i18nKey="auth.no_churches_found"
+          size="lg"
+          textAlign="center"
+        />
+      </YStack>
+    </SafeScreen>
   );
 }
 
@@ -138,14 +143,14 @@ export default function TenantSelectionScreen() {
 
   // Show tenant list
   return (
-    <YStack
-      testID="tenant-selection-screen"
-      flex={1}
-      padding="$4"
-      justifyContent="center"
-      backgroundColor="$background"
-      gap="$6"
-    >
+    <SafeScreen backgroundColor="$background">
+      <YStack
+        testID="tenant-selection-screen"
+        flex={1}
+        padding="$4"
+        justifyContent="center"
+        gap="$6"
+      >
       <YStack gap="$2">
         <Heading i18nKey="auth.select_church" level="h1" textAlign="center" />
         <Text i18nKey="auth.select_church_description" textAlign="center" opacity={0.7} />
@@ -177,5 +182,6 @@ export default function TenantSelectionScreen() {
         />
       </YStack>
     </YStack>
+    </SafeScreen>
   );
 }

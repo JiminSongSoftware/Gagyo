@@ -61,6 +61,12 @@ export interface ConversationListProps {
    * Whether to show the header. Default: true.
    */
   showHeader?: boolean;
+
+  /**
+   * Whether to hide the new chat button in the header.
+   * Use this when showing a FAB instead.
+   */
+  hideNewChatButton?: boolean;
 }
 
 /**
@@ -137,6 +143,7 @@ export function ConversationList({
   onSearchChange,
   onNewChat,
   showHeader = true,
+  hideNewChatButton,
 }: ConversationListProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -186,16 +193,20 @@ export function ConversationList({
   const ListHeader = useCallback(
     () =>
       showHeader ? (
-        <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} />
+        <ChatListHeader
+          onSearchChange={handleSearchChange}
+          onNewChat={onNewChat}
+          hideNewChatButton={hideNewChatButton}
+        />
       ) : null,
-    [showHeader, handleSearchChange, onNewChat]
+    [showHeader, handleSearchChange, onNewChat, hideNewChatButton]
   );
 
   // Show loading state on initial load
   if (loading && conversations.length === 0) {
     return (
       <YStack flex={1}>
-        {showHeader && <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} />}
+        {showHeader && <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} hideNewChatButton={hideNewChatButton} />}
         <LoadingState />
       </YStack>
     );
@@ -205,7 +216,7 @@ export function ConversationList({
   if (error && conversations.length === 0) {
     return (
       <YStack flex={1}>
-        {showHeader && <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} />}
+        {showHeader && <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} hideNewChatButton={hideNewChatButton} />}
         <ErrorState error={error} />
       </YStack>
     );
@@ -215,7 +226,7 @@ export function ConversationList({
   if (!loading && conversations.length === 0) {
     return (
       <YStack flex={1}>
-        {showHeader && <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} />}
+        {showHeader && <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} hideNewChatButton={hideNewChatButton} />}
         <EmptyState />
       </YStack>
     );
@@ -225,7 +236,7 @@ export function ConversationList({
   if (!loading && filteredConversations.length === 0 && searchQuery.trim()) {
     return (
       <YStack flex={1}>
-        <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} />
+        <ChatListHeader onSearchChange={handleSearchChange} onNewChat={onNewChat} hideNewChatButton={hideNewChatButton} />
         <Stack flex={1} alignItems="center" justifyContent="center" padding="$6" gap="$3">
           <TamaguiText fontSize={48}>🔍</TamaguiText>
           <TamaguiText fontSize="$lg" fontWeight="600" color="$color1" textAlign="center">

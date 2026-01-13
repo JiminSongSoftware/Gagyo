@@ -453,7 +453,7 @@ export default function ChatDetailScreen() {
   // Ref to access MessageInput methods
   const messageInputRef = useRef<MessageInputHandle | null>(null);
 
-  // Ref to access ChatScreen methods (for search scroll and keyboard handling)
+  // Ref to access ChatScreen methods (for search scroll)
   const chatScreenRef = useRef<ChatScreenHandle | null>(null);
 
   // Search state
@@ -710,7 +710,8 @@ export default function ChatDetailScreen() {
   );
 
   const handleBack = useCallback(() => {
-    router.push('/chat');
+    // Use router.back() since we're in a nested stack within the tab
+    router.back();
   }, [router]);
 
   const handleSearch = useCallback(() => {
@@ -742,6 +743,17 @@ export default function ChatDetailScreen() {
     });
   }, [searchResultIds.length]);
 
+  // Handle keyboard height change - trigger scroll to minimize native tabs
+  // Only applies in tabs context where native tabs exist
+  const handleKeyboardHeightChange = useCallback(
+    (height: number) => {
+      if (height > 0) {
+        // Keyboard appeared - scroll to trigger tab minimization
+        chatScreenRef.current?.scrollToTop();
+      }
+    },
+    []
+  );
 
   const getHeaderTitle = useCallback(() => {
     if (conversationName) {
@@ -858,7 +870,7 @@ export default function ChatDetailScreen() {
                 testID="chat-screen"
               />
 
-              {/* Message input */}
+              {/* Message input - positioned to appear above native tab bar */}
               <MessageInput
                 ref={messageInputRef}
                 onSend={handleSend}
@@ -869,6 +881,7 @@ export default function ChatDetailScreen() {
                 tenantId={tenantId ?? undefined}
                 currentMembershipId={membershipId ?? undefined}
                 onPlusPress={() => setShowAttachmentSheet(true)}
+                onKeyboardHeightChange={handleKeyboardHeightChange}
               />
             </KeyboardAvoidingView>
           </TamaguiStack>
@@ -914,7 +927,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    paddingBottom: Platform.OS === 'ios' ? 34 + 49 : 16, // Account for home indicator + tab bar
   },
   attachmentOption: {
     width: '100%',
